@@ -111,6 +111,11 @@ datadriven/tests/uq/analysis/genz/results/
 # ignoring custom.py file
 custom.py
 
+# ignoring VS files
+/.vs/
+/obj/
+*.user
+
 GPATH
 GRTAGS
 GSYMS
