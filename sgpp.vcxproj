@@ -24,6 +24,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>~/projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -41,18 +42,19 @@
     </ReBuildCommandLine>
     <CleanCommandLine>
     </CleanCommandLine>
-    <RemoteBuildCommandLine>scons SG_ALL=0 SG_BASE=1</RemoteBuildCommandLine>
+    <RemoteBuildCommandLine>scons</RemoteBuildCommandLine>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
-    <NMakeIncludeSearchPath>$(LINUX_HEADER_FILE_PATH)\usr\include\c++\6;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu\c++\6;$(LINUX_HEADER_FILE_PATH)\usr\include\c++\6\backward;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\6\include;$(LINUX_HEADER_FILE_PATH)\usr\local\include;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\6\include-fixed;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu;$(LINUX_HEADER_FILE_PATH)\usr\include;$(ProjectDir)base\src\;$(ProjectDir)optimization\src\;$(ProjectDir)datadriven\src\</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(LINUX_HEADER_FILE_PATH)\usr\include\c++\5;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu\c++\5;$(LINUX_HEADER_FILE_PATH)\usr\include\c++\5\backward;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\5\include;$(LINUX_HEADER_FILE_PATH)\usr\local\include;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\5\include-fixed;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu;$(LINUX_HEADER_FILE_PATH)\usr\include;$(ProjectDir)base\src\;$(ProjectDir)optimization\src\;$(ProjectDir)datadriven\src\</NMakeIncludeSearchPath>
     <ProjectPublicIncludePath>
     </ProjectPublicIncludePath>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
-    <NMakeForcedIncludes>$(LINUX_HEADER_FILE_PATH)\cpp_defines.txt</NMakeForcedIncludes>
+    <NMakeForcedIncludes>$(LINUX_HEADER_FILE_PATH)\cpp_defines.txt;$(ProjectDir)cpp_version.txt</NMakeForcedIncludes>
     <RemoteCleanCommandLine>scons -c</RemoteCleanCommandLine>
     <RemoteReBuildCommandLine>scons --clean
 scons --no-cache</RemoteReBuildCommandLine>
+    <RemoteBuildOutputs>/base/examples/dimensionReduction</RemoteBuildOutputs>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <BuildCommandLine>
@@ -64,21 +66,20 @@ scons --no-cache</RemoteReBuildCommandLine>
     <RemoteBuildCommandLine>scons SG_ALL=0 SG_BASE=1</RemoteBuildCommandLine>
     <AdditionalSourcesToCopyMapping>
     </AdditionalSourcesToCopyMapping>
-    <NMakeIncludeSearchPath>$(LINUX_HEADER_FILE_PATH)\usr\include\c++\6;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu\c++\6;$(LINUX_HEADER_FILE_PATH)\usr\include\c++\6\backward;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\6\include;$(LINUX_HEADER_FILE_PATH)\usr\local\include;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\6\include-fixed;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu;$(LINUX_HEADER_FILE_PATH)\usr\include;$(ProjectDir)base\src\;$(ProjectDir)optimization\src\;$(ProjectDir)datadriven\src\</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(LINUX_HEADER_FILE_PATH)\usr\include\c++\5;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu\c++\5;$(LINUX_HEADER_FILE_PATH)\usr\include\c++\5\backward;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\5\include;$(LINUX_HEADER_FILE_PATH)\usr\local\include;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\5\include-fixed;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu;$(LINUX_HEADER_FILE_PATH)\usr\include;$(ProjectDir)base\src\;$(ProjectDir)optimization\src\;$(ProjectDir)datadriven\src\</NMakeIncludeSearchPath>
     <ProjectPublicIncludePath>
     </ProjectPublicIncludePath>
     <NMakePreprocessorDefinitions>
     </NMakePreprocessorDefinitions>
-    <NMakeForcedIncludes>$(LINUX_HEADER_FILE_PATH)\cpp_defines.txt</NMakeForcedIncludes>
+    <NMakeForcedIncludes>$(LINUX_HEADER_FILE_PATH)\cpp_defines.txt;$(ProjectDir)cpp_version.txt</NMakeForcedIncludes>
   </PropertyGroup>
   <ItemGroup>
     <None Include="*.*" />
     <None Include="tools\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="base\**" Exclude="base\doc\**" />
-    <ClInclude Include="datadriven\**" Exclude="datadriven\doc\**" />
-    <ClInclude Include="optimization\**" Exclude="optimization\doc\**" />
+    <None Include="site_scons\**" />
+    <None Include="base\**" Exclude="base\doc\**" />
+    <None Include="datadriven\**" Exclude="datadriven\doc\**" />
+    <None Include="optimization\**" Exclude="optimization\doc\**" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

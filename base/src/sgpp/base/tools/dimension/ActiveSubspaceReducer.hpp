@@ -6,56 +6,88 @@
 #ifndef ACTIVESUBSPACEREDUCER_HPP
 #define ACTIVESUBSPACEREDUCER_HPP
 
-#include <sgpp/base/tools/dimension/Reducer.hpp>
-#include <sgpp/optimization/function/vector/VectorFunction.hpp>
 #include <sgpp/base/datatypes/DataMatrix.hpp>
-#include "VectorDistribution.hpp"
+#include <sgpp/optimization/function/vector/VectorFunction.hpp>
+#include "DimReduction.hpp"
 
-class ActiveSubspaceReducer : public Reducer {
+namespace sgpp {
+namespace base {
+
+class ActiveSubspaceReducer : public sgpp::base::FunctionReducer {
  public:
-  class GradientGenerationStrategy
-  {
-  public:
+  class Gradient {
+   public:
+    virtual sgpp::base::DataVector gradientAt(sgpp::base::DataVector& v) = 0;
+  };
+
+  class GivenGradient : public Gradient {
+   public:
+    GivenGradient(std::shared_ptr<sgpp::optimization::VectorFunction> gradient);
+
     virtual sgpp::base::DataVector gradientAt(sgpp::base::DataVector& v);
+
+   private:
+    std::shared_ptr<sgpp::optimization::VectorFunction> gradient;
   };
 
-  class MatrixComputationStrategy
-  {
-  public:
-    MatrixComputationStrategy(size_t dimensions, GradientGenerationStrategy& s);
-    virtual ~MatrixComputationStrategy() = default;
-
-    virtual std::unique_ptr<sgpp::base::DataMatrix> compute();
-  protected:
-    size_t dimensions;
-    GradientGenerationStrategy& gradient;
+  class CutoffCriterion {
+   public:
+    virtual size_t evaluate(const sgpp::base::DataMatrix& eigenVectors,
+                            const sgpp::base::DataVector& eigenValues,
+                            const std::vector<sgpp::base::DataMatrix>& sampleMatrices) = 0;
   };
 
-  class MCStrategy : MatrixComputationStrategy
-  {
-  public:
-    MCStrategy(size_t dimensions, GradientGenerationStrategy& s, VectorDistribution& distribution,
-               size_t samples);
+  class FixedCutoff : public CutoffCriterion {
+   public:
+    FixedCutoff(size_t n);
 
-    std::unique_ptr<sgpp::base::DataMatrix> compute() override;
+    size_t evaluate(const sgpp::base::DataMatrix& eigenVectors,
+                    const sgpp::base::DataVector& eigenValues,
+                    const std::vector<sgpp::base::DataMatrix>& sampleMatrices);
 
-  private:
-    VectorDistribution distribution;
-   size_t samples;
+   private:
+    size_t n;
   };
 
-  class CutoffCriterion
-  {
-    
+  class EigenValueCutoff : public CutoffCriterion {
+   public:
+    EigenValueCutoff(double minValue);
+
+    size_t evaluate(const sgpp::base::DataMatrix& eigenVectors,
+                    const sgpp::base::DataVector& eigenValues,
+                    const std::vector<sgpp::base::DataMatrix>& sampleMatrices);
+
+   private:
+    double minEigenValue;
   };
 
-  ActiveSubspaceReducer(MatrixComputationStrategy matrix);
+    class IntervalCutoff : public CutoffCriterion {
+   public:
+      IntervalCutoff(size_t bootstrapSamples);
 
-  std::unique_ptr<sgpp::optimization::VectorFunction> reduce(
-      sgpp::optimization::VectorFunction& input);
+    size_t evaluate(const sgpp::base::DataMatrix& eigenVectors,
+                    const sgpp::base::DataVector& eigenValues,
+                    const std::vector<sgpp::base::DataMatrix>& sampleMatrices);
 
-private:
-  MatrixComputationStrategy matrix;
+   private:
+    size_t bootstrapSamples;
+  };
+
+  ActiveSubspaceReducer(size_t samples, std::shared_ptr < Gradient>  gradient,
+                        std::shared_ptr < VectorDistribution>  distribution,
+                        std::shared_ptr < CutoffCriterion>  cutoff);
+
+  std::unique_ptr<sgpp::optimization::ScalarFunction> reduceFunction(
+      sgpp::optimization::ScalarFunction& input) override;
+
+ private:
+  size_t samples;
+  std::shared_ptr<Gradient> gradient;
+  std::shared_ptr<VectorDistribution> distribution;
+  std::shared_ptr<CutoffCriterion> cutoff;
 };
+
+}  // namespace base
+}  // namespace sgpp
 
 #endif

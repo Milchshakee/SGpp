@@ -12,6 +12,8 @@ moduleDependencies = []
 additionalDependencies = []
 if env["USE_OCL"]:
     additionalDependencies += ["OpenCL"]
+if env["USE_GSL"]:
+    additionalDependencies += ["gsl", "gslcblas"]
 
 module = ModuleHelper.Module(moduleDependencies, additionalDependencies)
 

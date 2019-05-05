@@ -114,6 +114,7 @@ custom.py
 # ignoring VS files
 /.vs/
 /obj/
+/bin/
 *.user
 
 GPATH
