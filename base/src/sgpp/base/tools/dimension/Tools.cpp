@@ -1,6 +1,12 @@
 #include "Tools.hpp"
 #include <gsl/gsl_eigen.h>
 
+
+sgpp::base::DataVector Tools::fromEigen(Eigen::VectorXd& e) {
+  sgpp::base::DataVector v(e.data(), e.size());
+  return std::move(v);
+}
+
 sgpp::base::DataMatrix Tools::fromEigen(Eigen::MatrixXd& e) {
   sgpp::base::DataMatrix m(e.data(), e.rows(), e.cols());
   return std::move(m);
@@ -11,12 +17,24 @@ Eigen::MatrixXd Tools::toEigen(sgpp::base::DataMatrix& matrix) {
   return std::move(m.matrix());
 }
 
+Eigen::VectorXd Tools::toEigen(const sgpp::base::DataVector& vector) {
+  Eigen::Map<Eigen::VectorXd> v(const_cast<double*>(vector.data()), vector.size());
+  return std::move(v);
+}
+
 sgpp::base::DataMatrix Tools::mult(sgpp::base::DataMatrix& m1,
                                    sgpp::base::DataMatrix& m2) {
   Eigen::MatrixXd e1 = toEigen(m1);
   Eigen::MatrixXd e2 = toEigen(m2);
   Eigen::MatrixXd e3 = e1 * e2;
   return fromEigen(e3);
+}
+
+sgpp::base::DataVector Tools::mult(sgpp::base::DataMatrix& m, const sgpp::base::DataVector& v) {
+  Eigen::MatrixXd em = toEigen(m);
+  Eigen::VectorXd ev = toEigen(v);
+  Eigen::VectorXd r = em * ev;
+  return fromEigen(r);
 }
 
 sgpp::base::DataMatrix Tools::centerMean(sgpp::base::DataMatrix& matrix) {
@@ -44,7 +62,7 @@ void Tools::svd(const sgpp::base::DataMatrix& input, sgpp::base::DataMatrix& eig
   }
 
   for (size_t c = 0; c < dimensions; c++) {
-    size_t max = 0;
+    size_t max = c;
     double maxValue = 0.0;
     for (size_t j = c; j < dimensions; j++) {
       if (eigenValues[j] > maxValue) {
@@ -52,10 +70,10 @@ void Tools::svd(const sgpp::base::DataMatrix& input, sgpp::base::DataMatrix& eig
         maxValue = eigenValues[j];
       }
     }
-    sgpp::base::DataVector temp1;
-    eigenVectorMatrix.getRow(c, temp1);
-    sgpp::base::DataVector temp2;
-    eigenVectorMatrix.getRow(max, temp2);
+    sgpp::base::DataVector temp1(dimensions);
+    eigenVectorMatrix.getColumn(c, temp1);
+    sgpp::base::DataVector temp2(dimensions);
+    eigenVectorMatrix.getColumn(max, temp2);
     eigenVectorMatrix.setColumn(c, temp2);
     eigenVectorMatrix.setColumn(max, temp1);
     double temp3 = eigenValues[c];

@@ -1,5 +1,6 @@
 #include "DimReduction.hpp"
 #include <random>
+#include "Tools.hpp"
 
 namespace sgpp {
 namespace base {
@@ -35,6 +36,22 @@ DataVector LengthVectorDistribution::operator()() {
   }
   toReturn.mult(toReturn.l2Norm() / length);
   return std::move(toReturn);
+}
+
+ReducedFunction::ReducedFunction(std::unique_ptr<sgpp::optimization::ScalarFunction>&& function,
+  DataMatrix transformation) : ScalarFunction(transformation.getNcols()), function(std::move(function)), transformation(transformation) {}
+
+ReducedFunction::~ReducedFunction() = default;
+
+double ReducedFunction::eval(const base::DataVector& x) {
+  DataVector y = Tools::mult(transformation, x);
+  return function->eval(y);
+}
+
+void ReducedFunction::clone(std::unique_ptr<ScalarFunction>& clone) const {
+  std::unique_ptr<ScalarFunction> ptr;
+  function->clone(ptr);
+  clone = std::make_unique<ReducedFunction>(std::move(ptr), transformation);
 }
 
 }  // namespace base

@@ -111,8 +111,11 @@ std::unique_ptr<sgpp::optimization::ScalarFunction> ActiveSubspaceReducer::reduc
   sgpp::base::DataMatrix eigenVectorMatrix(dimensions, dimensions);
   sgpp::base::DataVector eigenValues(dimensions);
   Tools::svd(matrix, eigenVectorMatrix, eigenValues);
-  //size_t n = cutoff.evaluate(eigenVectorMatrix, eigenValues, sampleMatrices);
-  return nullptr;
+  size_t n = cutoff->evaluate(eigenVectorMatrix, eigenValues, sampleMatrices);
+  eigenVectorMatrix.resizeRowsCols(dimensions, n);
+  std::unique_ptr<optimization::ScalarFunction> ptr;
+  input.clone(ptr);
+  return std::make_unique<ReducedFunction>(std::move(ptr), eigenVectorMatrix);
 }
 
 }  // namespace base

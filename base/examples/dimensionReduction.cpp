@@ -6,8 +6,6 @@
 #include "sgpp/optimization/function/vector/WrapperVectorFunction.hpp"
 #include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
 
-using sgpp::base::DataMatrix;
-
 double f(const sgpp::base::DataVector& v)
 { return v[0]; }
 
@@ -26,4 +24,6 @@ int main() {
 
   auto reducedFunc = reducer.reduceFunction(*func.get());
   std::cout << reducedFunc->getNumberOfParameters() << std::endl;
+
+  std::cout << reducedFunc->eval(sgpp::base::DataVector(1, 0.4)) << std::endl;
 }

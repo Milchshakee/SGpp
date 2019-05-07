@@ -50,6 +50,19 @@ class LengthVectorDistribution : public VectorDistribution {
   std::uniform_real_distribution<double> distribution;
 };
 
+  class ReducedFunction : public sgpp::optimization::ScalarFunction
+  {
+ public:
+    ReducedFunction(std::unique_ptr<sgpp::optimization::ScalarFunction>&& function, DataMatrix transformation);
+    ~ReducedFunction() override;
+
+    double eval(const base::DataVector& x) override;
+    void clone(std::unique_ptr<ScalarFunction>& clone) const override;
+  private:
+    std::unique_ptr<sgpp::optimization::ScalarFunction> function;
+   DataMatrix transformation;
+  };
+
 class DataReducer {
  public:
   virtual std::unique_ptr<sgpp::optimization::ScalarFunction> reduceData(
