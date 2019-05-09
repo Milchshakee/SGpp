@@ -19,10 +19,11 @@ int main() {
   auto funcGradient = std::make_shared<sgpp::optimization::WrapperVectorFunction>(2, 2, f_gradient);
   auto gradient = std::make_shared < sgpp::base::ActiveSubspaceReducer::GivenGradient>(funcGradient);
   auto dist = std::make_shared<sgpp::base::UniformVectorDistribution>(0, 2);
-  auto cutoff = std::make_shared < sgpp::base::ActiveSubspaceReducer::FixedCutoff>(1);
+  auto cutoff = std::make_shared < sgpp::base::FixedCutoff<sgpp::base::ActiveSubspaceInfo>>(1);
   auto reducer = sgpp::base::ActiveSubspaceReducer(100, gradient, dist, cutoff);
 
-  auto reducedFunc = reducer.reduceFunction(*func.get());
+  auto i = sgpp::base::ActiveSubspaceInfo();
+  auto reducedFunc = reducer.reduceFunction(*func.get(), i);
   std::cout << reducedFunc->getNumberOfParameters() << std::endl;
 
   std::cout << reducedFunc->eval(sgpp::base::DataVector(1, 0.4)) << std::endl;

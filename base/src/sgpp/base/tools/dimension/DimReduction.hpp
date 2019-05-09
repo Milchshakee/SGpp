@@ -6,10 +6,10 @@
 #ifndef DIMREDUCTION_HPP
 #define DIMREDUCTION_HPP
 
-#include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
-#include "sgpp/base/datatypes/DataMatrix.hpp"
-#include <vector>
 #include <random>
+#include <vector>
+#include "sgpp/base/datatypes/DataMatrix.hpp"
+#include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
 
 namespace sgpp {
 namespace base {
@@ -50,18 +50,48 @@ class LengthVectorDistribution : public VectorDistribution {
   std::uniform_real_distribution<double> distribution;
 };
 
-  class ReducedFunction : public sgpp::optimization::ScalarFunction
-  {
+template <class T>
+class CutoffCriterion {
  public:
-    ReducedFunction(std::unique_ptr<sgpp::optimization::ScalarFunction>&& function, DataMatrix transformation);
-    ~ReducedFunction() override;
+  virtual size_t evaluate(const T& info) = 0;
+};
 
-    double eval(const base::DataVector& x) override;
-    void clone(std::unique_ptr<ScalarFunction>& clone) const override;
-  private:
-    std::unique_ptr<sgpp::optimization::ScalarFunction> function;
-   DataMatrix transformation;
-  };
+template <class T>
+class FixedCutoff : public CutoffCriterion<T> {
+ public:
+  FixedCutoff(size_t n) : n(n) {}
+
+            size_t evaluate(const T& info) override {
+    return n;
+  }
+
+ private:
+  size_t n;
+};
+
+class ReducedFunction : public sgpp::optimization::ScalarFunction {
+ public:
+  ReducedFunction(std::unique_ptr<sgpp::optimization::ScalarFunction>&& function,
+                  DataMatrix transformation);
+  ~ReducedFunction() override = default;
+
+  double eval(const base::DataVector& x) override;
+  void clone(std::unique_ptr<ScalarFunction>& clone) const override;
+
+ private:
+  std::unique_ptr<sgpp::optimization::ScalarFunction> function;
+  DataMatrix transformation;
+};
+
+template <class T>
+class Reducer {
+ public:
+  Reducer(std::shared_ptr<CutoffCriterion<T>>& cutoff) : cutoff(cutoff) {}
+  virtual ~Reducer() = default;
+
+ protected:
+  std::shared_ptr<CutoffCriterion<T>> cutoff;
+};
 
 class DataReducer {
  public:
@@ -71,12 +101,23 @@ class DataReducer {
       sgpp::optimization::ScalarFunction& input, VectorDistribution& dist, size_t samples);
 };
 
-class FunctionReducer
-{
-public:
-  virtual std::unique_ptr<sgpp::optimization::ScalarFunction> reduceFunction(sgpp::optimization::ScalarFunction& input) = 0;
-};
+template <class T>
+class FunctionReducer : public Reducer<T> {
+ public:
+  FunctionReducer(std::shared_ptr<CutoffCriterion<T>>& cutoff) : Reducer<T>(cutoff) {}
 
+  std::unique_ptr<sgpp::optimization::ScalarFunction> reduceFunction(
+      sgpp::optimization::ScalarFunction& input, T& out) {
+    evaluateFunction(input, out);
+    size_t n = Reducer<T>::cutoff->evaluate(out);
+    return reduce(input, n, out);
+  }
+
+ protected:
+  virtual void evaluateFunction(sgpp::optimization::ScalarFunction& input, T& out) = 0;
+  virtual std::unique_ptr<sgpp::optimization::ScalarFunction> reduce(
+      sgpp::optimization::ScalarFunction& input, size_t n, const T& info) = 0;
+};
 }  // namespace base
 }  // namespace sgpp
 

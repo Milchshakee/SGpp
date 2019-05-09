@@ -41,8 +41,6 @@ DataVector LengthVectorDistribution::operator()() {
 ReducedFunction::ReducedFunction(std::unique_ptr<sgpp::optimization::ScalarFunction>&& function,
   DataMatrix transformation) : ScalarFunction(transformation.getNcols()), function(std::move(function)), transformation(transformation) {}
 
-ReducedFunction::~ReducedFunction() = default;
-
 double ReducedFunction::eval(const base::DataVector& x) {
   DataVector y = Tools::mult(transformation, x);
   return function->eval(y);

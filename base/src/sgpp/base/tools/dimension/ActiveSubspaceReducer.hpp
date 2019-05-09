@@ -13,7 +13,14 @@
 namespace sgpp {
 namespace base {
 
-class ActiveSubspaceReducer : public sgpp::base::FunctionReducer {
+struct ActiveSubspaceInfo {
+  sgpp::base::DataMatrix eigenVectors;
+  sgpp::base::DataVector eigenValues;
+  std::vector<sgpp::base::DataMatrix> sampleMatrices;
+};
+
+class ActiveSubspaceReducer
+    : public sgpp::base::FunctionReducer<ActiveSubspaceInfo> {
  public:
   class Gradient {
    public:
@@ -30,61 +37,39 @@ class ActiveSubspaceReducer : public sgpp::base::FunctionReducer {
     std::shared_ptr<sgpp::optimization::VectorFunction> gradient;
   };
 
-  class CutoffCriterion {
-   public:
-    virtual size_t evaluate(const sgpp::base::DataMatrix& eigenVectors,
-                            const sgpp::base::DataVector& eigenValues,
-                            const std::vector<sgpp::base::DataMatrix>& sampleMatrices) = 0;
-  };
-
-  class FixedCutoff : public CutoffCriterion {
-   public:
-    FixedCutoff(size_t n);
-
-    size_t evaluate(const sgpp::base::DataMatrix& eigenVectors,
-                    const sgpp::base::DataVector& eigenValues,
-                    const std::vector<sgpp::base::DataMatrix>& sampleMatrices);
-
-   private:
-    size_t n;
-  };
-
-  class EigenValueCutoff : public CutoffCriterion {
+  class EigenValueCutoff : public CutoffCriterion<ActiveSubspaceInfo> {
    public:
     EigenValueCutoff(double minValue);
 
-    size_t evaluate(const sgpp::base::DataMatrix& eigenVectors,
-                    const sgpp::base::DataVector& eigenValues,
-                    const std::vector<sgpp::base::DataMatrix>& sampleMatrices);
+    size_t evaluate(const ActiveSubspaceInfo& info) override;
 
    private:
     double minEigenValue;
   };
 
-    class IntervalCutoff : public CutoffCriterion {
+  class IntervalCutoff : public CutoffCriterion<ActiveSubspaceInfo> {
    public:
-      IntervalCutoff(size_t bootstrapSamples);
+    IntervalCutoff(size_t bootstrapSamples);
 
-    size_t evaluate(const sgpp::base::DataMatrix& eigenVectors,
-                    const sgpp::base::DataVector& eigenValues,
-                    const std::vector<sgpp::base::DataMatrix>& sampleMatrices);
+    size_t evaluate(const ActiveSubspaceInfo& info) override;
 
    private:
     size_t bootstrapSamples;
   };
 
-  ActiveSubspaceReducer(size_t samples, std::shared_ptr < Gradient>  gradient,
-                        std::shared_ptr < VectorDistribution>  distribution,
-                        std::shared_ptr < CutoffCriterion>  cutoff);
+  ActiveSubspaceReducer(size_t samples, std::shared_ptr<Gradient> gradient,
+                        std::shared_ptr<VectorDistribution> distribution,
+                        std::shared_ptr<CutoffCriterion<ActiveSubspaceInfo>> cutoff);
 
-  std::unique_ptr<sgpp::optimization::ScalarFunction> reduceFunction(
-      sgpp::optimization::ScalarFunction& input) override;
+protected:
+  void evaluateFunction(sgpp::optimization::ScalarFunction& input, ActiveSubspaceInfo& out);
+  std::unique_ptr<sgpp::optimization::ScalarFunction> reduce(
+      sgpp::optimization::ScalarFunction& input, size_t n, const ActiveSubspaceInfo& info) override;
 
  private:
   size_t samples;
   std::shared_ptr<Gradient> gradient;
   std::shared_ptr<VectorDistribution> distribution;
-  std::shared_ptr<CutoffCriterion> cutoff;
 };
 
 }  // namespace base

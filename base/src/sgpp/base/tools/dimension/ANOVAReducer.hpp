@@ -8,11 +8,19 @@
 
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
 
-class ANOVAReducer : public sgpp::base::FunctionReducer {
+struct ANOVAInformation
+{
+  
+};
+
+class ANOVAReducer : public sgpp::base::FunctionReducer<ANOVAInformation> {
  public:
   ANOVAReducer(size_t anovaOrder);
-  std::unique_ptr<sgpp::optimization::ScalarFunction> reduceFunction(
-      sgpp::optimization::ScalarFunction& input) override;
+
+protected:
+  void evaluateFunction(sgpp::optimization::ScalarFunction& input, ANOVAInformation& out) override;
+  std::unique_ptr<sgpp::optimization::ScalarFunction> reduce(
+      sgpp::optimization::ScalarFunction& input, size_t n, const ANOVAInformation& info) override;
 
  private:
   size_t level;

@@ -14,45 +14,36 @@ sgpp::base::DataVector ActiveSubspaceReducer::GivenGradient::gradientAt(sgpp::ba
   return std::move(result);
 }
 
-ActiveSubspaceReducer::FixedCutoff::FixedCutoff(size_t n) : n(n) {}
+ActiveSubspaceReducer::EigenValueCutoff::EigenValueCutoff(double minValue)
+    : minEigenValue(minValue) {}
 
-size_t ActiveSubspaceReducer::FixedCutoff::evaluate(
-    const sgpp::base::DataMatrix& eigenVectors, const sgpp::base::DataVector& eigenValues,
-    const std::vector<sgpp::base::DataMatrix>& sampleMatrices) {
-  return n;
-}
-
-size_t ActiveSubspaceReducer::EigenValueCutoff::evaluate(
-    const sgpp::base::DataMatrix& eigenVectors, const sgpp::base::DataVector& eigenValues,
-    const std::vector<sgpp::base::DataMatrix>& sampleMatrices) {
-  for (size_t d = 0; d < eigenValues.size(); ++d) {
-    if (eigenValues[d] < minEigenValue) {
+size_t ActiveSubspaceReducer::EigenValueCutoff::evaluate(const ActiveSubspaceInfo& info) {
+  for (size_t d = 0; d < info.eigenValues.size(); ++d) {
+    if (info.eigenValues[d] < minEigenValue) {
       return d + 1;
     }
   }
-  return eigenValues.size();
+  return info.eigenValues.size();
 }
 
 ActiveSubspaceReducer::IntervalCutoff::IntervalCutoff(size_t bootstrapSamples) : bootstrapSamples(bootstrapSamples) {}
 
-size_t ActiveSubspaceReducer::IntervalCutoff::evaluate(
-    const sgpp::base::DataMatrix& eigenVectors, const sgpp::base::DataVector& eigenValues,
-    const std::vector<sgpp::base::DataMatrix>& sampleMatrices) {
-  size_t dimensions = eigenValues.size();
+size_t ActiveSubspaceReducer::IntervalCutoff::evaluate(const ActiveSubspaceInfo& info) {
+  size_t dimensions = info.eigenValues.size();
   std::mt19937_64 prng;
-  std::uniform_int_distribution<size_t> dist(0, sampleMatrices.size() - 1);
+  std::uniform_int_distribution<size_t> dist(0, info.sampleMatrices.size() - 1);
 
   std::vector<std::pair<double, double>> eigenValueIntervals(dimensions);
   for (size_t d = 0; d < dimensions; ++d) {
-    eigenValueIntervals[d].first = eigenValues[d];
-    eigenValueIntervals[d].second = eigenValues[d];
+    eigenValueIntervals[d].first = info.eigenValues[d];
+    eigenValueIntervals[d].second = info.eigenValues[d];
   }
 
   for (size_t i = 0; i < bootstrapSamples; i++) {
-    sgpp::base::DataMatrix bootstrapMatrix(eigenValues.size(), eigenValues.size());
-    for (size_t j = 0; j < sampleMatrices.size(); i++) {
+    sgpp::base::DataMatrix bootstrapMatrix(info.eigenValues.size(), info.eigenValues.size());
+    for (size_t j = 0; j < info.sampleMatrices.size(); i++) {
       size_t l = dist(prng);
-      bootstrapMatrix.add(sampleMatrices[l]);
+      bootstrapMatrix.add(info.sampleMatrices[l]);
     }
     bootstrapMatrix.mult(1.0 / static_cast<double>(bootstrapSamples));
 
@@ -82,40 +73,40 @@ size_t ActiveSubspaceReducer::IntervalCutoff::evaluate(
   return cutoff;
 }
 
-ActiveSubspaceReducer::EigenValueCutoff::EigenValueCutoff(double minValue)
-    : minEigenValue(minValue) {}
-
 ActiveSubspaceReducer::ActiveSubspaceReducer(size_t samples, std::shared_ptr<Gradient> gradient,
-                                             std::shared_ptr<VectorDistribution> distribution,
-                                             std::shared_ptr<CutoffCriterion> cutoff)
-    : samples(samples), gradient(gradient), distribution(distribution), cutoff(cutoff) {}
+  std::shared_ptr<VectorDistribution> distribution,
+    std::shared_ptr<CutoffCriterion<ActiveSubspaceInfo>> cutoff) : FunctionReducer<sgpp::base::ActiveSubspaceInfo>(cutoff), samples(samples), gradient(gradient), distribution(distribution) {}
 
-std::unique_ptr<sgpp::optimization::ScalarFunction> ActiveSubspaceReducer::reduceFunction(
-    sgpp::optimization::ScalarFunction& input) {
+
+void ActiveSubspaceReducer::evaluateFunction(
+    sgpp::optimization::ScalarFunction& input, ActiveSubspaceInfo& out) {
   size_t dimensions = input.getNumberOfParameters();
   sgpp::base::DataMatrix matrix(dimensions, dimensions);
-  std::vector<sgpp::base::DataMatrix> sampleMatrices(
-      samples, sgpp::base::DataMatrix(dimensions, dimensions));
+  out.sampleMatrices = std::vector<DataMatrix>(samples, sgpp::base::DataMatrix(dimensions, dimensions));
   for (size_t i = 0; i < samples; ++i) {
     sgpp::base::DataVector sample = distribution->operator()();
     sgpp::base::DataVector sampleGradient = gradient->gradientAt(sample);
     for (size_t d = 0; d < dimensions; ++d) {
       sgpp::base::DataVector col = sampleGradient;
       col.mult(sampleGradient[d]);
-      sampleMatrices[i].setColumn(d, col);
+      out.sampleMatrices[i].setColumn(d, col);
     }
-    matrix.add(sampleMatrices[i]);
+    matrix.add(out.sampleMatrices[i]);
   }
   matrix.mult(1.0 / static_cast<double>(samples));
 
-  sgpp::base::DataMatrix eigenVectorMatrix(dimensions, dimensions);
-  sgpp::base::DataVector eigenValues(dimensions);
-  Tools::svd(matrix, eigenVectorMatrix, eigenValues);
-  size_t n = cutoff->evaluate(eigenVectorMatrix, eigenValues, sampleMatrices);
-  eigenVectorMatrix.resizeRowsCols(dimensions, n);
+  out.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
+  out.eigenValues = sgpp::base::DataVector(dimensions);
+  Tools::svd(matrix, out.eigenVectors, out.eigenValues);
+}
+
+std::unique_ptr<sgpp::optimization::ScalarFunction> ActiveSubspaceReducer::reduce(
+    sgpp::optimization::ScalarFunction& input, size_t n, const ActiveSubspaceInfo& info) {
+  DataMatrix m = info.eigenVectors;
+  m.resizeRowsCols(input.getNumberOfParameters(), n);
   std::unique_ptr<optimization::ScalarFunction> ptr;
   input.clone(ptr);
-  return std::make_unique<ReducedFunction>(std::move(ptr), eigenVectorMatrix);
+  return std::make_unique<ReducedFunction>(std::move(ptr), m);
 }
 
 }  // namespace base
