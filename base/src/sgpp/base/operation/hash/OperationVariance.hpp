@@ -35,22 +35,25 @@ class OperationVariance {
   /**
    * Constructor
    */
-  OperationVariance() {}
+  OperationVariance(GridStorage& gridStorage) : gridStorage(gridStorage) {}
 
   /**
    * Destructor
    */
-  ~OperationVariance() {}
+  ~OperationVariance() = default;
 
-  double calculateIncrementsVariance(
-      sgpp::base::Grid& grid, const sgpp::base::DataVector& alpha,
+  double calculateIncrementsVariance(const sgpp::base::DataVector& alpha,
       const std::vector<LevelVector>& levels);
 
-  double calculateIncrementVariance(sgpp::base::Grid& grid, const DataVector& alpha,
+  double calculateIncrementVariance(const DataVector& alpha,
                                   const LevelVector& levels);
 
-  double calculateDimensionVariance(sgpp::base::Grid& grid, const DataVector& alpha,
+  double calculateDimensionVariance(const DataVector& alpha,
                                     const DimensionVector& fixedDimensions);
+
+ private:
+  /// reference to the grid's GridStorage object
+  GridStorage& gridStorage;
 
 };
 

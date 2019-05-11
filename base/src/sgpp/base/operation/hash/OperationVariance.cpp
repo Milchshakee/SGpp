@@ -6,8 +6,12 @@
 double getL2NormOfBasis(const sgpp::base::OperationVariance::LevelVector& levels) {
   double result = 1;
   for (size_t d = 0; d < levels.size(); d++) {
-    double integral = (1. / 3.) / static_cast<double>(1 << (levels[d] - 2));
-    result *= integral;
+    if (levels[d] == 0) {
+      result *= 1;
+    } else {
+      double integral = (1. / 3.) / static_cast<double>(1 << (levels[d] - 2));
+      result *= integral;
+    }
   }
   return result;
 }
@@ -21,9 +25,8 @@ sgpp::base::OperationVariance::LevelVector getLevelVector(const sgpp::base::Grid
 }
 
 double sgpp::base::OperationVariance::calculateIncrementsVariance(
-    sgpp::base::Grid& grid, const sgpp::base::DataVector& alpha,
+    const sgpp::base::DataVector& alpha,
     const std::vector<sgpp::base::OperationVariance::LevelVector>& levels) {
-  const sgpp::base::GridStorage& gridStorage = grid.getStorage();
   double sum = 0;
   for (size_t i = 0; i < gridStorage.getSize(); i++) {
     sgpp::base::GridPoint& gp = gridStorage.getPoint(i);
@@ -38,16 +41,12 @@ double sgpp::base::OperationVariance::calculateIncrementsVariance(
   return sum;
 }
 
-double sgpp::base::OperationVariance::calculateIncrementVariance(sgpp::base::Grid& grid,
-                                                                 const DataVector& alpha,
+double sgpp::base::OperationVariance::calculateIncrementVariance(const DataVector& alpha,
                                                                  const LevelVector& level) {
-  return calculateIncrementsVariance(grid, alpha, {level});
+  return calculateIncrementsVariance(alpha, {level});
 }
 
-bool isValidLevel(sgpp::base::Grid& grid,
-                  const sgpp::base::OperationVariance::LevelVector& levels) {
-  return true;
-}
+bool isValidLevel(const sgpp::base::OperationVariance::LevelVector& levels) { return true; }
 
 bool nextLevel(size_t maxLevel, sgpp::base::OperationVariance::LevelVector& levels,
                const sgpp::base::OperationVariance::DimensionVector& fixedDimensions) {
@@ -73,7 +72,7 @@ bool nextLevel(size_t maxLevel, sgpp::base::OperationVariance::LevelVector& leve
 }
 
 double sgpp::base::OperationVariance::calculateDimensionVariance(
-    sgpp::base::Grid& grid, const DataVector& alpha, const DimensionVector& fixedDimensions) {
+    const DataVector& alpha, const DimensionVector& fixedDimensions) {
   LevelVector dimensions;
   for (size_t i = 0; i < fixedDimensions.size(); i++) {
     if (!fixedDimensions[i]) {
@@ -84,9 +83,9 @@ double sgpp::base::OperationVariance::calculateDimensionVariance(
   }
 
   double sum = 0;
-  while (nextLevel(grid.getStorage().getMaxLevel(), dimensions, fixedDimensions)) {
-    if (isValidLevel(grid, dimensions)) {
-      sum += calculateIncrementVariance(grid, alpha, dimensions);
+  while (nextLevel(gridStorage.getMaxLevel(), dimensions, fixedDimensions)) {
+    if (isValidLevel(dimensions)) {
+      sum += calculateIncrementVariance(alpha, dimensions);
     }
   }
   return sum;
