@@ -233,7 +233,8 @@ base::OperationHierarchisation* createOperationHierarchisation(base::Grid& grid)
   } else if (grid.getType() == base::GridType::LinearL0Boundary ||
              grid.getType() == base::GridType::LinearBoundary ||
              grid.getType() == base::GridType::LinearTruncatedBoundary ||
-             grid.getType() == base::GridType::SquareRoot) {
+             grid.getType() == base::GridType::SquareRoot ||
+             grid.getType() == base::GridType::AnovaBoundary) {
     return new base::OperationHierarchisationLinearBoundary(grid.getStorage());
   } else if (grid.getType() == base::GridType::LinearStretched) {
     return new base::OperationHierarchisationLinearStretched(grid.getStorage());

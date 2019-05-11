@@ -36,6 +36,7 @@
 #include <sgpp/base/grid/type/SquareRootGrid.hpp>
 #include <sgpp/base/grid/type/WaveletBoundaryGrid.hpp>
 #include <sgpp/base/grid/type/WaveletGrid.hpp>
+#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
 
 #include <sgpp/base/grid/generation/functors/SurplusRefinementFunctor.hpp>
 
@@ -63,6 +64,10 @@ Grid* Grid::createModLinearGridStencil(size_t dim) { return new ModLinearGridSte
 Grid* Grid::createLinearGrid(size_t dim) { return new LinearGrid(dim); }
 
 Grid* Grid::createLinearStretchedGrid(size_t dim) { return new LinearStretchedGrid(dim); }
+
+Grid* Grid::createAnovaBoundaryGrid(size_t dim) {
+   return new AnovaBoundaryGrid(dim);
+}
 
 Grid* Grid::createLinearBoundaryGrid(size_t dim, level_t boundaryLevel) {
   if (boundaryLevel == 0) {
@@ -248,6 +253,9 @@ Grid* Grid::createGridOfEquivalentType(size_t numDims) {
       break;
     case GridType::LinearL0Boundary:
       newGrid = Grid::createLinearBoundaryGrid(numDims);
+      break;
+    case GridType::AnovaBoundary:
+      newGrid = Grid::createLinearAnovaBoundaryGrid(numDims);
       break;
     case GridType::LinearBoundary:
       boundaryLevel =

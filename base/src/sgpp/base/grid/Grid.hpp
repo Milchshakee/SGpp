@@ -56,7 +56,8 @@ enum class GridType {
   LinearClenshawCurtis,          // 28
   ModPolyClenshawCurtis,         // 29
   ModLinearClenshawCurtis,       // 30
-  NakBsplineBoundaryCombigrid    // 31
+  NakBsplineBoundaryCombigrid,   // 31
+  AnovaBoundary                  // 32
 };
 
 /**
@@ -220,6 +221,23 @@ class Grid {
    * @return grid
    */
   static Grid* createLinearStretchedGrid(size_t dim);
+
+  /**
+   * creates a linear boundary grid
+   * <table border="0"><tr>
+   * <td>\image html "createLinearBoundaryGrid_C2,_0J-small.png" "Level 4 sparse grid with
+   * boundaryLevel = 0"</td> <td>\image html "createLinearBoundaryGrid_C2,_1J-small.png" "Level 4
+   * sparse grid with boundaryLevel = 1"</td> <td>\image html
+   * "createLinearBoundaryGrid_C2,_2J-small.png" "Level 4 sparse grid with boundaryLevel = 2"</td>
+   * <td>\image html "hiba_createLinearGrid_C2J-small.png" "Hierarchical basis functions up to level
+   * 3"</td>
+   * </tr></table>
+   *
+   * @param dim the grid's dimension
+   *
+   * @return grid
+   */
+  static Grid* createAnovaBoundaryGrid(size_t dim);
 
   /**
    * creates a linear boundary grid

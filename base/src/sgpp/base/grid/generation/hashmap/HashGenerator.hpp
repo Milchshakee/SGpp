@@ -6,15 +6,15 @@
 #ifndef HASHGENERATOR_HPP
 #define HASHGENERATOR_HPP
 
-#include <sgpp/base/grid/GridStorage.hpp>
-#include <sgpp/base/exception/generation_exception.hpp>
-#include <sgpp/globaldef.hpp>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <iostream>
+#include <iterator>
+#include <sgpp/base/exception/generation_exception.hpp>
+#include <sgpp/base/grid/GridStorage.hpp>
+#include <sgpp/globaldef.hpp>
 #include <unordered_set>
 #include <vector>
-#include <iterator>
 
 namespace sgpp {
 namespace base {
@@ -94,17 +94,17 @@ class HashGenerator {
   }
 
   /**
-  * Generates a regular sparse grid of level levels, without boundaries
-  * where dimensions are splitted into a groups with only certain number
-  * of dimensions completely connected in a clique
-  *
-  * @param storage Hashmap that stores the grid points
-  * @param level Grid level (non-negative value)
-  * @param clique_size number of dimensions in a clique
-  * @param T modifier for subgrid selection, T = 0 implies standard sparse grid.
-  *        For further information see Griebel and Knapek's paper
-  *        optimized tensor-product approximation spaces
-  */
+   * Generates a regular sparse grid of level levels, without boundaries
+   * where dimensions are splitted into a groups with only certain number
+   * of dimensions completely connected in a clique
+   *
+   * @param storage Hashmap that stores the grid points
+   * @param level Grid level (non-negative value)
+   * @param clique_size number of dimensions in a clique
+   * @param T modifier for subgrid selection, T = 0 implies standard sparse grid.
+   *        For further information see Griebel and Knapek's paper
+   *        optimized tensor-product approximation spaces
+   */
   void cliques(GridStorage& storage, level_t level, size_t clique_size, double T = 0) {
     if (storage.getSize() > 0) {
       throw generation_exception("storage not empty");
@@ -143,6 +143,20 @@ class HashGenerator {
     }
 
     this->createFullGridTruncatedIterative(storage, level);
+  }
+
+  /**
+   * Generates a regular sparse grid of level levels with boundaries
+   *
+   * @param storage Hashmap, that stores the grid points
+   * @param level maximum level of the sparse grid (non-negative value)
+   */
+  void anovaBoundaries(GridStorage& storage, level_t level) {
+    if (storage.getSize() > 0) {
+      throw generation_exception("storage not empty");
+    }
+
+    this->regular_anova_boundary_truncated_iter(storage, level);
   }
 
   /**
@@ -224,9 +238,7 @@ class HashGenerator {
      * if (level%2==0) level--;
      * */
     int small_level = level / 2;
-    this->square_rec(storage, point, storage.getDimension() - 1,
-                     level, small_level, false,
-                     0);
+    this->square_rec(storage, point, storage.getDimension() - 1, level, small_level, false, 0);
   }
   /**
    * Generates a truncated boundary grid containing all gridpoints with li<l-k and |l|<l+(dim-1)*k
@@ -510,35 +522,202 @@ class HashGenerator {
 
   /**
    * Generate a regular sparse grid iteratively (much faster than
-         * recursively) with truncated boundary, i.e.,
-         * the sparse grid on the \f$(d-1)\f$-dimensional faces of
-         * \f$[0, 1]^d\f$ has a coarser level than the main axes
-         * \f$x_t = 0.5, t = 1, ..., d\f$.
-         *
-         * The function adds all hierarchical subspaces \f$W_{\vec{\ell}}\f$
-         * where
-         * * \f$\norm{\vec{\ell}}_1 \le n + d - 1\f$ with
-         *   \f$\forall_t\; \ell_t \ge 1\f$,
-         * * \f$\norm{\vec{\ell}}_1 \le n + d - b - N_{\vec{\ell}}\f$ with
-         *   \f$N_{\vec{\ell}} := |\{t \mid \ell_t = 0\}| \ge 1\f$, or
-         * * \f$\vec{\ell} = \vec{0}\f$.
-         *
-         * The previous implementation inserted the 1D boundary grid points
-         * at higher levels (e.g., at boundaryLevel = 2), which
-         * led to the effect that corner points were missing in
-         * higher-dimensional grids: For example, if \f$d = 2\f$,
-         * \f$n = 3\f$, and \f$\mathtt{boundaryLevel} = 3\f$,
-         * then the four corners had level sum
-         * \f$2 \cdot \mathtt{boundaryLevel} = 6\f$ (which is greater than
-         * \f$n + d - 1 = 4\f$), thus they were missing in the sparse grid.
-         * The midpoints of the four edges, however, had level sum
-         * \f$\mathtt{boundaryLevel} + 1 = 4 \le n + d - 1\f$
-         * and were thus included in the grid. To get the corners into the
-         * grid, too, one would have to choose \f$n \ge 4\f$.
-         *
-         * In contrast, the new implementation makes sure that the corners
-         * will always appear first in the grid when increasing the level
-         * \f$n = 1, 2, 3, \dotsc\f$ of the regular grid.
+   * recursively) with truncated boundary, i.e.,
+   * the sparse grid on the \f$(d-1)\f$-dimensional faces of
+   * \f$[0, 1]^d\f$ has a coarser level than the main axes
+   * \f$x_t = 0.5, t = 1, ..., d\f$.
+   *
+   * The function adds all hierarchical subspaces \f$W_{\vec{\ell}}\f$
+   * where
+   * * \f$\norm{\vec{\ell}}_1 \le n + d - 1\f$ with
+   *   \f$\forall_t\; \ell_t \ge 1\f$,
+   * * \f$\norm{\vec{\ell}}_1 \le n + d - b - N_{\vec{\ell}}\f$ with
+   *   \f$N_{\vec{\ell}} := |\{t \mid \ell_t = 0\}| \ge 1\f$, or
+   * * \f$\vec{\ell} = \vec{0}\f$.
+   *
+   * The previous implementation inserted the 1D boundary grid points
+   * at higher levels (e.g., at boundaryLevel = 2), which
+   * led to the effect that corner points were missing in
+   * higher-dimensional grids: For example, if \f$d = 2\f$,
+   * \f$n = 3\f$, and \f$\mathtt{boundaryLevel} = 3\f$,
+   * then the four corners had level sum
+   * \f$2 \cdot \mathtt{boundaryLevel} = 6\f$ (which is greater than
+   * \f$n + d - 1 = 4\f$), thus they were missing in the sparse grid.
+   * The midpoints of the four edges, however, had level sum
+   * \f$\mathtt{boundaryLevel} + 1 = 4 \le n + d - 1\f$
+   * and were thus included in the grid. To get the corners into the
+   * grid, too, one would have to choose \f$n \ge 4\f$.
+   *
+   * In contrast, the new implementation makes sure that the corners
+   * will always appear first in the grid when increasing the level
+   * \f$n = 1, 2, 3, \dotsc\f$ of the regular grid.
+   *
+   * @param storage       pointer to storage object into which
+   *                      the grid points should be stored
+   * @param n             level of regular sparse grid
+   * @param T             modifier for subgrid selection, T = 0 implies standard sparse grid.
+   *                      For further information see Griebel and Knapek's paper
+   *                      optimized tensor-product approximation spaces
+   */
+  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n, double T = 0) {
+    const size_t dim = storage.getDimension();
+
+    if (dim == 0) {
+      return;
+    }
+
+    GridPoint idx_1d(dim);
+
+    for (size_t d = 0; d < dim; d++) {
+      idx_1d.push(d, 1, 1, false);
+    }
+
+    // generate boundary basis function for level 0
+    idx_1d.push(0, 0, 0, false);
+    storage.insert(idx_1d);
+
+    if (n >= 1) {
+      // generate boundary basis function for level 1
+      idx_1d.push(0, 1, 2, false);
+      storage.insert(idx_1d);
+
+      // generate 1D grid in first dimension for levels >= 2
+      for (level_t l = 2; l <= n; l++) {
+        // generate inner basis function
+        for (index_t i = 2; i < static_cast<index_t>(1) << l; i += 4) {
+          if (l == n) {
+            idx_1d.push(0, l, i, true);
+          } else {
+            idx_1d.push(0, l, i, false);
+          }
+
+          storage.insert(idx_1d);
+        }
+      }
+    }
+
+    // Generate grid points in all other dimensions:
+    // loop dim times over intermediate grid,
+    // take all grid points and modify them in current dimension d
+    for (size_t d = 1; d < dim; d++) {
+      // current size
+      const size_t gridSize = storage.getSize();
+      // curDim is new dimension of the grid points to be inserted
+      const level_t curDim = static_cast<level_t>(d + 1);
+
+      // loop over all current grid points
+      for (size_t g = 0; g < gridSize; g++) {
+        level_t levelSum = 0;
+        level_t numberOfZeroLevels = 0;
+        GridPoint idx(storage.getPoint(g));
+        bool firstPoint = true;
+
+        // TODO
+
+        // calculate level sum and count number of zero levels
+        for (size_t sd = 0; sd < d; sd++) {
+          level_t tmp = idx.getLevel(sd);
+
+          if (tmp == 0 || tmp == 1) {
+            numberOfZeroLevels++;
+          }
+
+          levelSum += tmp;
+        }
+
+        // generate boundary basis functions,
+        // but only if levelSum <=
+        // n + curDim - (numberOfZeroLevels + 1)
+        // (the +1 comes from the fact that the newly generated functions
+        // will have an additional zero in the d-th dimension)
+        if ((levelSum + numberOfZeroLevels + 1 <= n + curDim) ||
+            (numberOfZeroLevels == curDim - 1)) {
+          idx.push(d, 0, 0, false);
+          storage.update(idx, g);
+
+          idx.push(d, 0, 1, false);
+          storage.insert(idx);
+
+          firstPoint = false;
+        }
+
+        double upperBound;
+
+        // choose upper bound of level sum according whether
+        // the new basis function is an interior or a boundary function
+        // (the loop below skips l = 0 as the boundary points
+        // have been inserted a few lines above)
+        if (numberOfZeroLevels > 0) {
+          // check if upperBound would be negative
+          // (we're working with unsigned integers here)
+          if (n + curDim < boundaryLevel + numberOfZeroLevels) {
+            continue;
+          } else {
+            // upper bound for boundary basis functions
+            upperBound = static_cast<double>(n + curDim - numberOfZeroLevels - boundaryLevel);
+          }
+        } else {
+          // upper bound for interior basis functions
+          upperBound = static_cast<double>(n + curDim - 1);
+        }
+        upperBound -= T * n;
+        level_t level_max = idx.getLevelMax();
+
+        for (level_t l = 1;
+             (static_cast<double>(l + levelSum) - (T * std::max(l, level_max)) <= upperBound) &&
+             (std::max(l, level_max) <= n);
+             l++) {
+          // generate inner basis functions
+          for (index_t i = 1; i < static_cast<index_t>(1) << l; i += 2) {
+            if ((l + levelSum) == n + dim - 1) {
+              idx.push(d, l, i, (numberOfZeroLevels == 0));
+            } else {
+              idx.push(d, l, i, false);
+            }
+
+            if (firstPoint) {
+              storage.update(idx, g);
+              firstPoint = false;
+            } else {
+              storage.insert(idx);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Generate a regular sparse grid iteratively (much faster than
+   * recursively) with truncated boundary, i.e.,
+   * the sparse grid on the \f$(d-1)\f$-dimensional faces of
+   * \f$[0, 1]^d\f$ has a coarser level than the main axes
+   * \f$x_t = 0.5, t = 1, ..., d\f$.
+   *
+   * The function adds all hierarchical subspaces \f$W_{\vec{\ell}}\f$
+   * where
+   * * \f$\norm{\vec{\ell}}_1 \le n + d - 1\f$ with
+   *   \f$\forall_t\; \ell_t \ge 1\f$,
+   * * \f$\norm{\vec{\ell}}_1 \le n + d - b - N_{\vec{\ell}}\f$ with
+   *   \f$N_{\vec{\ell}} := |\{t \mid \ell_t = 0\}| \ge 1\f$, or
+   * * \f$\vec{\ell} = \vec{0}\f$.
+   *
+   * The previous implementation inserted the 1D boundary grid points
+   * at higher levels (e.g., at boundaryLevel = 2), which
+   * led to the effect that corner points were missing in
+   * higher-dimensional grids: For example, if \f$d = 2\f$,
+   * \f$n = 3\f$, and \f$\mathtt{boundaryLevel} = 3\f$,
+   * then the four corners had level sum
+   * \f$2 \cdot \mathtt{boundaryLevel} = 6\f$ (which is greater than
+   * \f$n + d - 1 = 4\f$), thus they were missing in the sparse grid.
+   * The midpoints of the four edges, however, had level sum
+   * \f$\mathtt{boundaryLevel} + 1 = 4 \le n + d - 1\f$
+   * and were thus included in the grid. To get the corners into the
+   * grid, too, one would have to choose \f$n \ge 4\f$.
+   *
+   * In contrast, the new implementation makes sure that the corners
+   * will always appear first in the grid when increasing the level
+   * \f$n = 1, 2, 3, \dotsc\f$ of the regular grid.
    *
    * @param storage       pointer to storage object into which
    *                      the grid points should be stored
@@ -598,8 +777,8 @@ class HashGenerator {
 
       // loop over all current grid points
       for (size_t g = 0; g < gridSize; g++) {
-              level_t levelSum = 0;
-              level_t numberOfZeroLevels = 0;
+        level_t levelSum = 0;
+        level_t numberOfZeroLevels = 0;
         GridPoint idx(storage.getPoint(g));
         bool firstPoint = true;
 
@@ -1027,9 +1206,8 @@ class HashGenerator {
    * @param bLevelZero specifies if the current index has a level zero component
    */
 
-  void boundaries_truncated_rec(GridStorage& storage, GridPoint& index,
-                                size_t current_dim, level_t current_level,
-                                level_t level, bool bLevelZero) {
+  void boundaries_truncated_rec(GridStorage& storage, GridPoint& index, size_t current_dim,
+                                level_t current_level, level_t level, bool bLevelZero) {
     if (current_dim == 0) {
       boundaries_Truncated_rec_1d(storage, index, current_level, level, bLevelZero);
     } else {
@@ -1091,9 +1269,8 @@ class HashGenerator {
    * @param bLevelZero specifies if the current index has a level zero component
    */
 
-  void boundaries_Truncated_rec_1d(GridStorage& storage, GridPoint& index,
-                                   level_t current_level, level_t level,
-                                   bool bLevelZero) {
+  void boundaries_Truncated_rec_1d(GridStorage& storage, GridPoint& index, level_t current_level,
+                                   level_t level, bool bLevelZero) {
     bool bLevelGreaterZero = !bLevelZero;
 
     for (level_t l = 0; l <= level - current_level + 1; l++) {
@@ -1136,8 +1313,7 @@ class HashGenerator {
    * @param level maximum level of the sparse grid
    */
 
-  void boundaries_rec(GridStorage& storage, GridPoint& index,
-                      size_t current_dim,
+  void boundaries_rec(GridStorage& storage, GridPoint& index, size_t current_dim,
                       level_t current_level, level_t level) {
     index_t source_index;
     level_t source_level;
@@ -1213,9 +1389,8 @@ class HashGenerator {
    * @param sum sum of all levels
    */
 
-  void square_rec(GridStorage& storage, GridPoint& index,
-                  size_t current_dim, level_t level, level_t small_level,
-                  bool tail, size_t sum) {
+  void square_rec(GridStorage& storage, GridPoint& index, size_t current_dim, level_t level,
+                  level_t small_level, bool tail, size_t sum) {
     index_t source_index;
     level_t source_level;
 
@@ -1299,8 +1474,7 @@ class HashGenerator {
    *the construction of the sparse grid)
    */
 
-  void trunc_rec(GridStorage& storage, GridPoint& index,
-                 size_t current_dim, level_t current_level,
+  void trunc_rec(GridStorage& storage, GridPoint& index, size_t current_dim, level_t current_level,
                  level_t level, level_t minlevel) {
     index_t source_index;
     level_t source_level;
