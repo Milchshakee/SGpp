@@ -21,10 +21,16 @@ namespace base {
  */
 class OperationVariance {
  public:
+
   /**
    * Vector that holds levels for every dimension
    */
   typedef std::vector<sgpp::base::HashGridPoint::level_type> LevelVector;
+
+  /**
+   * Vector that holds levels for every dimension
+   */
+  typedef std::vector<bool> DimensionVector;
 
   /**
    * Constructor
@@ -36,8 +42,16 @@ class OperationVariance {
    */
   ~OperationVariance() {}
 
-  void calculateIncrementVariance(sgpp::base::Grid& grid, const DataVector& alpha,
+  double calculateIncrementsVariance(
+      sgpp::base::Grid& grid, const sgpp::base::DataVector& alpha,
+      const std::vector<LevelVector>& levels);
+
+  double calculateIncrementVariance(sgpp::base::Grid& grid, const DataVector& alpha,
                                   const LevelVector& levels);
+
+  double calculateDimensionVariance(sgpp::base::Grid& grid, const DataVector& alpha,
+                                    const DimensionVector& fixedDimensions);
+
 };
 
 }  // namespace base

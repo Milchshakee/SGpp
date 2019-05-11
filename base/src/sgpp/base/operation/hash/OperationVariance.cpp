@@ -1,34 +1,93 @@
 #include <sgpp/base/operation/hash/OperationVariance.hpp>
-#include "sgpp/base/grid/GridStorage.hpp"
 #include "common/basis/AnovaBoundaryBasis.hpp"
+#include "sgpp/base/grid/GridStorage.hpp"
+#include "sgpp/datadriven/functors/classification/GridPointBasedRefinementFunctor.hpp"
 
-double getIntegral(sgpp::base::Grid& grid, const sgpp::base::OperationVariance::LevelVector& levels) {
-  sgpp::base::SAnovaBoundaryBasis& b = dynamic_cast<sgpp::base::SAnovaBoundaryBasis&>(grid.getBasis());
-  double val = 1;
+double getL2NormOfBasis(const sgpp::base::OperationVariance::LevelVector& levels) {
+  double result = 1;
   for (size_t d = 0; d < levels.size(); d++) {
-    val *= b.getIntegral(levels[d]);
+    double integral = (1. / 3.) / static_cast<double>(1 << (levels[d] - 2));
+    result *= integral;
   }
-  return val;
+  return result;
 }
 
-void sgpp::base::OperationVariance::calculateIncrementVariance(sgpp::base::Grid& grid,
-                                                               const DataVector& alpha,
-                                                               const LevelVector& levels) {
+sgpp::base::OperationVariance::LevelVector getLevelVector(const sgpp::base::GridPoint& point) {
+  sgpp::base::OperationVariance::LevelVector v(point.getDimension());
+  for (size_t d = 0; d < point.getDimension(); d++) {
+    v[d] = point.getLevel(d);
+  }
+  return std::move(v);
+}
+
+double sgpp::base::OperationVariance::calculateIncrementsVariance(
+    sgpp::base::Grid& grid, const sgpp::base::DataVector& alpha,
+    const std::vector<sgpp::base::OperationVariance::LevelVector>& levels) {
   const sgpp::base::GridStorage& gridStorage = grid.getStorage();
-  out: for (size_t i = 0; i < gridStorage.getSize(); i++) {
+  double sum = 0;
+  for (size_t i = 0; i < gridStorage.getSize(); i++) {
     sgpp::base::GridPoint& gp = gridStorage.getPoint(i);
-    for (size_t d = 0; d < gridStorage.getDimension(); d++) {
-      if (gp.getLevel(d) != levels[d]) {
-        goto out;
+    sgpp::base::OperationVariance::LevelVector v = getLevelVector(gp);
+    if (std::find(levels.begin(), levels.end(), v) != levels.end()) {
+      double integral = getL2NormOfBasis(v);
+      double val = alpha[i] * integral;
+      sum += val;
+    }
+  }
+
+  return sum;
+}
+
+double sgpp::base::OperationVariance::calculateIncrementVariance(sgpp::base::Grid& grid,
+                                                                 const DataVector& alpha,
+                                                                 const LevelVector& level) {
+  return calculateIncrementsVariance(grid, alpha, {level});
+}
+
+bool isValidLevel(sgpp::base::Grid& grid,
+                  const sgpp::base::OperationVariance::LevelVector& levels) {
+  return true;
+}
+
+bool nextLevel(size_t maxLevel, sgpp::base::OperationVariance::LevelVector& levels,
+               const sgpp::base::OperationVariance::DimensionVector& fixedDimensions) {
+  bool lastAdded = false;
+  for (size_t i = 0; i < fixedDimensions.size(); i++) {
+    if (!fixedDimensions[i]) {
+      if (levels[i] == maxLevel) {
+        levels[i] = 0;
+        lastAdded = true;
+      } else {
+        lastAdded = false;
+        levels[i]++;
+      }
+
+      if (!lastAdded) {
+        return true;
       }
     }
-    double val = alpha[i];
-    double 
   }
 
-  for (IndexValVector::iterator iter = vec.begin(); iter != vec.end(); iter++) {
-    result += iter->second * alpha[iter->first];
+  // Reached end
+  return false;
+}
+
+double sgpp::base::OperationVariance::calculateDimensionVariance(
+    sgpp::base::Grid& grid, const DataVector& alpha, const DimensionVector& fixedDimensions) {
+  LevelVector dimensions;
+  for (size_t i = 0; i < fixedDimensions.size(); i++) {
+    if (!fixedDimensions[i]) {
+      dimensions.push_back(1);
+    } else {
+      dimensions.push_back(0);
+    }
   }
 
-  return result;
+  double sum = 0;
+  while (nextLevel(grid.getStorage().getMaxLevel(), dimensions, fixedDimensions)) {
+    if (isValidLevel(grid, dimensions)) {
+      sum += calculateIncrementVariance(grid, alpha, dimensions);
+    }
+  }
+  return sum;
 }

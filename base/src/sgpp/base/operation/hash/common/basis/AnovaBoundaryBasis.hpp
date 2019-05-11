@@ -51,11 +51,6 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
         0.0);
   }
 
-  double getIntegral(LT level)
-  {
-    return getIntegral(level, level == 0 ? 0 : 2);
-  }
-
   double getIntegral(LT level, IT index) override {
     if (level == 0) {
       return 1;
