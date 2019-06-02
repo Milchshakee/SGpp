@@ -19,7 +19,7 @@ namespace base {
  * Operation that cpnverts a given basis into the normal, linear hat basis and vice versa
  *
  */
-class OperationVariance {
+class OperationAnova {
  public:
 
   /**
@@ -32,15 +32,21 @@ class OperationVariance {
    */
   typedef std::vector<bool> DimensionVector;
 
+    struct AnovaComponent {
+    size_t order;
+    DimensionVector fixedDimensions;
+    double variance;
+  };
+
   /**
    * Constructor
    */
-  OperationVariance(GridStorage& gridStorage) : gridStorage(gridStorage) {}
+  OperationAnova(GridStorage& gridStorage) : gridStorage(gridStorage) {}
 
   /**
    * Destructor
    */
-  ~OperationVariance() = default;
+  ~OperationAnova() = default;
 
   double calculateIncrementsVariance(const sgpp::base::DataVector& alpha,
       const std::vector<LevelVector>& levels);
@@ -50,6 +56,10 @@ class OperationVariance {
 
   double calculateDimensionVariance(const DataVector& alpha,
                                     const DimensionVector& fixedDimensions);
+
+  std::vector<AnovaComponent> calculateAnovaOrderVariance(const DataVector& alpha,
+                                                          size_t anovaOrder);
+
 
  private:
   /// reference to the grid's GridStorage object

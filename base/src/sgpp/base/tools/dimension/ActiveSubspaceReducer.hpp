@@ -9,6 +9,7 @@
 #include <sgpp/base/datatypes/DataMatrix.hpp>
 #include <sgpp/optimization/function/vector/VectorFunction.hpp>
 #include "DimReduction.hpp"
+#include "sgpp/base/tools/Sample.hpp"
 
 namespace sgpp {
 namespace base {
@@ -16,26 +17,24 @@ namespace base {
 struct ActiveSubspaceInfo {
   sgpp::base::DataMatrix eigenVectors;
   sgpp::base::DataVector eigenValues;
-  std::vector<sgpp::base::DataMatrix> sampleMatrices;
+  Sample<sgpp::base::DataMatrix> sampleMatrices;
 };
 
+  struct ActiveSubspaceResult
+  {
+  DataMatrix transformation;
+
+    std::unique_ptr<ReducedFunction> apply(
+      sgpp::optimization::ScalarFunction& input);
+  };
+
 class ActiveSubspaceReducer
-    : public sgpp::base::FunctionReducer<ActiveSubspaceInfo> {
+    : public sgpp::base::Reducer<Sample<DataMatrix>,ActiveSubspaceInfo, ActiveSubspaceResult> {
  public:
-  class Gradient {
-   public:
-    virtual sgpp::base::DataVector gradientAt(sgpp::base::DataVector& v) = 0;
-  };
 
-  class GivenGradient : public Gradient {
-   public:
-    GivenGradient(std::shared_ptr<sgpp::optimization::VectorFunction> gradient);
-
-    virtual sgpp::base::DataVector gradientAt(sgpp::base::DataVector& v);
-
-   private:
-    std::shared_ptr<sgpp::optimization::VectorFunction> gradient;
-  };
+  static Sample<DataMatrix> fromGradientSample(const Sample<DataVector>& gradients);
+  
+  static Sample<DataMatrix> fromFiniteDifferences(optimization::ScalarFunction& func, VectorDistribution& v);
 
   class EigenValueCutoff : public CutoffCriterion<ActiveSubspaceInfo> {
    public:
@@ -57,19 +56,9 @@ class ActiveSubspaceReducer
     size_t bootstrapSamples;
   };
 
-  ActiveSubspaceReducer(size_t samples, std::shared_ptr<Gradient> gradient,
-                        std::shared_ptr<VectorDistribution> distribution,
-                        std::shared_ptr<CutoffCriterion<ActiveSubspaceInfo>> cutoff);
-
-protected:
-  void evaluateFunction(sgpp::optimization::ScalarFunction& input, ActiveSubspaceInfo& out);
-  std::unique_ptr<sgpp::optimization::ScalarFunction> reduce(
-      sgpp::optimization::ScalarFunction& input, size_t n, const ActiveSubspaceInfo& info) override;
-
- private:
-  size_t samples;
-  std::shared_ptr<Gradient> gradient;
-  std::shared_ptr<VectorDistribution> distribution;
+  void evaluate(Sample<DataMatrix>& input, ActiveSubspaceInfo& out) override;
+  ActiveSubspaceResult reduce(Sample<DataMatrix>& input, size_t c,
+    const ActiveSubspaceInfo& info) override;
 };
 
 }  // namespace base

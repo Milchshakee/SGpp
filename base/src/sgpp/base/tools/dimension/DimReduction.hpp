@@ -16,9 +16,9 @@ namespace base {
 
 typedef std::vector<std::pair<double, double>> Domain;
 
-class VectorDistribution {
+class RandomDistribution {
  public:
-  VectorDistribution(std::uint64_t seed);
+  RandomDistribution(std::uint64_t seed);
 
   virtual DataVector operator()() = 0;
 
@@ -26,7 +26,7 @@ class VectorDistribution {
   std::mt19937_64 prng;
 };
 
-class UniformVectorDistribution : public VectorDistribution {
+class UniformVectorDistribution : public RandomDistribution {
  public:
   UniformVectorDistribution(uint64_t seed, size_t dimensions);
   UniformVectorDistribution(uint64_t seed, Domain domain);
@@ -38,7 +38,7 @@ class UniformVectorDistribution : public VectorDistribution {
   std::vector<std::uniform_real_distribution<double>> distributions;
 };
 
-class LengthVectorDistribution : public VectorDistribution {
+class LengthVectorDistribution : public RandomDistribution {
  public:
   LengthVectorDistribution(uint64_t seed, size_t dimensions, double length);
 
@@ -50,10 +50,10 @@ class LengthVectorDistribution : public VectorDistribution {
   std::uniform_real_distribution<double> distribution;
 };
 
-template <class T>
+template <class I>
 class CutoffCriterion {
  public:
-  virtual size_t evaluate(const T& info) = 0;
+  virtual size_t evaluate(const I& info) = 0;
 };
 
 template <class T>
@@ -83,40 +83,22 @@ class ReducedFunction : public sgpp::optimization::ScalarFunction {
   DataMatrix transformation;
 };
 
-template <class T>
+template <class INPUT, class INFO, class OUTPUT>
 class Reducer {
  public:
-  Reducer(std::shared_ptr<CutoffCriterion<T>>& cutoff) : cutoff(cutoff) {}
+  Reducer() = default;
   virtual ~Reducer() = default;
 
- protected:
-  std::shared_ptr<CutoffCriterion<T>> cutoff;
-};
-
-class DataReducer {
- public:
-  virtual std::unique_ptr<sgpp::optimization::ScalarFunction> reduceData(
-      sgpp::base::DataMatrix& input) = 0;
-  std::unique_ptr<sgpp::optimization::ScalarFunction> reduceFunction(
-      sgpp::optimization::ScalarFunction& input, VectorDistribution& dist, size_t samples);
-};
-
-template <class T>
-class FunctionReducer : public Reducer<T> {
- public:
-  FunctionReducer(std::shared_ptr<CutoffCriterion<T>>& cutoff) : Reducer<T>(cutoff) {}
-
-  std::unique_ptr<sgpp::optimization::ScalarFunction> reduceFunction(
-      sgpp::optimization::ScalarFunction& input, T& out) {
+  std::unique_ptr<OUTPUT> evaluateAndReduce(INPUT& input, CutoffCriterion<INFO>& cutoff, INFO& out) {
     evaluateFunction(input, out);
-    size_t n = Reducer<T>::cutoff->evaluate(out);
-    return reduce(input, n, out);
+    size_t c = cutoff.evaluate(out);
+    return reduce(input, c, out);
   }
 
- protected:
-  virtual void evaluateFunction(sgpp::optimization::ScalarFunction& input, T& out) = 0;
-  virtual std::unique_ptr<sgpp::optimization::ScalarFunction> reduce(
-      sgpp::optimization::ScalarFunction& input, size_t n, const T& info) = 0;
+  virtual void evaluate(INPUT& input, INFO& out) = 0;
+  virtual OUTPUT reduce(
+      INPUT& input, size_t c, const INFO& info) = 0;
+
 };
 }  // namespace base
 }  // namespace sgpp

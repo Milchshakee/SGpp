@@ -24,7 +24,7 @@ AnovaBoundaryGridGenerator::~AnovaBoundaryGridGenerator() = default;
 
 void AnovaBoundaryGridGenerator::regular(size_t level) {
   HashGenerator gen;
-  gen.regularWithBoundaries(this->storage, static_cast<level_t>(level));
+  gen.regularWithAnovaBoundaries(this->storage, static_cast<level_t>(level));
 }
 
 void AnovaBoundaryGridGenerator::cliques(size_t level, size_t clique_size) {

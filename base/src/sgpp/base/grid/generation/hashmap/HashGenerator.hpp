@@ -151,7 +151,7 @@ class HashGenerator {
    * @param storage Hashmap, that stores the grid points
    * @param level maximum level of the sparse grid (non-negative value)
    */
-  void anovaBoundaries(GridStorage& storage, level_t level) {
+  void regularWithAnovaBoundaries(GridStorage& storage, level_t level) {
     if (storage.getSize() > 0) {
       throw generation_exception("storage not empty");
     }
@@ -520,6 +520,34 @@ class HashGenerator {
     }
   }
 
+  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n) {
+    const size_t dim = storage.getDimension();
+
+    if (n == 0) {
+      GridPoint idx(dim);
+      for (size_t d = 1; d < dim; d++) {
+        idx.push(d, 0, 0, true);
+      }
+      storage.insert(idx);
+    } else {
+      regular_boundary_truncated_iter(storage, n - 1);
+
+      for (size_t d = 1; d < dim; d++) {
+        const size_t gridSize = storage.getSize();
+        for (size_t g = 0; g < gridSize; g++) {
+          GridPoint idx(storage.getPoint(g));
+          if (idx.getLevel(d) == 0 && idx.getIndex(d) == 1) {
+            idx.set(d, 1, 2);
+          }
+
+          if (idx.getLevel(d) >= 1) {
+            idx.set(d, idx.getLevel(d) + 1, idx.getIndex(d) * 2);
+          }
+        }
+      }
+    }
+  }
+
   /**
    * Generate a regular sparse grid iteratively (much faster than
    * recursively) with truncated boundary, i.e.,
@@ -555,137 +583,133 @@ class HashGenerator {
    * @param storage       pointer to storage object into which
    *                      the grid points should be stored
    * @param n             level of regular sparse grid
-   * @param T             modifier for subgrid selection, T = 0 implies standard sparse grid.
-   *                      For further information see Griebel and Knapek's paper
-   *                      optimized tensor-product approximation spaces
    */
-  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n, double T = 0) {
-    const size_t dim = storage.getDimension();
+  //void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n) {
+  //  const size_t dim = storage.getDimension();
 
-    if (dim == 0) {
-      return;
-    }
+  //  if (dim == 0) {
+  //    return;
+  //  }
 
-    GridPoint idx_1d(dim);
+  //  GridPoint idx_1d(dim);
 
-    for (size_t d = 0; d < dim; d++) {
-      idx_1d.push(d, 1, 1, false);
-    }
+  //  for (size_t d = 0; d < dim; d++) {
+  //    idx_1d.push(d, 1, 1, false);
+  //  }
 
-    // generate boundary basis function for level 0
-    idx_1d.push(0, 0, 0, false);
-    storage.insert(idx_1d);
+  //  // generate boundary basis function for level 0
+  //  idx_1d.push(0, 0, 0, false);
+  //  storage.insert(idx_1d);
 
-    if (n >= 1) {
-      // generate boundary basis function for level 1
-      idx_1d.push(0, 1, 2, false);
-      storage.insert(idx_1d);
+  //  if (n >= 1) {
+  //    // generate boundary basis function for level 1
+  //    idx_1d.push(0, 1, 2, false);
+  //    storage.insert(idx_1d);
 
-      // generate 1D grid in first dimension for levels >= 2
-      for (level_t l = 2; l <= n; l++) {
-        // generate inner basis function
-        for (index_t i = 2; i < static_cast<index_t>(1) << l; i += 4) {
-          if (l == n) {
-            idx_1d.push(0, l, i, true);
-          } else {
-            idx_1d.push(0, l, i, false);
-          }
+  //    // generate 1D grid in first dimension for levels >= 2
+  //    for (level_t l = 2; l <= n; l++) {
+  //      // generate inner basis function
+  //      for (index_t i = 2; i < static_cast<index_t>(1) << l; i += 4) {
+  //        if (l == n) {
+  //          idx_1d.push(0, l, i, true);
+  //        } else {
+  //          idx_1d.push(0, l, i, false);
+  //        }
 
-          storage.insert(idx_1d);
-        }
-      }
-    }
+  //        storage.insert(idx_1d);
+  //      }
+  //    }
+  //  }
 
-    // Generate grid points in all other dimensions:
-    // loop dim times over intermediate grid,
-    // take all grid points and modify them in current dimension d
-    for (size_t d = 1; d < dim; d++) {
-      // current size
-      const size_t gridSize = storage.getSize();
-      // curDim is new dimension of the grid points to be inserted
-      const level_t curDim = static_cast<level_t>(d + 1);
+  //  // Generate grid points in all other dimensions:
+  //  // loop dim times over intermediate grid,
+  //  // take all grid points and modify them in current dimension d
+  //  for (size_t d = 1; d < dim; d++) {
+  //    // current size
+  //    const size_t gridSize = storage.getSize();
+  //    // curDim is new dimension of the grid points to be inserted
+  //    const level_t curDim = static_cast<level_t>(d + 1);
 
-      // loop over all current grid points
-      for (size_t g = 0; g < gridSize; g++) {
-        level_t levelSum = 0;
-        level_t numberOfZeroLevels = 0;
-        GridPoint idx(storage.getPoint(g));
-        bool firstPoint = true;
+  //    // loop over all current grid points
+  //    for (size_t g = 0; g < gridSize; g++) {
+  //      level_t levelSum = 0;
+  //      level_t numberOfBoundaryLevels = 0;
+  //      GridPoint idx(storage.getPoint(g));
+  //      bool firstPoint = true;
 
-        // TODO
+  //      // TODO
 
-        // calculate level sum and count number of zero levels
-        for (size_t sd = 0; sd < d; sd++) {
-          level_t tmp = idx.getLevel(sd);
+  //      // calculate level sum and count number of zero levels
+  //      for (size_t sd = 0; sd < d; sd++) {
+  //        level_t tmp = idx.getLevel(sd);
 
-          if (tmp == 0 || tmp == 1) {
-            numberOfZeroLevels++;
-          }
+  //        if (tmp == 0 || tmp == 1) {
+  //          numberOfBoundaryLevels++;
+  //        }
 
-          levelSum += tmp;
-        }
+  //        levelSum += tmp;
+  //      }
 
-        // generate boundary basis functions,
-        // but only if levelSum <=
-        // n + curDim - (numberOfZeroLevels + 1)
-        // (the +1 comes from the fact that the newly generated functions
-        // will have an additional zero in the d-th dimension)
-        if ((levelSum + numberOfZeroLevels + 1 <= n + curDim) ||
-            (numberOfZeroLevels == curDim - 1)) {
-          idx.push(d, 0, 0, false);
-          storage.update(idx, g);
+  //      bool isOnBoundary = numberOfBoundaryLevels > 0;
 
-          idx.push(d, 0, 1, false);
-          storage.insert(idx);
+  //      // If grid point is
 
-          firstPoint = false;
-        }
+  //      // generate boundary basis functions,
+  //      // but only if levelSum <=
+  //      // n + curDim - (numberOfZeroLevels + 1)
+  //      // (the +1 comes from the fact that the newly generated functions
+  //      // will have an additional zero in the d-th dimension)
+  //      if ((levelSum + numberOfZeroLevels + 1 <= n + curDim) ||
+  //          (numberOfZeroLevels == curDim - 1)) {
+  //        idx.push(d, 0, 0, false);
+  //        storage.update(idx, g);
 
-        double upperBound;
+  //        firstPoint = false;
+  //      }
 
-        // choose upper bound of level sum according whether
-        // the new basis function is an interior or a boundary function
-        // (the loop below skips l = 0 as the boundary points
-        // have been inserted a few lines above)
-        if (numberOfZeroLevels > 0) {
-          // check if upperBound would be negative
-          // (we're working with unsigned integers here)
-          if (n + curDim < boundaryLevel + numberOfZeroLevels) {
-            continue;
-          } else {
-            // upper bound for boundary basis functions
-            upperBound = static_cast<double>(n + curDim - numberOfZeroLevels - boundaryLevel);
-          }
-        } else {
-          // upper bound for interior basis functions
-          upperBound = static_cast<double>(n + curDim - 1);
-        }
-        upperBound -= T * n;
-        level_t level_max = idx.getLevelMax();
+  //      level_t upperBound;
 
-        for (level_t l = 1;
-             (static_cast<double>(l + levelSum) - (T * std::max(l, level_max)) <= upperBound) &&
-             (std::max(l, level_max) <= n);
-             l++) {
-          // generate inner basis functions
-          for (index_t i = 1; i < static_cast<index_t>(1) << l; i += 2) {
-            if ((l + levelSum) == n + dim - 1) {
-              idx.push(d, l, i, (numberOfZeroLevels == 0));
-            } else {
-              idx.push(d, l, i, false);
-            }
+  //      // choose upper bound of level sum according whether
+  //      // the new basis function is an interior or a boundary function
+  //      // (the loop below skips l = 0 as the boundary points
+  //      // have been inserted a few lines above)
+  //      if (isOnBoundary) {
+  //        // check if upperBound would be negative
+  //        // (we're working with unsigned integers here)
+  //        if (n + curDim < numberOfZeroLevels + 1) {
+  //          continue;
+  //        } else {
+  //          // upper bound for boundary basis functions
+  //          upperBound = n + curDim - numberOfZeroLevels - 1;
+  //        }
+  //      } else {
+  //        // upper bound for interior basis functions
+  //        upperBound = static_cast<double>(n + curDim - 1);
+  //      }
+  //      level_t level_max = idx.getLevelMax();
 
-            if (firstPoint) {
-              storage.update(idx, g);
-              firstPoint = false;
-            } else {
-              storage.insert(idx);
-            }
-          }
-        }
-      }
-    }
-  }
+  //      for (level_t l = 2;
+  //           (static_cast<double>(l + levelSum) <= upperBound) && (std::max(l, level_max) <= n);
+  //           l++) {
+  //        // generate inner basis functions
+  //        for (index_t i = 2; i < static_cast<index_t>(1) << l; i += 4) {
+  //          if ((l + levelSum) == n + dim - 1) {
+  //            idx.push(d, l, i, (numberOfZeroLevels == 0));
+  //          } else {
+  //            idx.push(d, l, i, false);
+  //          }
+
+  //          if (firstPoint) {
+  //            storage.update(idx, g);
+  //            firstPoint = false;
+  //          } else {
+  //            storage.insert(idx);
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 
   /**
    * Generate a regular sparse grid iteratively (much faster than

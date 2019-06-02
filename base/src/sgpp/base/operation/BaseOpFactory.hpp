@@ -31,7 +31,7 @@
 #include "hash/OperationEvalGradient.hpp"
 #include "hash/OperationEvalHessian.hpp"
 #include "hash/OperationEvalPartialDerivative.hpp"
-#include "hash/OperationVariance.hpp"
+#include "hash/OperationAnova.hpp"
 
 namespace sgpp {
 
@@ -46,7 +46,7 @@ namespace op_factory {
 base::OperationMatrix* createOperationDiagonal(base::Grid& grid,
                                                                double multiplicationFactor = 0.25);
 
-base::OperationVariance* createOperationVariance(base::Grid& grid);
+base::OperationAnova* createOperationAnova(base::Grid& grid);
 
     /**
  * Factory method, returning an OperationHierarchisation for the grid at hand.

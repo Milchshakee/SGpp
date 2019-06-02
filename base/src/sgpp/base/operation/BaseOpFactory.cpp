@@ -215,10 +215,10 @@ base::OperationMatrix* createOperationDiagonal(base::Grid& grid, double multipli
   return new base::OperationDiagonal(&(grid.getStorage()), multiplicationFactor);
 }
 
-base::OperationVariance* createOperationVariance(base::Grid& grid)
+base::OperationAnova* createOperationAnova(base::Grid& grid)
 {
   if (grid.getType() == base::GridType::AnovaBoundary) {
-    return new base::OperationVariance(grid.getStorage());
+    return new base::OperationAnova(grid.getStorage());
   } else {
     throw base::factory_exception(
         "createOperationVariance is not implemented for this grid type.");
