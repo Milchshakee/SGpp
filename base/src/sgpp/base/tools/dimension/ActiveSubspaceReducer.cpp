@@ -22,19 +22,11 @@ Sample<DataMatrix> ActiveSubspaceReducer::fromFiniteDifferences(optimization::Sc
   VectorDistribution& v) {
 }
 
-std::function<DataMatrix(DataVector&)> ActiveSubspaceReducer::finiteDifferences(
-  std::shared_ptr<optimization::ScalarFunction>& func) {
-}
-
 std::unique_ptr<ReducedFunction> ActiveSubspaceResult::apply(
     sgpp::optimization::ScalarFunction& input) {
   std::unique_ptr<optimization::ScalarFunction> ptr;
   input.clone(ptr);
   return std::make_unique<ReducedFunction>(std::move(ptr), transformation);
-}
-
-ActiveSubspaceReducer::ActiveSubspaceReducer(
-  std::shared_ptr<CutoffCriterion<ActiveSubspaceInfo>> cutoff) : Reducer<sgpp::base::Sample<sgpp::base::DataMatrix>, sgpp::base::ActiveSubspaceInfo, sgpp::base::ActiveSubspaceResult>(cutoff) {
 }
 
 ActiveSubspaceReducer::EigenValueCutoff::EigenValueCutoff(double minValue)
