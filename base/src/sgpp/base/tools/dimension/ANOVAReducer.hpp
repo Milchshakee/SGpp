@@ -32,7 +32,7 @@ class ANOVAReducer : public sgpp::base::FunctionReducer<AnovaInformation, AnovaC
  public:
   enum class GridType { FULL, SPARSE };
 
-  class VarianceCutoff : public sgpp::base::CutoffCriterion<AnovaInformation, AnovaCutoff> {
+  class VarianceCutoff : public sgpp::base::Cutter<AnovaInformation, AnovaCutoff> {
    public:
     VarianceCutoff(double maxVariance);
 
@@ -42,7 +42,7 @@ class ANOVAReducer : public sgpp::base::FunctionReducer<AnovaInformation, AnovaC
     double maxVariance;
   };
 
-    class OrderCutoff : public sgpp::base::CutoffCriterion<AnovaInformation, AnovaCutoff> {
+    class OrderCutoff : public sgpp::base::Cutter<AnovaInformation, AnovaCutoff> {
    public:
     OrderCutoff(double maxVariance);
 

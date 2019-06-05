@@ -1,12 +1,13 @@
-#include "ActiveSubspaceReducer.hpp"
+#include "AsMcReducer.hpp"
 #include "Tools.hpp"
 
 namespace sgpp {
 namespace base {
 
-
-Sample<DataMatrix> ActiveSubspaceReducer::fromGradientSample(const Sample<DataVector>& gradients) {
-  std::vector<DataMatrix> out(gradients.getSize(), DataMatrix(gradients.getDimensions(), gradients.getDimensions()));
+Sample<DataMatrix> AsMcReducer::fromGradientSample(
+    const Sample<DataVector>& gradients) {
+  std::vector<DataMatrix> out(gradients.getSize(),
+                              DataMatrix(gradients.getDimensions(), gradients.getDimensions()));
   for (size_t i = 0; i < gradients.getSize(); ++i) {
     sgpp::base::DataVector sampleGradient = gradients.getValues()[i];
     for (size_t d = 0; d < gradients.getDimensions(); ++d) {
@@ -18,32 +19,14 @@ Sample<DataMatrix> ActiveSubspaceReducer::fromGradientSample(const Sample<DataVe
   return Sample<DataMatrix>(gradients.getVectors(), out);
 }
 
-Sample<DataMatrix> ActiveSubspaceReducer::fromFiniteDifferences(optimization::ScalarFunction& func,
+
+Sample<DataMatrix> AsMcReducer::fromFiniteDifferences(optimization::ScalarFunction& func,
   VectorDistribution& v) {
 }
 
-std::unique_ptr<ReducedFunction> ActiveSubspaceResult::apply(
-    sgpp::optimization::ScalarFunction& input) {
-  std::unique_ptr<optimization::ScalarFunction> ptr;
-  input.clone(ptr);
-  return std::make_unique<ReducedFunction>(std::move(ptr), transformation);
-}
+AsMcReducer::IntervalCutoff::IntervalCutoff(size_t bootstrapSamples) : bootstrapSamples(bootstrapSamples) {}
 
-ActiveSubspaceReducer::EigenValueCutoff::EigenValueCutoff(double minValue)
-    : minEigenValue(minValue) {}
-
-size_t ActiveSubspaceReducer::EigenValueCutoff::evaluate(const ActiveSubspaceInfo& info) {
-  for (size_t d = 0; d < info.eigenValues.size(); ++d) {
-    if (info.eigenValues[d] < minEigenValue) {
-      return d + 1;
-    }
-  }
-  return info.eigenValues.size();
-}
-
-ActiveSubspaceReducer::IntervalCutoff::IntervalCutoff(size_t bootstrapSamples) : bootstrapSamples(bootstrapSamples) {}
-
-size_t ActiveSubspaceReducer::IntervalCutoff::evaluate(const ActiveSubspaceInfo& info) {
+size_t AsMcReducer::IntervalCutoff::evaluate(const McActiveSubspaceInfo& info) {
   size_t dimensions = info.eigenValues.size();
   std::mt19937_64 prng;
   std::uniform_int_distribution<size_t> dist(0, info.sampleMatrices.getSize() - 1);
@@ -88,8 +71,8 @@ size_t ActiveSubspaceReducer::IntervalCutoff::evaluate(const ActiveSubspaceInfo&
   return cutoff;
 }
 
-void ActiveSubspaceReducer::evaluate(
-    Sample<DataMatrix>& input, ActiveSubspaceInfo& out) {
+void AsMcReducer::evaluate(
+    Sample<DataMatrix>& input, McActiveSubspaceInfo& out) {
   size_t dimensions = input.getDimensions();
   sgpp::base::DataMatrix matrix(dimensions, dimensions);
   out.sampleMatrices = input;
@@ -103,8 +86,8 @@ void ActiveSubspaceReducer::evaluate(
   Tools::svd(matrix, out.eigenVectors, out.eigenValues);
 }
 
-    ActiveSubspaceResult ActiveSubspaceReducer::reduce(
-        Sample<DataMatrix>& input, size_t c, const ActiveSubspaceInfo& info) {
+    ActiveSubspaceResult AsMcReducer::reduce(
+        Sample<DataMatrix>& input, size_t c, const McActiveSubspaceInfo& info) {
   DataMatrix m = info.eigenVectors;
   m.resizeRowsCols(input.getDimensions(), c);
   return ActiveSubspaceResult {m};

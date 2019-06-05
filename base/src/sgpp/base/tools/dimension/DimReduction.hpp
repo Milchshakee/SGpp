@@ -14,73 +14,20 @@
 namespace sgpp {
 namespace base {
 
-typedef std::vector<std::pair<double, double>> Domain;
-
-class RandomDistribution {
+template <class INPUT, class INFO, class OUTPUT>
+class Cutter {
  public:
-  RandomDistribution(std::uint64_t seed);
-
-  virtual DataVector operator()() = 0;
-
- protected:
-  std::mt19937_64 prng;
+  virtual OUTPUT cut(const INPUT& input, const INFO& info) = 0;
 };
 
-class UniformVectorDistribution : public RandomDistribution {
+template <class INPUT, class INFO, class OUTPUT>
+class FixedCutter : public Cutter<INPUT, INFO, OUTPUT> {
  public:
-  UniformVectorDistribution(uint64_t seed, size_t dimensions);
-  UniformVectorDistribution(uint64_t seed, Domain domain);
+  FixedCutter(size_t n) : n(n) {}
 
-  DataVector operator()() override;
-
- private:
-  Domain domain;
-  std::vector<std::uniform_real_distribution<double>> distributions;
-};
-
-class LengthVectorDistribution : public RandomDistribution {
- public:
-  LengthVectorDistribution(uint64_t seed, size_t dimensions, double length);
-
-  DataVector operator()() override;
-
- private:
-  size_t dimensions;
-  double length;
-  std::uniform_real_distribution<double> distribution;
-};
-
-template <class I>
-class CutoffCriterion {
- public:
-  virtual size_t evaluate(const I& info) = 0;
-};
-
-template <class T>
-class FixedCutoff : public CutoffCriterion<T> {
- public:
-  FixedCutoff(size_t n) : n(n) {}
-
-            size_t evaluate(const T& info) override {
-    return n;
-  }
 
  private:
   size_t n;
-};
-
-class ReducedFunction : public sgpp::optimization::ScalarFunction {
- public:
-  ReducedFunction(std::unique_ptr<sgpp::optimization::ScalarFunction>&& function,
-                  DataMatrix transformation);
-  ~ReducedFunction() override = default;
-
-  double eval(const base::DataVector& x) override;
-  void clone(std::unique_ptr<ScalarFunction>& clone) const override;
-
- private:
-  std::unique_ptr<sgpp::optimization::ScalarFunction> function;
-  DataMatrix transformation;
 };
 
 template <class INPUT, class INFO, class OUTPUT>
@@ -89,7 +36,7 @@ class Reducer {
   Reducer() = default;
   virtual ~Reducer() = default;
 
-  std::unique_ptr<OUTPUT> evaluateAndReduce(INPUT& input, CutoffCriterion<INFO>& cutoff, INFO& out) {
+  std::unique_ptr<OUTPUT> evaluateAndReduce(INPUT& input, Cutter<INFO>& cutoff, INFO& out) {
     evaluateFunction(input, out);
     size_t c = cutoff.evaluate(out);
     return reduce(input, c, out);

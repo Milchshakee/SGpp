@@ -8,7 +8,7 @@
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
 #include <sgpp/optimization/function/vector/VectorFunction.hpp>
-#include "ActiveSubspaceReducer.hpp"
+#include "AsMcReducer.hpp"
 
 class IterativePCAReducer : public sgpp::base::DataReducer {
  public:

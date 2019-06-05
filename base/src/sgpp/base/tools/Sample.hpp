@@ -26,6 +26,14 @@ class Sample {
     }
   }
 
+  Sample(const std::vector<DataVector>& vectors, std::function<T(DataVector&)>& func)
+      : vectors(vectors), values(vectors.size())
+  {
+    for (size_t i = 0; i < vectors.size(); i++) {
+      values[i] = func(vectors[i]);
+    }
+  }
+
   Sample(const std::vector<DataVector>& vectors, const std::vector<T>& values)
       : vectors(vectors), values(values) {}
 
@@ -41,7 +49,7 @@ class Sample {
 
 namespace Sampler {
 template <class T>
-Sample<T> sampleGrid(Grid& grid, std::function<T(DataVector)>& func) {
+Sample<T> sampleGrid(Grid& grid, std::function<T(DataVector&)>& func) {
   GridDistribution d(grid);
   return Sample<T>(d, func);
 }

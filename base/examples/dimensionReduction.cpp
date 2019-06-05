@@ -2,7 +2,7 @@
 
 #include "sgpp/base/datatypes/DataMatrix.hpp"
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
-#include "sgpp/base/tools/dimension/ActiveSubspaceReducer.hpp"
+#include "sgpp/base/tools/dimension/AsMcReducer.hpp"
 #include "sgpp/optimization/function/vector/WrapperVectorFunction.hpp"
 #include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
 
@@ -21,11 +21,11 @@ int main() {
   sgpp::base::Sample<sgpp::base::DataVector> gradientSamples =
       sgpp::base::Sampler::sampleVectorFunction(dist, funcGradient);
   sgpp::base::Sample<sgpp::base::DataMatrix> m =
-      sgpp::base::ActiveSubspaceReducer::fromGradientSample(gradientSamples);
+      sgpp::base::AsMcReducer::fromGradientSample(gradientSamples);
 
-  auto cutoff = sgpp::base::FixedCutoff<sgpp::base::ActiveSubspaceInfo>(1);
-  auto reducer = sgpp::base::ActiveSubspaceReducer();
-  auto i = sgpp::base::ActiveSubspaceInfo();
+  auto cutoff = sgpp::base::FixedCutter<sgpp::base::McActiveSubspaceInfo>(1);
+  auto reducer = sgpp::base::AsMcReducer();
+  auto i = sgpp::base::McActiveSubspaceInfo();
 
   auto result = reducer.evaluateAndReduce(m, cutoff, i);
   auto reducedFunc = result->apply(func);
@@ -38,11 +38,11 @@ int main2() {
   auto dist = sgpp::base::RandomUniformDistribution(100, std::mt19937_64::default_seed, 2);
   auto funcGradient = sgpp::optimization::WrapperVectorFunction(2, 2, f_gradient);
   sgpp::base::Sample<sgpp::base::DataMatrix> m =
-      sgpp::base::ActiveSubspaceReducer::fromFiniteDifferences(func, dist);
+      sgpp::base::AsMcReducer::fromFiniteDifferences(func, dist);
 
-  auto cutoff = sgpp::base::FixedCutoff<sgpp::base::ActiveSubspaceInfo>(1);
-  auto reducer = sgpp::base::ActiveSubspaceReducer();
-  auto i = sgpp::base::ActiveSubspaceInfo();
+  auto cutoff = sgpp::base::FixedCutter<sgpp::base::McActiveSubspaceInfo>(1);
+  auto reducer = sgpp::base::AsMcReducer();
+  auto i = sgpp::base::McActiveSubspaceInfo();
 
   auto result = reducer.evaluateAndReduce(m, cutoff, i);
   auto reducedFunc = result->apply(func);
@@ -60,12 +60,12 @@ int main3() {
   sgpp::base::Sample<sgpp::base::DataVector> sample =
       sgpp::base::Sampler::sampleGrid(*grid, funcGradient);
   sgpp::base::Sample<sgpp::base::DataMatrix> m =
-      sgpp::base::ActiveSubspaceReducer::fromGradientSample(sample);
+      sgpp::base::AsMcReducer::fromGradientSample(sample);
 
   
-  auto cutoff = sgpp::base::FixedCutoff<sgpp::base::ActiveSubspaceInfo>(1);
-  auto reducer = sgpp::base::ActiveSubspaceReducer();
-  auto i = sgpp::base::ActiveSubspaceInfo();
+  auto cutoff = sgpp::base::FixedCutter<sgpp::base::McActiveSubspaceInfo>(1);
+  auto reducer = sgpp::base::AsMcReducer();
+  auto i = sgpp::base::McActiveSubspaceInfo();
 
   auto result = reducer.evaluateAndReduce(m, cutoff, i);
   auto reducedFunc = result->apply(func);
