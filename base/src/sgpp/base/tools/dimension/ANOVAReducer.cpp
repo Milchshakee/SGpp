@@ -1,5 +1,5 @@
 #include <iostream>
-#include "ANOVAReducer.hpp"
+#include "AnovaReducer.hpp"
 #include "sgpp/base/grid/Grid.hpp"
 #include "sgpp/base/operation/hash/OperationHierarchisation.hpp"
 #include <sgpp/base/operation/BaseOpFactory.hpp>

@@ -16,6 +16,10 @@
 namespace sgpp {
 namespace base {
 
+  
+  typedef std::vector<bool> AnovaComponent;
+typedef std::vector<AnovaComponent> AnovaComponentVector;
+
 /**
  * This class provides the interface for the grid generation
  * for grids with boundaries, pentagon cut through sub space scheme
@@ -27,7 +31,7 @@ class AnovaBoundaryGridGenerator : public GridGenerator {
    *
    * @param storage       template type that holds the grid points
    */
-  explicit AnovaBoundaryGridGenerator(GridStorage& storage);
+  explicit AnovaBoundaryGridGenerator(const AnovaComponentVector& components, GridStorage& storage);
 
   /**
    * Destructor
@@ -50,6 +54,7 @@ class AnovaBoundaryGridGenerator : public GridGenerator {
  protected:
   /// reference to the grid's storage object
   GridStorage& storage;
+  AnovaComponentVector components;
 };
 
 }  // namespace base

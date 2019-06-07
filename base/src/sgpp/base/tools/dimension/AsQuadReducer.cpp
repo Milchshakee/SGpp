@@ -37,7 +37,3 @@ void sgpp::base::AsQuadReducer::evaluate(Sample<DataVector>& input, AsInfo& out)
     Tools::svd(m, out.eigenVectors, out.eigenValues);
 
 }
-
-sgpp::base::AsResult sgpp::base::AsQuadReducer::reduce(Sample<DataVector>& input, size_t c,
-  const AsInfo& info) {
-}

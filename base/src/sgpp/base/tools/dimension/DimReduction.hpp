@@ -36,15 +36,13 @@ class Reducer {
   Reducer() = default;
   virtual ~Reducer() = default;
 
-  std::unique_ptr<OUTPUT> evaluateAndReduce(INPUT& input, Cutter<INFO>& cutoff, INFO& out) {
+  OUTPUT evaluateAndCut(INPUT& input, Cutter<INPUT, INFO, OUTPUT>& cutter, INFO& out) {
     evaluateFunction(input, out);
-    size_t c = cutoff.evaluate(out);
-    return reduce(input, c, out);
+    OUTPUT result = cutter.cut(input, out);
+    return result;
   }
 
   virtual void evaluate(INPUT& input, INFO& out) = 0;
-  virtual OUTPUT reduce(
-      INPUT& input, size_t c, const INFO& info) = 0;
 
 };
 }  // namespace base

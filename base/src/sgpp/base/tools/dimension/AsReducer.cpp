@@ -17,9 +17,9 @@ void sgpp::base::AsReducedFunction::clone(std::unique_ptr<ScalarFunction>& clone
   clone = std::make_unique<AsReducedFunction>(std::move(ptr), transformation);
 }
 
-sgpp::base::AsResult::AsResult(DataMatrix& m, size_t n) {
-  m.resizeRowsCols(m.getNrows(), n);
+sgpp::base::AsResult::AsResult(const DataMatrix& m, size_t n) {
   transformation = m;
+  transformation.resizeRowsCols(m.getNrows(), n);
 }
 
 std::unique_ptr<sgpp::base::AsReducedFunction> sgpp::base::AsResult::apply(

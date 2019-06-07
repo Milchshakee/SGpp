@@ -15,11 +15,11 @@ namespace base {
 AnovaBoundaryGrid::AnovaBoundaryGrid(std::istream& istr)
     : Grid(istr), generator(storage) {}
 
-AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim)
-    : Grid(dim), generator(storage) {}
+AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim, const AnovaComponentVector& components)
+    : Grid(dim), generator(components, storage) {}
 
-AnovaBoundaryGrid::AnovaBoundaryGrid(BoundingBox& BB)
-    : Grid(BB), generator(storage) {}
+AnovaBoundaryGrid::AnovaBoundaryGrid(BoundingBox& BB, const AnovaComponentVector& components)
+    : Grid(BB), generator(components, storage) {}
 
 sgpp::base::GridType AnovaBoundaryGrid::getType() { return sgpp::base::GridType::AnovaBoundary; }
 

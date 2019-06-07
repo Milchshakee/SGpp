@@ -14,44 +14,67 @@
 namespace sgpp {
 namespace base {
 
-template <class T>
+template <class T, class K = DataVector>
 class Sample {
  public:
   Sample() = default;
 
-  Sample(VectorDistribution& dist, std::function<T(DataVector&)>& func)
-      : vectors(dist.getVectors()), values(dist.getSize()) {
-    for (size_t i = 0; i < dist.getSize(); i++) {
-      values[i] = func(dist.getVectors()[i]);
-    }
-  }
-
-  Sample(const std::vector<DataVector>& vectors, std::function<T(DataVector&)>& func)
-      : vectors(vectors), values(vectors.size())
+  Sample(const std::vector<K>& keys, std::function<T(K&)>& func)
+      : keys(keys), values(keys.size())
   {
-    for (size_t i = 0; i < vectors.size(); i++) {
-      values[i] = func(vectors[i]);
+    for (size_t i = 0; i < keys.size(); i++) {
+      values[i] = func(keys[i]);
     }
   }
 
-  Sample(const std::vector<DataVector>& vectors, const std::vector<T>& values)
-      : vectors(vectors), values(values) {}
+  Sample(const std::vector<K>& vectors, const std::vector<T>& values)
+      : keys(vectors), values(values) {}
 
   size_t getSize() const { return values.size(); }
-  size_t getDimensions() const { return vectors.empty() ? 0 : vectors[0].getSize(); }
-  const std::vector<DataVector>& getVectors() const { return vectors; }
+  size_t getDimensions() const { return keys.empty() ? 0 : keys[0].getSize(); }
+  const std::vector<K>& getKeys() const { return keys; }
   const std::vector<T>& getValues() const { return values; }
 
- private:
-  std::vector<DataVector> vectors;
+ protected:
+  std::vector<K> keys;
   std::vector<T> values;
 };
 
+  template <class T>
+class GridSample : public Sample<T> {
+ public:
+  GridSample() = default;
+
+  GridSample(std::shared_ptr<Grid>& grid, std::function<T(DataVector&)>& func)
+      : keys(grid->getSize()), values(grid->getSize()) {
+    GridDistribution d(*grid);
+    for (size_t i = 0; i < d.getSize(); i++) {
+      values[i] = func(d.getVectors()[i]);
+    }
+  }
+
+  GridSample(std::shared_ptr<Grid>& grid, const std::vector<T>& values)
+      : keys(grid.getSize()), values(values)
+  {
+    GridDistribution d(*grid);
+    keys = d.getVectors();
+  }
+
+    const Grid& getGrid() const { return *grid; }
+
+ private:
+  std::shared_ptr<Grid> grid;
+  };
+
 namespace Sampler {
+
 template <class T>
-Sample<T> sampleGrid(Grid& grid, std::function<T(DataVector&)>& func) {
-  GridDistribution d(grid);
-  return Sample<T>(d, func);
+Sample<T> sampleDistribution(VectorDistribution& dist, std::function<T(DataVector&)>& func) {
+  std::vector<double> values(dist.getSize());
+  for (size_t i = 0; i < dist.getSize(); i++) {
+    values[i] = func(dist.getVectors()[i]);
+  }
+  return Sample<T>(dist.getVectors(), values);
 }
 
 Sample<double> sampleScalarFunction(VectorDistribution& dist,

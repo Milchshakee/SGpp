@@ -16,7 +16,7 @@ Sample<DataMatrix> AsMcReducer::fromGradientSample(
       out[i].setColumn(d, col);
     }
   }
-  return Sample<DataMatrix>(gradients.getVectors(), out);
+  return Sample<DataMatrix>(gradients.getKeys(), out);
 }
 
 
@@ -24,12 +24,14 @@ Sample<DataMatrix> AsMcReducer::fromFiniteDifferences(optimization::ScalarFuncti
   VectorDistribution& v) {
 }
 
-AsMcReducer::IntervalCutoff::IntervalCutoff(size_t bootstrapSamples) : bootstrapSamples(bootstrapSamples) {}
 
-size_t AsMcReducer::IntervalCutoff::evaluate(const McActiveSubspaceInfo& info) {
+AsMcIntervalCutter::AsMcIntervalCutter(size_t bootstrapSamples) : bootstrapSamples(bootstrapSamples) {
+}
+
+AsResult AsMcIntervalCutter::cut(const Sample<DataMatrix>& input, const AsInfo& info) {
   size_t dimensions = info.eigenValues.size();
   std::mt19937_64 prng;
-  std::uniform_int_distribution<size_t> dist(0, info.sampleMatrices.getSize() - 1);
+  std::uniform_int_distribution<size_t> dist(0, input.getSize() - 1);
 
   std::vector<std::pair<double, double>> eigenValueIntervals(dimensions);
   for (size_t d = 0; d < dimensions; ++d) {
@@ -39,9 +41,9 @@ size_t AsMcReducer::IntervalCutoff::evaluate(const McActiveSubspaceInfo& info) {
 
   for (size_t i = 0; i < bootstrapSamples; i++) {
     sgpp::base::DataMatrix bootstrapMatrix(info.eigenValues.size(), info.eigenValues.size());
-    for (size_t j = 0; j < info.sampleMatrices.getSize(); i++) {
+    for (size_t j = 0; j < input.getSize(); i++) {
       size_t l = dist(prng);
-      bootstrapMatrix.add(info.sampleMatrices[l]);
+      bootstrapMatrix.add(input.getValues()[l]);
     }
     bootstrapMatrix.mult(1.0 / static_cast<double>(bootstrapSamples));
 
@@ -68,16 +70,14 @@ size_t AsMcReducer::IntervalCutoff::evaluate(const McActiveSubspaceInfo& info) {
       cutoff = d + 1;
     }
   }
-  return cutoff;
+  return AsResult(info.eigenVectors, cutoff);
 }
 
-void AsMcReducer::evaluate(
-    Sample<DataMatrix>& input, McActiveSubspaceInfo& out) {
+void AsMcReducer::evaluate(Sample<DataMatrix>& input, AsInfo& out) {
   size_t dimensions = input.getDimensions();
   sgpp::base::DataMatrix matrix(dimensions, dimensions);
-  out.sampleMatrices = input;
   for (size_t i = 0; i < input.getSize(); ++i) {
-    matrix.add(out.sampleMatrices.getValues()[i]);
+    matrix.add(input.getValues()[i]);
   }
   matrix.mult(1.0 / static_cast<double>(input.getSize()));
 
@@ -85,13 +85,6 @@ void AsMcReducer::evaluate(
   out.eigenValues = sgpp::base::DataVector(dimensions);
   Tools::svd(matrix, out.eigenVectors, out.eigenValues);
 }
-
-    ActiveSubspaceResult AsMcReducer::reduce(
-        Sample<DataMatrix>& input, size_t c, const McActiveSubspaceInfo& info) {
-  DataMatrix m = info.eigenVectors;
-  m.resizeRowsCols(input.getDimensions(), c);
-  return ActiveSubspaceResult {m};
-    }
 
 }  // namespace base
 }  // namespace sgpp

@@ -15,11 +15,11 @@
 namespace sgpp {
 namespace base {
 
-class AsMcIntervalCutter: public Cutter<AsInfo> {
+class AsMcIntervalCutter: public Cutter<Sample<DataMatrix>,AsInfo, AsResult> {
  public:
   AsMcIntervalCutter(size_t bootstrapSamples);
 
-  size_t evaluate(const AsInfo& info) override;
+  AsResult cut(const Sample<DataMatrix>& input, const AsInfo& info) override;
 
  private:
   size_t bootstrapSamples;
@@ -34,8 +34,6 @@ class AsMcReducer
   static Sample<DataMatrix> fromFiniteDifferences(optimization::ScalarFunction& func, VectorDistribution& v);
 
   void evaluate(Sample<DataMatrix>& input, AsInfo& out) override;
-  AsResult reduce(Sample<DataMatrix>& input, size_t c,
-    const AsInfo& info) override;
 };
 
 }  // namespace base

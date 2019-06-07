@@ -22,8 +22,7 @@ class AsQuadReducer : public AsReducer<Sample<DataVector>> {
   AsQuadReducer(std::shared_ptr<Grid>& grid, std::shared_ptr<OperationQuadrature>& quad);
 
   void evaluate(Sample<DataVector>& input, AsInfo& out) override;
-  AsResult reduce(Sample<DataVector>& input, size_t c,
-                              const AsInfo& info) override;
+
 private:
   std::shared_ptr<Grid> grid;
  std::shared_ptr<OperationQuadrature> quad;

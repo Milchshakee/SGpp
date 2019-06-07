@@ -15,6 +15,7 @@
 #include <sgpp/globaldef.hpp>
 #include <unordered_set>
 #include <vector>
+#include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
 
 namespace sgpp {
 namespace base {
@@ -151,7 +152,8 @@ class HashGenerator {
    * @param storage Hashmap, that stores the grid points
    * @param level maximum level of the sparse grid (non-negative value)
    */
-  void regularWithAnovaBoundaries(GridStorage& storage, level_t level) {
+  void regularWithAnovaBoundaries(GridStorage& storage, level_t level,
+                                  AnovaBoundaryGrid::ComponentVector& components) {
     if (storage.getSize() > 0) {
       throw generation_exception("storage not empty");
     }
@@ -520,7 +522,8 @@ class HashGenerator {
     }
   }
 
-  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n) {
+  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n,
+                                             AnovaBoundaryGrid::ComponentVector& components) {
     const size_t dim = storage.getDimension();
 
     if (n == 0) {

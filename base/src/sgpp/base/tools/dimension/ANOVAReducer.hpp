@@ -7,60 +7,46 @@
 #define ANOVAREDUCER_HPP
 
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
+#include "sgpp/base/tools/Sample.hpp"
+#include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
 
-/**
- * Vector that holds levels for every dimension
- */
-typedef std::vector<bool> DimensionVector;
+namespace sgpp {
+namespace base {
 
-struct AnovaInformation
+struct AnovaInfo
 {
-  struct Component
-  {
-    size_t order;
-    double variance;
-    DimensionVector fixedDimensions;
-  };
-
-  std::vector<double> variances;
-  std::vector<Component> components;
+  sgpp::base::Sample<sgpp::base::AnovaComponent, double> variances;
 };
 
-typedef std::vector<DimensionVector> AnovaCutoff;
+struct AnovaResult
+{
+  AnovaComponentVector activeComponents;
 
-class ANOVAReducer : public sgpp::base::FunctionReducer<AnovaInformation, AnovaCutoff> {
+  std::unique_ptr<sgpp::base::AnovaBoundaryGrid> apply(sgpp::base::AnovaBoundaryGrid& grid);
+};
+
+    class AnovaCutter : public sgpp::base::Cutter<AnovaInfo, GridSample<double>, AnovaResult> {};
+
+  
+  class AnovaVarianceCutter : public sgpp::base::Cutter<AnovaInfo, GridSample<double>, AnovaResult> {
  public:
-  enum class GridType { FULL, SPARSE };
+    AnovaVarianceCutter(double maxVariance);
 
-  class VarianceCutoff : public sgpp::base::Cutter<AnovaInformation, AnovaCutoff> {
-   public:
-    VarianceCutoff(double maxVariance);
-
-    AnovaCutoff evaluate(const AnovaInformation& info) override;
-
-   private:
-    double maxVariance;
-  };
-
-    class OrderCutoff : public sgpp::base::Cutter<AnovaInformation, AnovaCutoff> {
-   public:
-    OrderCutoff(double maxVariance);
-
-    AnovaCutoff evaluate(const AnovaInformation& info) override;
-
-   private:
-    double maxVariance;
-  };
-
-  ANOVAReducer(size_t gridLevel, GridType gridType);
-
-  void evaluateFunction(sgpp::optimization::ScalarFunction& input, AnovaInformation& out) override;
-  std::unique_ptr<sgpp::optimization::ScalarFunction> reduceFunction(
-      sgpp::optimization::ScalarFunction& input, const AnovaCutoff& c, const AnovaInformation& info) override;
+  AnovaResult cut(const AnovaInfo& input, const GridSample<double>& info) override;
 
  private:
-  size_t gridLevel;
-  GridType gridType;
+  double maxVariance;
+  };
+
+class AnovaReducer : public sgpp::base::Reducer<GridSample<double>,AnovaInfo,AnovaResult> {
+ public:
+
+  AnovaReducer();
+
+  void evaluate(GridSample<double>& input, AnovaInfo& out) override;
 };
+
+}  // namespace base
+}  // namespace sgpp
 
 #endif

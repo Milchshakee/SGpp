@@ -12,14 +12,18 @@
 namespace sgpp {
 namespace base {
 
+  class AnovaBoundaryGridGenerator;
+
 /**
  * grid with linear base functions with boundaries, pentagon cut
  */
 class AnovaBoundaryGrid : public Grid {
+
  protected:
   explicit AnovaBoundaryGrid(std::istream& istr);
 
  public:
+
   /**
    * Constructor Linear Truncated Boundary Grid
    *
@@ -29,7 +33,7 @@ class AnovaBoundaryGrid : public Grid {
    *                      1 means same level,
    *                      2 means one level coarser, etc.
    */
-  explicit AnovaBoundaryGrid(size_t dim);
+  explicit AnovaBoundaryGrid(size_t dim, const AnovaComponentVector& components);
 
   /**
    * Constructor Linear Truncated Boundary Grid
@@ -40,7 +44,7 @@ class AnovaBoundaryGrid : public Grid {
    *                      1 means same level,
    *                      2 means one level coarser, etc.
    */
-  explicit AnovaBoundaryGrid(BoundingBox& BB);
+  explicit AnovaBoundaryGrid(BoundingBox& BB, const AnovaComponentVector& components);
 
   /**
    * Destructor

@@ -34,7 +34,7 @@ class AsReducedFunction : public sgpp::optimization::ScalarFunction {
 };
 
 struct AsResult {
-  AsResult(DataMatrix& m, size_t n);
+  AsResult(const DataMatrix& m, size_t n);
 
   DataMatrix transformation;
 
@@ -46,14 +46,14 @@ class AsEigenValueCutter : public Cutter<INPUT, AsInfo, AsResult> {
  public:
     AsEigenValueCutter(double minValue) : minEigenValue(minValue) {}
 
-  void cut(const INPUT& input, const AsInfo& info) override
+  AsResult cut(const INPUT& input, const AsInfo& info) override
   {
     for (size_t d = 0; d < info.eigenValues.size(); ++d) {
       if (info.eigenValues[d] < minEigenValue) {
-        return d + 1;
+        return AsResult(info.eigenVectors, d + 1);
       }
     }
-    return info.eigenValues.size();
+    return AsResult(info.eigenVectors, info.eigenValues.size());
   };
 
  private:
