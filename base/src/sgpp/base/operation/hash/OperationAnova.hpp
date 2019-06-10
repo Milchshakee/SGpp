@@ -11,6 +11,8 @@
 
 #include <sgpp/globaldef.hpp>
 #include "sgpp/datadriven/application/learnersgdeonoffparallel/AuxiliaryStructures.hpp"
+#include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
+#include "sgpp/base/tools/Sample.hpp"
 
 namespace sgpp {
 namespace base {
@@ -26,17 +28,6 @@ class OperationAnova {
    * Vector that holds levels for every dimension
    */
   typedef std::vector<sgpp::base::HashGridPoint::level_type> LevelVector;
-
-  /**
-   * Vector that holds levels for every dimension
-   */
-  typedef std::vector<bool> DimensionVector;
-
-    struct AnovaComponent {
-    size_t order;
-    DimensionVector fixedDimensions;
-    double variance;
-  };
 
   /**
    * Constructor
@@ -55,10 +46,9 @@ class OperationAnova {
                                   const LevelVector& levels);
 
   double calculateDimensionVariance(const DataVector& alpha,
-                                    const DimensionVector& fixedDimensions);
+                                    const AnovaComponent& comp);
 
-  std::vector<AnovaComponent> calculateAnovaOrderVariance(const DataVector& alpha,
-                                                          size_t anovaOrder);
+  Sample<AnovaComponent, double> calculateAnovaOrderVariances(const DataVector& alpha);
 
 
  private:

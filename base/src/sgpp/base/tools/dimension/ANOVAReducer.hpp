@@ -20,19 +20,23 @@ struct AnovaInfo
 
 struct AnovaResult
 {
+  std::vector<bool> activeDimensions;
   AnovaComponentVector activeComponents;
 
-  std::unique_ptr<sgpp::base::AnovaBoundaryGrid> apply(sgpp::base::AnovaBoundaryGrid& grid);
+  TransformationFunction createTransformationFunction();
+  GridSample<double> createReducedGridSample(GridSample<double>& sample);
+
 };
 
     class AnovaCutter : public sgpp::base::Cutter<AnovaInfo, GridSample<double>, AnovaResult> {};
 
   
-  class AnovaVarianceCutter : public sgpp::base::Cutter<AnovaInfo, GridSample<double>, AnovaResult> {
+  class AnovaVarianceCutter
+        : public sgpp::base::Cutter<GridSample<double>, AnovaInfo, AnovaResult> {
  public:
     AnovaVarianceCutter(double maxVariance);
 
-  AnovaResult cut(const AnovaInfo& input, const GridSample<double>& info) override;
+  AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
 
  private:
   double maxVariance;
@@ -40,10 +44,7 @@ struct AnovaResult
 
 class AnovaReducer : public sgpp::base::Reducer<GridSample<double>,AnovaInfo,AnovaResult> {
  public:
-
-  AnovaReducer();
-
-  void evaluate(GridSample<double>& input, AnovaInfo& out) override;
+  AnovaInfo evaluate(GridSample<double>& input) override;
 };
 
 }  // namespace base

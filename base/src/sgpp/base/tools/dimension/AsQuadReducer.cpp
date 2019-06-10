@@ -23,7 +23,7 @@ void sgpp::base::AsQuadReducer::evaluate(Sample<DataVector>& input, AsInfo& out)
         counter++;
         return val;
           };
-      Sample<double> alphas = Sampler::sampleGrid<double>(*grid, f);
+      Sample<double> alphas = SampleHelper::sampleGrid<double>(*grid, f);
           DataVector v(alphas.getValues());
           double val = quad->doQuadrature(v);
           m.set(i, j, val);

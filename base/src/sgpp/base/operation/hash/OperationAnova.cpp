@@ -2,6 +2,7 @@
 #include "common/basis/AnovaBoundaryBasis.hpp"
 #include "sgpp/base/grid/GridStorage.hpp"
 #include "sgpp/datadriven/functors/classification/GridPointBasedRefinementFunctor.hpp"
+#include "sgpp/base/tools/Sample.hpp"
 
 double getL2NormOfBasis(const sgpp::base::OperationAnova::LevelVector& levels) {
   double result = 1;
@@ -49,10 +50,10 @@ double sgpp::base::OperationAnova::calculateIncrementVariance(const DataVector& 
 bool isValidLevel(const sgpp::base::OperationAnova::LevelVector& levels) { return true; }
 
 bool nextLevel(size_t maxLevel, sgpp::base::OperationAnova::LevelVector& levels,
-               const sgpp::base::OperationAnova::DimensionVector& fixedDimensions) {
+               const sgpp::base::AnovaComponent& comp) {
   bool lastAdded = false;
-  for (size_t i = 0; i < fixedDimensions.size(); i++) {
-    if (!fixedDimensions[i]) {
+  for (size_t i = 0; i < comp.size(); i++) {
+    if (!comp[i]) {
       if (levels[i] == maxLevel) {
         levels[i] = 0;
         lastAdded = true;
@@ -71,73 +72,68 @@ bool nextLevel(size_t maxLevel, sgpp::base::OperationAnova::LevelVector& levels,
   return false;
 }
 
-double sgpp::base::OperationAnova::calculateDimensionVariance(
-    const DataVector& alpha, const DimensionVector& fixedDimensions) {
-  LevelVector dimensions;
-  for (size_t i = 0; i < fixedDimensions.size(); i++) {
-    if (!fixedDimensions[i]) {
-      dimensions.push_back(1);
-    } else {
-      dimensions.push_back(0);
-    }
-  }
-
-  double sum = 0;
-  while (nextLevel(gridStorage.getMaxLevel(), dimensions, fixedDimensions)) {
-    if (isValidLevel(dimensions)) {
-      sum += calculateIncrementVariance(alpha, dimensions);
-    }
-  }
-  return sum;
-}
-
-bool nextDimensionVector(
-    sgpp::base::OperationAnova::DimensionVector& fixedDimensions) {
+bool nextAnovaComponent(
+    sgpp::base::AnovaComponent& comp) {
   size_t first = 0;
-  for (size_t i = 0; i < fixedDimensions.size(); i++) {
-    if (!fixedDimensions[i]) {
+  for (size_t i = 0; i < comp.size(); i++) {
+    if (!comp[i]) {
       first = i;
-      fixedDimensions[i] = true;
+      comp[i] = true;
       break;
       }
   }
 
   size_t propagated = 0;
-    for (size_t i = first + 1; i < fixedDimensions.size(); i++) {
-    if (fixedDimensions[i]) {
-      fixedDimensions[i] = false;
+    for (size_t i = first + 1; i < comp.size(); i++) {
+    if (comp[i]) {
+      comp[i] = false;
       break;
     } else {
-      fixedDimensions[i] = true;
+      comp[i] = true;
       propagated++;
     }
   }
 
-  if (first + propagated + 1 == fixedDimensions.size()) {
+  if (first + propagated + 1 == comp.size()) {
     return false;
     }
 
     for (size_t i = 0; i < propagated; i++) {
-    fixedDimensions[i] = false;
+    comp[i] = false;
   }
 
   return true;
 }
 
-
-std::vector<sgpp::base::OperationAnova::AnovaComponent> sgpp::base::OperationAnova::
-calculateAnovaOrderVariance(const DataVector& alpha, size_t anovaOrder) {
-  DimensionVector fixedDimensions(gridStorage.getDimension(), false);
-  for (size_t i = 0; i < anovaOrder; i++) {
-    fixedDimensions[i] = true;
+double sgpp::base::OperationAnova::calculateDimensionVariance(const DataVector& alpha,
+                                                              const AnovaComponent& comp) {
+  LevelVector levels;
+  for (size_t i = 0; i < comp.size(); i++) {
+    if (!comp[i]) {
+      levels.push_back(1);
+    } else {
+      levels.push_back(0);
+    }
   }
 
-  std::vector<sgpp::base::OperationAnova::AnovaComponent> components;
-  while (nextDimensionVector(fixedDimensions))
-  {
-    AnovaComponent comp{anovaOrder, fixedDimensions,
-                        calculateDimensionVariance(alpha, fixedDimensions)};
-    components.push_back(comp);
+  double sum = 0;
+  while (nextLevel(gridStorage.getMaxLevel(), levels, comp)) {
+    if (isValidLevel(levels)) {
+      sum += calculateIncrementVariance(alpha, levels);
+    }
   }
-  return std::move(components);
+  return sum;
+}
+
+sgpp::base::Sample<sgpp::base::AnovaComponent, double> sgpp::base::OperationAnova::calculateAnovaOrderVariances(
+    const DataVector& alpha) {
+  AnovaComponent currentComp(gridStorage.getDimension(), false);
+  std::vector<AnovaComponent> components;
+  std::vector<double> variances;
+  while (nextAnovaComponent(currentComp)) {
+    double var = calculateDimensionVariance(alpha, currentComp);
+    components.push_back(currentComp);
+    variances.push_back(var);
+  }
+  return Sample<AnovaComponent, double>(components, variances);
 }

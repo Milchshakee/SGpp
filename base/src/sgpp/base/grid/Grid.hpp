@@ -16,6 +16,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "sgpp/datadriven/algorithm/AlgorithmAdaBoostBase.hpp"
 
 namespace sgpp {
 namespace base {
@@ -237,7 +238,7 @@ class Grid {
    *
    * @return grid
    */
-  static Grid* createAnovaBoundaryGrid(size_t dim);
+  static Grid* createAnovaBoundaryGrid(size_t dim, const AnovaComponentVector& comps);
 
   /**
    * creates a linear boundary grid

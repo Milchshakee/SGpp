@@ -10,18 +10,18 @@
 #include "VectorDistribution.hpp"
 #include "sgpp/base/grid/Grid.hpp"
 #include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
+#include "sgpp/optimization/function/vector/VectorFunction.hpp"
+#include "sgpp/datadriven/operation/hash/OperationPiecewiseConstantRegression/OperationPiecewiseConstantRegression.hpp"
 
 namespace sgpp {
 namespace base {
 
-template <class T, class K = DataVector>
+template <class K, class T>
 class Sample {
  public:
   Sample() = default;
 
-  Sample(const std::vector<K>& keys, std::function<T(K&)>& func)
-      : keys(keys), values(keys.size())
-  {
+  Sample(const std::vector<K>& keys, std::function<T(K&)>& func) : keys(keys), values(keys.size()) {
     for (size_t i = 0; i < keys.size(); i++) {
       values[i] = func(keys[i]);
     }
@@ -30,6 +30,14 @@ class Sample {
   Sample(const std::vector<K>& vectors, const std::vector<T>& values)
       : keys(vectors), values(values) {}
 
+  const T& getValue(const K& key) {
+    for (size_t i = 0; i < getSize(); i++) {
+      if (key == keys[i]) {
+        return values[i];
+      }
+    }
+    throw std::invalid_argument();
+  }
   size_t getSize() const { return values.size(); }
   size_t getDimensions() const { return keys.empty() ? 0 : keys[0].getSize(); }
   const std::vector<K>& getKeys() const { return keys; }
@@ -40,8 +48,11 @@ class Sample {
   std::vector<T> values;
 };
 
-  template <class T>
-class GridSample : public Sample<T> {
+template <class T>
+using PointSample = Sample<DataVector, T>;
+
+template <class T>
+class GridSample : public PointSample<T> {
  public:
   GridSample() = default;
 
@@ -54,58 +65,68 @@ class GridSample : public Sample<T> {
   }
 
   GridSample(std::shared_ptr<Grid>& grid, const std::vector<T>& values)
-      : keys(grid.getSize()), values(values)
-  {
+      : keys(grid.getSize()), values(values) {
     GridDistribution d(*grid);
     keys = d.getVectors();
   }
 
-    const Grid& getGrid() const { return *grid; }
+  const Grid& getGrid() const { return *grid; }
 
  private:
   std::shared_ptr<Grid> grid;
-  };
+};
 
-namespace Sampler {
-
+namespace SampleHelper {
 template <class T>
-Sample<T> sampleDistribution(VectorDistribution& dist, std::function<T(DataVector&)>& func) {
+PointSample<T> sampleDistribution(VectorDistribution& dist, std::function<T(DataVector&)>& func) {
   std::vector<double> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     values[i] = func(dist.getVectors()[i]);
   }
-  return Sample<T>(dist.getVectors(), values);
+  return PointSample<T>(dist.getVectors(), values);
 }
 
-Sample<double> sampleScalarFunction(VectorDistribution& dist,
-                                           optimization::ScalarFunction& func) {
+PointSample<double> sampleScalarFunction(VectorDistribution& dist,
+                                         optimization::ScalarFunction& func) {
   std::vector<double> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     values[i] = func.eval(dist.getVectors()[i]);
   }
-  return Sample<double>(dist.getVectors(), values);
+  return PointSample<double>(dist.getVectors(), values);
 }
 
-Sample<double> sampleGrid(Grid& grid, optimization::ScalarFunction& func) {
-  GridDistribution d(grid);
-  return sampleScalarFunction(d, func);
+GridSample<double> sampleGrid(std::shared_ptr<Grid>& grid, optimization::ScalarFunction& func) {
+  GridDistribution d(*grid);
+  PointSample<double> s = sampleScalarFunction(d, func);
+  return std::move(GridSample<double>(grid, s.getValues()));
 }
 
-Sample<DataVector> sampleVectorFunction(VectorDistribution& dist,
-                                               optimization::VectorFunction& func) {
+PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
+                                             optimization::VectorFunction& func) {
   std::vector<DataVector> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     func.eval(dist.getVectors()[i], values[i]);
   }
-  return Sample<DataVector>(dist.getVectors(), values);
+  return PointSample<DataVector>(dist.getVectors(), values);
 }
 
-Sample<DataVector> sampleGrid(Grid& grid, optimization::VectorFunction& func) {
-  GridDistribution d(grid);
-  return sampleVectorFunction(d, func);
+GridSample<DataVector> sampleGrid(std::shared_ptr<Grid>& grid,
+                                   optimization::VectorFunction& func) {
+  GridDistribution d(*grid);
+  PointSample<DataVector> s = sampleVectorFunction(d, func);
+  return std::move(GridSample<DataVector>(grid, s.getValues()));
 }
 
-}  // namespace Sampler
+  
+  DataVector doHierarchisation(GridSample<double> sample) {
+  DataVector v(sample.getValues());
+  std::unique_ptr<sgpp::base::OperationHierarchisation>(
+      sgpp::op_factory::createOperationHierarchisation(const_cast<Grid&>(sample.getGrid())))
+      ->doHierarchisation(v);
+  return std::move(v);
+  }
+
+}  // namespace SampleHelper
 
 }  // namespace base
 }  // namespace sgpp

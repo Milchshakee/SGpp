@@ -5,14 +5,25 @@
 
 #ifndef DIMREDUCTION_HPP
 #define DIMREDUCTION_HPP
-
-#include <random>
-#include <vector>
 #include "sgpp/base/datatypes/DataMatrix.hpp"
 #include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
+#include "sgpp/optimization/function/vector/VectorFunction.hpp"
 
 namespace sgpp {
 namespace base {
+
+    
+class TransformationFunction : public sgpp::optimization::VectorFunction {
+ public:
+  TransformationFunction(DataMatrix transformation);
+  ~TransformationFunction() override = default;
+
+  void eval(const base::DataVector& x, DataVector& out) override;
+  void clone(std::unique_ptr<VectorFunction>& clone) const override;
+
+ private:
+  DataMatrix transformation;
+};
 
 template <class INPUT, class INFO, class OUTPUT>
 class Cutter {
@@ -36,13 +47,13 @@ class Reducer {
   Reducer() = default;
   virtual ~Reducer() = default;
 
-  OUTPUT evaluateAndCut(INPUT& input, Cutter<INPUT, INFO, OUTPUT>& cutter, INFO& out) {
-    evaluateFunction(input, out);
-    OUTPUT result = cutter.cut(input, out);
+  OUTPUT evaluateAndCut(INPUT& input, Cutter<INPUT, INFO, OUTPUT>& cutter) {
+    INFO i = evaluateFunction(input);
+    OUTPUT result = cutter.cut(input, i);
     return result;
   }
 
-  virtual void evaluate(INPUT& input, INFO& out) = 0;
+  virtual INFO evaluate(INPUT& input) = 0;
 
 };
 }  // namespace base

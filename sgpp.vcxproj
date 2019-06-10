@@ -776,8 +776,6 @@ scons --no-cache</RemoteReBuildCommandLine>
     <None Include="base\src\sgpp\base\tools\CPPLINT.cfg" />
     <None Include="base\src\sgpp\base\tools\dimension\AsMcReducer.cpp" />
     <None Include="base\src\sgpp\base\tools\dimension\AsMcReducer.hpp" />
-    <None Include="base\src\sgpp\base\tools\dimension\ANOVAReducer.cpp" />
-    <None Include="base\src\sgpp\base\tools\dimension\ANOVAReducer.hpp" />
     <None Include="base\src\sgpp\base\tools\dimension\DimReduction.cpp" />
     <None Include="base\src\sgpp\base\tools\dimension\DimReduction.hpp" />
     <None Include="base\src\sgpp\base\tools\dimension\IterativePCAReducer.cpp" />
@@ -881,6 +879,7 @@ scons --no-cache</RemoteReBuildCommandLine>
     <ClInclude Include="base\src\sgpp\base\operation\hash\common\basis\AnovaBoundaryBasis.hpp" />
     <ClInclude Include="base\src\sgpp\base\operation\hash\OperationHierarchisationAnovaBoundary.hpp" />
     <ClInclude Include="base\src\sgpp\base\operation\hash\OperationAnova.hpp" />
+    <ClInclude Include="base\src\sgpp\base\tools\dimension\AnovaReducer.hpp" />
     <ClInclude Include="base\src\sgpp\base\tools\dimension\AsReducer.hpp" />
     <ClInclude Include="base\src\sgpp\base\tools\dimension\AsQuadReducer.hpp" />
     <ClInclude Include="base\src\sgpp\base\tools\Sample.hpp" />
@@ -891,6 +890,7 @@ scons --no-cache</RemoteReBuildCommandLine>
     <ClCompile Include="base\src\sgpp\base\grid\type\AnovaBoundaryGrid.cpp" />
     <ClCompile Include="base\src\sgpp\base\operation\hash\OperationHierarchisationAnovaBoundary.cpp" />
     <ClCompile Include="base\src\sgpp\base\operation\hash\OperationAnova.cpp" />
+    <ClCompile Include="base\src\sgpp\base\tools\dimension\AnovaReducer.cpp" />
     <ClCompile Include="base\src\sgpp\base\tools\dimension\AsReducer.cpp" />
     <ClCompile Include="base\src\sgpp\base\tools\dimension\AsQuadReducer.cpp" />
     <ClCompile Include="base\src\sgpp\base\tools\VectorDistribution.cpp" />

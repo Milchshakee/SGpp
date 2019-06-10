@@ -65,8 +65,8 @@ Grid* Grid::createLinearGrid(size_t dim) { return new LinearGrid(dim); }
 
 Grid* Grid::createLinearStretchedGrid(size_t dim) { return new LinearStretchedGrid(dim); }
 
-Grid* Grid::createAnovaBoundaryGrid(size_t dim) {
-   return new AnovaBoundaryGrid(dim);
+Grid* Grid::createAnovaBoundaryGrid(size_t dim, const AnovaComponentVector& comps) {
+   return new AnovaBoundaryGrid(dim, comps);
 }
 
 Grid* Grid::createLinearBoundaryGrid(size_t dim, level_t boundaryLevel) {
