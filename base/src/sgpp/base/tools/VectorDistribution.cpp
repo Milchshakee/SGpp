@@ -6,14 +6,14 @@ namespace base {
 VectorDistribution::VectorDistribution(size_t size, size_t dimensions)
     : size(size), dimensions(dimensions), vectors(size, DataVector(dimensions, 0)) {}
 
-const std::vector<DataVector>& VectorDistribution::getVectors() { return vectors; }
+const std::vector<DataVector>& VectorDistribution::getVectors() const { return vectors; }
 
 
-size_t VectorDistribution::getSize() { return size; }
+size_t VectorDistribution::getSize() const { return size; }
 
-size_t VectorDistribution::getDimensions() { return dimensions; }
+size_t VectorDistribution::getDimensions() const { return dimensions; }
 
-GridDistribution::GridDistribution(sgpp::base::Grid& grid) : VectorDistribution(grid->getSize(), grid->getDimension())
+GridDistribution::GridDistribution(sgpp::base::Grid& grid) : VectorDistribution(grid.getSize(), grid.getDimension())
 {
   for (size_t i = 0; i < grid.getSize(); i++) {
     sgpp::base::GridPoint& gp = grid.getStorage().getPoint(i);

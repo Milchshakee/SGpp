@@ -2,7 +2,7 @@
 #include "Tools.hpp"
 
 sgpp::base::AsReducedFunction::AsReducedFunction(
-    std::unique_ptr<sgpp::optimization::ScalarFunction>&& function, DataMatrix transformation) :
+    std::unique_ptr<sgpp::optimization::ScalarFunction>&& function, sgpp::base::DataMatrix transformation) :
     ScalarFunction(transformation.getNcols()),
     function(std::move(function)), transformation(transformation) {}
 

@@ -778,8 +778,8 @@ scons --no-cache</RemoteReBuildCommandLine>
     <None Include="base\src\sgpp\base\tools\dimension\AsMcReducer.hpp" />
     <None Include="base\src\sgpp\base\tools\dimension\DimReduction.cpp" />
     <None Include="base\src\sgpp\base\tools\dimension\DimReduction.hpp" />
-    <None Include="base\src\sgpp\base\tools\dimension\IterativePCAReducer.cpp" />
-    <None Include="base\src\sgpp\base\tools\dimension\IterativePCAReducer.hpp" />
+    <None Include="base\src\sgpp\base\tools\dimension\PcaReducer.cpp" />
+    <None Include="base\src\sgpp\base\tools\dimension\PcaReducer.hpp" />
     <None Include="base\src\sgpp\base\tools\dimension\Tools.cpp" />
     <None Include="base\src\sgpp\base\tools\dimension\Tools.hpp" />
     <None Include="base\src\sgpp\base\tools\EvalCuboidGenerator.cpp" />

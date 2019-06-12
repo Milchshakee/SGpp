@@ -19,9 +19,9 @@ class VectorDistribution {
  public:
   VectorDistribution(size_t size, size_t dimensions);
 
-  size_t getSize();
-  size_t getDimensions();
-  const std::vector<DataVector>& getVectors();
+  size_t getSize() const;
+  size_t getDimensions() const;
+  const std::vector<DataVector>& getVectors() const;
 
  protected:
   size_t size;
