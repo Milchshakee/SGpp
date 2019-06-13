@@ -16,12 +16,12 @@
 namespace sgpp {
 namespace base {
 
-class AsQuadReducer : public AsReducer<Sample<DataVector>> {
+class AsQuadReducer : public AsReducer<PointSample<DataVector>> {
  public:
 
   AsQuadReducer(std::shared_ptr<Grid>& grid, std::shared_ptr<OperationQuadrature>& quad);
 
-  void evaluate(Sample<DataVector>& input, AsInfo& out) override;
+  AsInfo evaluate(PointSample<DataVector>& input) override;
 
 private:
   std::shared_ptr<Grid> grid;

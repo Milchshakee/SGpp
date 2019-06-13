@@ -2,7 +2,7 @@
 #include "Tools.hpp"
 
 
-sgpp::base::PcaResult::PcaResult(const DataMatrix& m, size_t n) {
+sgpp::base::PcaResult::PcaResult(const DataMatrix& m, size_t n, double coveredVariance) : coveredVariance(coveredVariance) {
   transformation = m;
   transformation.resizeRowsCols(m.getNrows(), n);
 }
@@ -13,28 +13,26 @@ sgpp::base::PcaFixedCutter::PcaFixedCutter(size_t n) : n(n) {
 
 sgpp::base::PcaResult sgpp::base::PcaFixedCutter::cut(const VectorDistribution& input,
                                                       const PcaInfo& info){
-  return PcaResult(info.eigenVectors, n);
+  double sum = 0;
+  for (size_t d = 0; d < n; ++d) {
+    sum += info.varianceShares[d];
+  }
+  return PcaResult(info.eigenVectors, n, sum);
 }
 
-sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double variancePercentage) : variancePercentage(variancePercentage) {
+sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double varianceShare) : varianceShare(varianceShare) {
 }
 
 sgpp::base::PcaResult sgpp::base::PcaVarianceCutter::cut(const VectorDistribution& input,
                                                          const PcaInfo& info) {
   double sum = 0;
   for (size_t d = 0; d < info.eigenValues.size(); ++d) {
-    sum += info.eigenValues[d];
-  }
-
-  double percSum = 0;
-  for (size_t d = 0; d < info.eigenValues.size(); ++d) {
-    double varPercentage = info.eigenValues[d] / sum;
-    percSum += varPercentage;
-    if (percSum >= variancePercentage) {
-      return PcaResult(info.eigenVectors, d + 1);
+    sum += info.varianceShares[d];
+    if (sum >= varianceShare) {
+      return PcaResult(info.eigenVectors, d + 1, sum);
     }
   }
-  return PcaResult(info.eigenVectors, info.eigenValues.size());
+  return PcaResult(info.eigenVectors, info.eigenValues.size(), sum);
 }
 
 sgpp::base::FixedDistribution sgpp::base::PcaResult::apply(const VectorDistribution& input) {
@@ -52,7 +50,7 @@ sgpp::base::DataMatrix&& centerMean(sgpp::base::VectorDistribution& input) {
     for (size_t c = 0; c < input.getSize(); c++) {
       mean += input.getVectors()[c][d];
     }
-    mean /= input.getSize();
+    mean /= static_cast<double>(input.getSize());
     means[d] = mean;
   }
 
@@ -95,5 +93,16 @@ sgpp::base::PcaInfo sgpp::base::PcaReducer::evaluate(VectorDistribution& input) 
   for (size_t c = 0; c < dimension; c++) {
     eigenValues.set(c, e(c, c));
   }
-  return {eigenVectorMatrix, eigenValues};
+
+  DataVector variances(eigenValues.size());
+  double sum = 0;
+    for (size_t d = 0; d < eigenValues.size(); ++d) {
+    sum += eigenValues[d];
+  }
+
+      for (size_t d = 0; d < eigenValues.size(); ++d) {
+    variances[d] = eigenValues[d] / sum;
+  }
+
+  return {eigenVectorMatrix, eigenValues, variances};
 }

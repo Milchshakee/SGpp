@@ -22,6 +22,7 @@ class VectorDistribution {
   size_t getSize() const;
   size_t getDimensions() const;
   const std::vector<DataVector>& getVectors() const;
+  DataMatrix getAsDataMatrix() const;
 
  protected:
   size_t size;
@@ -35,7 +36,8 @@ class VectorDistribution {
     };
 
   class FixedDistribution : public VectorDistribution {
- public:
+     public:
+      FixedDistribution(const DataMatrix& data);
     FixedDistribution(size_t size, size_t dimensions, const std::vector<DataVector>& vectors);
 };
 

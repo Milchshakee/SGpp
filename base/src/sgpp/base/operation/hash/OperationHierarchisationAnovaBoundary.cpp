@@ -4,8 +4,6 @@
 // sgpp.sparsegrids.org
 
 #include <sgpp/base/operation/hash/OperationHierarchisationAnovaBoundary.hpp>
-#include <sgpp/base/operation/hash/common/algorithm_sweep/DehierarchisationAnovaBoundary.hpp>
-#include <sgpp/base/operation/hash/common/algorithm_sweep/HierarchisationAnovaBoundary.hpp>
 
 #include <sgpp/base/algorithm/sweep.hpp>
 
@@ -14,33 +12,33 @@
 namespace sgpp {
 namespace base {
 
-void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_values) {
-  HierarchisationAnovaBoundary func(storage);
-  sweep<HierarchisationAnovaBoundary> s(func, storage);
-
-  // N D case
-  if (this->storage.getDimension() > 1) {
-    for (size_t i = 0; i < this->storage.getDimension(); i++) {
-      s.sweep1D_Boundary(node_values, node_values, i);
-    }
-  } else {  // 1 D case
-    s.sweep1D(node_values, node_values, 0);
-  }
-}
-
-void OperationHierarchisationAnovaBoundary::doDehierarchisation(DataVector& alpha) {
-  DehierarchisationAnovaBoundary func(storage);
-  sweep<DehierarchisationAnovaBoundary> s(func, storage);
-
-  // N D case
-  if (this->storage.getDimension() > 1) {
-    for (size_t i = 0; i < this->storage.getDimension(); i++) {
-      s.sweep1D_Boundary(alpha, alpha, i);
-    }
-  } else {  // 1 D case
-    s.sweep1D(alpha, alpha, 0);
-  }
-}
+//void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_values) {
+//  HierarchisationAnovaBoundary func(storage);
+//  sweep<HierarchisationAnovaBoundary> s(func, storage);
+//
+//  // N D case
+//  if (this->storage.getDimension() > 1) {
+//    for (size_t i = 0; i < this->storage.getDimension(); i++) {
+//      s.sweep1D_Boundary(node_values, node_values, i);
+//    }
+//  } else {  // 1 D case
+//    s.sweep1D(node_values, node_values, 0);
+//  }
+//}
+//
+//void OperationHierarchisationAnovaBoundary::doDehierarchisation(DataVector& alpha) {
+//  DehierarchisationAnovaBoundary func(storage);
+//  sweep<DehierarchisationAnovaBoundary> s(func, storage);
+//
+//  // N D case
+//  if (this->storage.getDimension() > 1) {
+//    for (size_t i = 0; i < this->storage.getDimension(); i++) {
+//      s.sweep1D_Boundary(alpha, alpha, i);
+//    }
+//  } else {  // 1 D case
+//    s.sweep1D(alpha, alpha, 0);
+//  }
+//}
 
 }  // namespace base
 }  // namespace sgpp

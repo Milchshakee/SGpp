@@ -12,16 +12,10 @@
 namespace sgpp {
 namespace base {
 
-  class AnovaBoundaryGridGenerator;
-
 /**
  * grid with linear base functions with boundaries, pentagon cut
  */
 class AnovaBoundaryGrid : public Grid {
-
- protected:
-  explicit AnovaBoundaryGrid(std::istream& istr);
-
  public:
 
   /**

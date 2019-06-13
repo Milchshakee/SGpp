@@ -166,6 +166,8 @@ Grid* Grid::createGrid(RegularGridConfiguration gridConfig) {
     return base::Grid::unserialize(content);
   } else {
     switch (gridConfig.type_) {
+      case GridType::AnovaBoundary:
+        return Grid::createAnovaBoundaryGrid(gridConfig.dim_, std::vector<std::vector<bool>>());
       case GridType::Linear:
         return Grid::createLinearGrid(gridConfig.dim_);
       case GridType::LinearStretched:
@@ -255,7 +257,7 @@ Grid* Grid::createGridOfEquivalentType(size_t numDims) {
       newGrid = Grid::createLinearBoundaryGrid(numDims);
       break;
     case GridType::AnovaBoundary:
-      newGrid = Grid::createLinearAnovaBoundaryGrid(numDims);
+      newGrid = Grid::createAnovaBoundaryGrid(numDims, std::vector<std::vector<bool>>());
       break;
     case GridType::LinearBoundary:
       boundaryLevel =

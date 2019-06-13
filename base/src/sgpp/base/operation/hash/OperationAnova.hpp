@@ -3,14 +3,13 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef OPERATIONVARIANCE_HPP
-#define OPERATIONVARIANCE_HPP
+#ifndef OPERATIONANOVA_HPP
+#define OPERATIONANOVA_HPP
 
 #include <sgpp/base/datatypes/DataVector.hpp>
 #include <sgpp/base/grid/Grid.hpp>
 
 #include <sgpp/globaldef.hpp>
-#include "sgpp/datadriven/application/learnersgdeonoffparallel/AuxiliaryStructures.hpp"
 #include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 

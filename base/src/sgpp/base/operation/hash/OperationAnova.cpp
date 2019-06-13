@@ -1,7 +1,6 @@
 #include <sgpp/base/operation/hash/OperationAnova.hpp>
 #include "common/basis/AnovaBoundaryBasis.hpp"
 #include "sgpp/base/grid/GridStorage.hpp"
-#include "sgpp/datadriven/functors/classification/GridPointBasedRefinementFunctor.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 
 double getL2NormOfBasis(const sgpp::base::OperationAnova::LevelVector& levels) {

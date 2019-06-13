@@ -8,6 +8,14 @@ VectorDistribution::VectorDistribution(size_t size, size_t dimensions)
 
 const std::vector<DataVector>& VectorDistribution::getVectors() const { return vectors; }
 
+DataMatrix VectorDistribution::getAsDataMatrix() const
+{
+  DataMatrix data(getSize(), getDimensions());
+  for (size_t i = 0; i < size; i++) {
+    data.setColumn(i, vectors[i]);
+  }
+  return data;
+}
 
 size_t VectorDistribution::getSize() const { return size; }
 
@@ -20,6 +28,15 @@ GridDistribution::GridDistribution(sgpp::base::Grid& grid) : VectorDistribution(
     for (size_t j = 0; j < grid.getDimension(); j++) {
       vectors[i][j] = gp.getStandardCoordinate(j);
     }
+  }
+}
+
+
+FixedDistribution::FixedDistribution(const DataMatrix& data)
+    : VectorDistribution(data.getNcols(), data.getNrows())
+{
+  for (size_t i = 0; i < size; i++) {
+    data.getColumn(i, vectors[i]);
   }
 }
 

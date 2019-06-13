@@ -16,13 +16,15 @@ namespace base {
   struct PcaInfo {
   sgpp::base::DataMatrix eigenVectors;
   sgpp::base::DataVector eigenValues;
-};
+  DataVector varianceShares;
+  };
 
   struct PcaResult
   {
-  PcaResult(const DataMatrix& m, size_t n);
+  PcaResult(const DataMatrix& m, size_t n, double coveredVariance);
 
   DataMatrix transformation;
+  double coveredVariance;
 
   FixedDistribution apply(const VectorDistribution& input);
   };
@@ -38,7 +40,7 @@ namespace base {
     PcaResult cut(const VectorDistribution& input, const PcaInfo& info) override;
 
     private:
-    double variancePercentage;
+    double varianceShare;
   };
 
   class PcaFixedCutter : public PcaCutter

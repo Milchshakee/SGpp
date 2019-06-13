@@ -5,12 +5,12 @@ sgpp::base::AsQuadReducer::AsQuadReducer(std::shared_ptr<Grid>& grid,
                                          std::shared_ptr<OperationQuadrature>& quad)
     : grid(grid), quad(quad) {}
 
-void sgpp::base::AsQuadReducer::evaluate(Sample<DataVector>& input, AsInfo& out) {
+sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(PointSample<DataVector>& input) {
 
-  std::vector<Sample<double>> samples(input.getDimensions());
+  std::vector<PointSample<double>> samples(input.getDimensions());
     for (size_t i = 0; i < input.getDimensions(); ++i) {
-    std::function<double(DataVector&)> f = [i](DataVector& v) { return v[i]; };
-    Sample<double> grad = Sample<double>(input.getValues(), f);
+    std::function<double(const DataVector&)> f = [i](const DataVector& v) { return v[i]; };
+      PointSample<double> grad(input.getValues(), f);
     samples[i] = grad;
       }
 
@@ -18,12 +18,12 @@ void sgpp::base::AsQuadReducer::evaluate(Sample<DataVector>& input, AsInfo& out)
   for (size_t i = 0; i < input.getDimensions(); ++i) {
         for (size_t j = 0; j < input.getDimensions(); ++j) {
       size_t counter = 0;
-          std::function<double(DataVector&)> f = [&counter, i, j, samples](DataVector& v) {
+          std::function<double(const DataVector&)> f = [&counter, i, j, samples](const DataVector& v) {
             double val = samples[i].getValues()[counter] * samples[j].getValues()[counter];
         counter++;
         return val;
           };
-      Sample<double> alphas = SampleHelper::sampleGrid<double>(*grid, f);
+      GridSample<double> alphas(grid, f);
           DataVector v(alphas.getValues());
           double val = quad->doQuadrature(v);
           m.set(i, j, val);
@@ -31,9 +31,10 @@ void sgpp::base::AsQuadReducer::evaluate(Sample<DataVector>& input, AsInfo& out)
     }
     }
 
-  
-  out.eigenVectors = sgpp::base::DataMatrix(input.getDimensions(), input.getDimensions());
-    out.eigenValues = sgpp::base::DataVector(input.getDimensions());
-    Tools::svd(m, out.eigenVectors, out.eigenValues);
+  AsInfo i;
+  i.eigenVectors = sgpp::base::DataMatrix(input.getDimensions(), input.getDimensions());
+    i.eigenValues = sgpp::base::DataVector(input.getDimensions());
+    Tools::svd(m, i.eigenVectors, i.eigenValues);
+    return i;
 
 }

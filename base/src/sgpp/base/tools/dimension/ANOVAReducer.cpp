@@ -1,13 +1,11 @@
 #include <iostream>
 #include "AnovaReducer.hpp"
 #include "sgpp/base/grid/Grid.hpp"
-#include "sgpp/base/operation/hash/OperationHierarchisation.hpp"
-#include <sgpp/base/operation/BaseOpFactory.hpp>
+#include "sgpp/base/operation/BaseOpFactory.hpp"
 
 
 sgpp::base::TransformationFunction sgpp::base::AnovaResult::createTransformationFunction() {
   DataMatrix mat = DataMatrix();
-  size_t active = 0;
   for (size_t d = 0; d < activeDimensions.size(); d++) {
     if (activeDimensions[d]) {
       DataVector v(activeDimensions.size(), 0);
@@ -44,9 +42,9 @@ sgpp::base::GridSample<double> sgpp::base::AnovaResult::createReducedGridSample(
   }
 
   std::vector<double> newValues(newGrid->getSize());
-  std::function<double(DataVector&)> f = [collapsingPoints](DataVector& v){
+  std::function<double(const DataVector&)> f = [collapsingPoints](const DataVector& v){
     auto t = collapsingPoints.at(v);
-    return std::get<1>(t) / std::get<0>(t);
+    return static_cast<double>(std::get<1>(t)) / std::get<0>(t);
   };
   GridSample<double> s(newGrid, f);
   return std::move(s);
@@ -80,10 +78,13 @@ sgpp::base::AnovaResult sgpp::base::AnovaVarianceCutter::cut(
   }
 
 sgpp::base::AnovaInfo sgpp::base::AnovaReducer::evaluate(GridSample<double>& input) {
-  DataVector values = SampleHelper::doHierarchisation(input);
+    DataVector v(input.getValues());
+    std::unique_ptr<sgpp::base::OperationHierarchisation>(
+        sgpp::op_factory::createOperationHierarchisation(const_cast<Grid&>(input.getGrid())))
+        ->doHierarchisation(v);
   std::unique_ptr<sgpp::base::OperationAnova> op(sgpp::op_factory::createOperationAnova(const_cast<Grid&>(input.getGrid())));  
     sgpp::base::Sample<sgpp::base::AnovaComponent, double> variances =
-      op->calculateAnovaOrderVariances(values);
+      op->calculateAnovaOrderVariances(v);
 
   return AnovaInfo{variances};
 }

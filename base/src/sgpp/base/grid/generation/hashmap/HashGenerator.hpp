@@ -153,12 +153,12 @@ class HashGenerator {
    * @param level maximum level of the sparse grid (non-negative value)
    */
   void regularWithAnovaBoundaries(GridStorage& storage, level_t level,
-                                  AnovaBoundaryGrid::ComponentVector& components) {
+                                  AnovaComponentVector& components) {
     if (storage.getSize() > 0) {
       throw generation_exception("storage not empty");
     }
 
-    this->regular_anova_boundary_truncated_iter(storage, level);
+    this->regular_anova_boundary_truncated_iter(storage, level, components);
   }
 
   /**
@@ -523,7 +523,7 @@ class HashGenerator {
   }
 
   void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n,
-                                             AnovaBoundaryGrid::ComponentVector& components) {
+                                             AnovaComponentVector& components) {
     const size_t dim = storage.getDimension();
 
     if (n == 0) {

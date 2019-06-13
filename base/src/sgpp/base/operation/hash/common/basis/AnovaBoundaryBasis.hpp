@@ -44,7 +44,7 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
     } else if (l == 1) {
       return x;
     } else {
-      return 1. / static_cast<double>(static_cast<IT>(1) << (level - 1));
+      return 1. / static_cast<double>(static_cast<IT>(1) << (l - 1));
     }
     return std::max(
         1.0 - std::abs(static_cast<double>(static_cast<IT>(1) << l) * x - static_cast<double>(i)),

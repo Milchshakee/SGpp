@@ -4,8 +4,7 @@
 namespace sgpp {
 namespace base {
 
-Sample<DataMatrix> AsMcReducer::fromGradientSample(
-    const Sample<DataVector>& gradients) {
+PointSample<DataMatrix> AsMcReducer::fromGradientSample(const PointSample<DataVector>& gradients) {
   std::vector<DataMatrix> out(gradients.getSize(),
                               DataMatrix(gradients.getDimensions(), gradients.getDimensions()));
   for (size_t i = 0; i < gradients.getSize(); ++i) {
@@ -16,11 +15,11 @@ Sample<DataMatrix> AsMcReducer::fromGradientSample(
       out[i].setColumn(d, col);
     }
   }
-  return Sample<DataMatrix>(gradients.getKeys(), out);
+  return PointSample<DataMatrix>(gradients.getKeys(), out);
 }
 
 
-Sample<DataMatrix> AsMcReducer::fromFiniteDifferences(optimization::ScalarFunction& func,
+PointSample<DataMatrix> AsMcReducer::fromFiniteDifferences(optimization::ScalarFunction& func,
   VectorDistribution& v) {
 }
 
@@ -28,7 +27,23 @@ Sample<DataMatrix> AsMcReducer::fromFiniteDifferences(optimization::ScalarFuncti
 AsMcIntervalCutter::AsMcIntervalCutter(size_t bootstrapSamples) : bootstrapSamples(bootstrapSamples) {
 }
 
-AsResult AsMcIntervalCutter::cut(const Sample<DataMatrix>& input, const AsInfo& info) {
+  
+AsInfo AsMcReducer::evaluate(PointSample<DataMatrix>& input) {
+  size_t dimensions = input.getDimensions();
+  sgpp::base::DataMatrix matrix(dimensions, dimensions);
+  for (size_t i = 0; i < input.getSize(); ++i) {
+    matrix.add(input.getValues()[i]);
+  }
+  matrix.mult(1.0 / static_cast<double>(input.getSize()));
+
+  AsInfo i;
+  i.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
+  i.eigenValues = sgpp::base::DataVector(dimensions);
+  Tools::svd(matrix, i.eigenVectors, i.eigenValues);
+  return i;
+}
+
+AsResult AsMcIntervalCutter::cut(const PointSample<DataMatrix>& input, const AsInfo& info) {
   size_t dimensions = info.eigenValues.size();
   std::mt19937_64 prng;
   std::uniform_int_distribution<size_t> dist(0, input.getSize() - 1);
@@ -71,19 +86,6 @@ AsResult AsMcIntervalCutter::cut(const Sample<DataMatrix>& input, const AsInfo& 
     }
   }
   return AsResult(info.eigenVectors, cutoff);
-}
-
-void AsMcReducer::evaluate(Sample<DataMatrix>& input, AsInfo& out) {
-  size_t dimensions = input.getDimensions();
-  sgpp::base::DataMatrix matrix(dimensions, dimensions);
-  for (size_t i = 0; i < input.getSize(); ++i) {
-    matrix.add(input.getValues()[i]);
-  }
-  matrix.mult(1.0 / static_cast<double>(input.getSize()));
-
-  out.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
-  out.eigenValues = sgpp::base::DataVector(dimensions);
-  Tools::svd(matrix, out.eigenVectors, out.eigenValues);
 }
 
 }  // namespace base
