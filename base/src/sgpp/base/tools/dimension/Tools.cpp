@@ -8,13 +8,16 @@ sgpp::base::DataVector Tools::fromEigen(Eigen::VectorXd& e) {
 }
 
 sgpp::base::DataMatrix Tools::fromEigen(Eigen::MatrixXd& e) {
-  sgpp::base::DataMatrix m(e.data(), e.rows(), e.cols());
+  sgpp::base::DataMatrix m(e.data(), e.cols(), e.rows());
+  m.transpose();
   return std::move(m);
 }
 
 Eigen::MatrixXd Tools::toEigen(sgpp::base::DataMatrix& matrix) {
-  Eigen::Map<Eigen::MatrixXd> m(matrix.getPointer(), matrix.getNrows(), matrix.getNcols());
-  return std::move(m.matrix());
+  Eigen::Map<Eigen::MatrixXd> m(matrix.getPointer(), matrix.getNcols(), matrix.getNrows());
+  Eigen::MatrixXd mat = m.matrix();
+  mat.transposeInPlace();
+  return std::move(mat);
 }
 
 Eigen::VectorXd Tools::toEigen(const sgpp::base::DataVector& vector) {

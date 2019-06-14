@@ -4,7 +4,7 @@
 
 sgpp::base::PcaResult::PcaResult(const DataMatrix& m, size_t n, double coveredVariance) : coveredVariance(coveredVariance) {
   transformation = m;
-  transformation.resizeRowsCols(m.getNrows(), n);
+  transformation.resizeRowsCols(n, m.getNcols());
 }
 
 
@@ -36,14 +36,14 @@ sgpp::base::PcaResult sgpp::base::PcaVarianceCutter::cut(const VectorDistributio
 }
 
 sgpp::base::FixedDistribution sgpp::base::PcaResult::apply(const VectorDistribution& input) {
-  std::vector<DataVector> newDist(input.getSize());
+  std::vector<DataVector> newDist(input.getSize(), DataVector(transformation.getNrows()));
   for (size_t c = 0; c < input.getSize(); c++) {
     newDist[c] = Tools::mult(transformation, input.getVectors()[c]);
   }
-  return FixedDistribution(input.getSize(), input.getDimensions(), newDist);
+  return FixedDistribution(input.getSize(), transformation.getNrows(), newDist);
 }
 
-sgpp::base::DataMatrix&& centerMean(sgpp::base::VectorDistribution& input) {
+sgpp::base::DataMatrix centerMean(sgpp::base::VectorDistribution& input) {
   std::vector<double> means(input.getDimensions());
   for (size_t d = 0; d < input.getDimensions(); ++d) {
     double mean = 0;
@@ -54,11 +54,10 @@ sgpp::base::DataMatrix&& centerMean(sgpp::base::VectorDistribution& input) {
     means[d] = mean;
   }
 
-  sgpp::base::DataMatrix newVectors(input.getDimensions(), input.getSize());
+  sgpp::base::DataMatrix newVectors = input.getAsDataMatrix();
   for (size_t c = 0; c < input.getSize(); c++) {
-    newVectors.setColumn(c, input.getVectors()[c]);
     for (size_t d = 0; d < input.getDimensions(); ++d) {
-      newVectors.set(d, c, newVectors.get(d, c) - means[d]);
+      newVectors.set(c, d, newVectors.get(c, d) - means[d]);
     }
   }
   return std::move(newVectors);
@@ -86,6 +85,10 @@ sgpp::base::PcaInfo sgpp::base::PcaReducer::evaluate(VectorDistribution& input) 
     s = x.transpose() * (x * r);
     e = r.transpose() * s;
     r = s;
+    for (size_t c = 0; c < dimension; c++) {
+      r.col(c).normalize();
+    }
+
   }
 
   sgpp::base::DataMatrix eigenVectorMatrix = Tools::fromEigen(r);

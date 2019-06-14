@@ -12,7 +12,7 @@ DataMatrix VectorDistribution::getAsDataMatrix() const
 {
   DataMatrix data(getSize(), getDimensions());
   for (size_t i = 0; i < size; i++) {
-    data.setColumn(i, vectors[i]);
+    data.setRow(i, vectors[i]);
   }
   return data;
 }
@@ -33,10 +33,9 @@ GridDistribution::GridDistribution(sgpp::base::Grid& grid) : VectorDistribution(
 
 
 FixedDistribution::FixedDistribution(const DataMatrix& data)
-    : VectorDistribution(data.getNcols(), data.getNrows())
-{
+    : VectorDistribution(data.getNrows(), data.getNcols()) {
   for (size_t i = 0; i < size; i++) {
-    data.getColumn(i, vectors[i]);
+    data.getRow(i, vectors[i]);
   }
 }
 
@@ -80,7 +79,7 @@ void RandomOrientationDistribution::generate() {
     for (size_t dim = 0; dim < dimensions; ++dim) {
       v[dim] = distribution(prng);
     }
-    v.mult(v.l2Norm() / length);
+    v.mult(length / v.l2Norm());
   }
 }
 }  // namespace base
