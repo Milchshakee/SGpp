@@ -17,7 +17,7 @@ sgpp::base::PcaResult sgpp::base::PcaFixedCutter::cut(const VectorDistribution& 
   for (size_t d = 0; d < n; ++d) {
     sum += info.varianceShares[d];
   }
-  return PcaResult(info.eigenVectors, n, sum);
+  return PcaResult(info.principalAxes, n, sum);
 }
 
 sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double varianceShare) : varianceShare(varianceShare) {
@@ -29,10 +29,10 @@ sgpp::base::PcaResult sgpp::base::PcaVarianceCutter::cut(const VectorDistributio
   for (size_t d = 0; d < info.eigenValues.size(); ++d) {
     sum += info.varianceShares[d];
     if (sum >= varianceShare) {
-      return PcaResult(info.eigenVectors, d + 1, sum);
+      return PcaResult(info.principalAxes, d + 1, sum);
     }
   }
-  return PcaResult(info.eigenVectors, info.eigenValues.size(), sum);
+  return PcaResult(info.principalAxes, info.eigenValues.size(), sum);
 }
 
 sgpp::base::FixedDistribution sgpp::base::PcaResult::apply(const VectorDistribution& input) {
@@ -64,20 +64,29 @@ sgpp::base::DataMatrix centerMean(sgpp::base::VectorDistribution& input) {
 }
 
 
-sgpp::base::PcaReducer::PcaReducer(size_t iterations, uint64_t seed) : iterations(iterations), seed(seed) {
+sgpp::base::PcaInfo sgpp::base::PcaCovarianceSolver::solve(DataMatrix& matrix) {
+  Eigen::MatrixXd b = Tools::toEigen(matrix);
+  Eigen::MatrixXd c = (b.transpose() * b) * (1 / (matrix.getNcols() - 1));
+  PcaInfo i;
+  i.principalAxes = sgpp::base::DataMatrix(matrix.getNcols(), matrix.getNcols());
+  i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
+  Tools::svd(Tools::fromEigen(c), i.principalAxes, i.eigenValues);
+  return i;
 }
 
-sgpp::base::PcaInfo sgpp::base::PcaReducer::evaluate(VectorDistribution& input) {
-  size_t dimension = input.getDimensions();
-  DataMatrix dist = centerMean(input);
 
+sgpp::base::PcaIterativeSolver::PcaIterativeSolver(size_t iterations, uint64_t seed) : iterations(iterations), seed(seed) {
+}
+
+sgpp::base::PcaInfo sgpp::base::PcaIterativeSolver::solve(DataMatrix& matrix) {
+  size_t dimension = matrix.getNcols();
   sgpp::base::DataMatrix random(dimension, dimension);
-  RandomOrientationDistribution orientations(input.getDimensions(), seed, input.getDimensions(), 1);
+  RandomOrientationDistribution orientations(dimension, seed, dimension, 1);
   for (size_t d = 0; d < dimension; ++d) {
     random.setColumn(d, orientations.getVectors()[d]);
   }
 
-  Eigen::MatrixXd x = Tools::toEigen(dist);
+  Eigen::MatrixXd x = Tools::toEigen(matrix);
   Eigen::MatrixXd r = Tools::toEigen(random);
   Eigen::MatrixXd s(dimension, dimension);
   Eigen::MatrixXd e(dimension, dimension);
@@ -88,24 +97,41 @@ sgpp::base::PcaInfo sgpp::base::PcaReducer::evaluate(VectorDistribution& input) 
     for (size_t c = 0; c < dimension; c++) {
       r.col(c).normalize();
     }
-
   }
 
-  sgpp::base::DataMatrix eigenVectorMatrix = Tools::fromEigen(r);
-  sgpp::base::DataVector eigenValues(dimension);
+  
+  PcaInfo i;
+  i.principalAxes = Tools::fromEigen(r);
+  i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
   for (size_t c = 0; c < dimension; c++) {
-    eigenValues.set(c, e(c, c));
+    i.eigenValues.set(c, e(c, c));
   }
 
-  DataVector variances(eigenValues.size());
+  return i;
+}
+
+sgpp::base::PcaReducer::PcaReducer(std::shared_ptr<PcaSolver> solver) : solver(solver) {
+}
+
+sgpp::base::PcaInfo sgpp::base::PcaReducer::evaluate(VectorDistribution& input) {
+  size_t dimension = input.getDimensions();
+  DataMatrix dist = centerMean(input);
+  PcaInfo i = solver->solve(dist);
   double sum = 0;
-    for (size_t d = 0; d < eigenValues.size(); ++d) {
-    sum += eigenValues[d];
+  for (size_t d = 0; d < i.eigenValues.size(); ++d) {
+    sum += i.eigenValues[d];
   }
 
-      for (size_t d = 0; d < eigenValues.size(); ++d) {
-    variances[d] = eigenValues[d] / sum;
+  i.varianceShares = DataVector(dimension);
+  i.singularValues = DataVector(dimension);
+  i.loadings = DataMatrix(dimension, dimension);
+  for (size_t d = 0; d < i.eigenValues.size(); ++d) {
+    i.varianceShares[d] = i.eigenValues[d] / sum;
+    i.singularValues[d] = std::sqrt(i.eigenValues[d] * (input.getSize() - 1));
+    DataVector v(dimension);
+    i.principalAxes.getColumn(d, v);
+    v.mult(std::sqrt(i.eigenValues[d]));
+    i.loadings.setColumn(d, v);
   }
-
-  return {eigenVectorMatrix, eigenValues, variances};
+  return i;
 }

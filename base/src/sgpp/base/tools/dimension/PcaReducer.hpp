@@ -14,8 +14,10 @@ namespace sgpp {
 namespace base {
 
   struct PcaInfo {
-  sgpp::base::DataMatrix eigenVectors;
-  sgpp::base::DataVector eigenValues;
+  sgpp::base::DataMatrix principalAxes;
+  sgpp::base::DataMatrix loadings;
+    sgpp::base::DataVector eigenValues;
+    sgpp::base::DataVector singularValues;
   DataVector varianceShares;
   };
 
@@ -54,15 +56,36 @@ namespace base {
    size_t n;
   };
 
+  class PcaSolver
+  {
+  public:
+    virtual PcaInfo solve(DataMatrix& matrix) = 0;
+  };
+
+  class PcaCovarianceSolver : public PcaSolver {
+   public:
+    PcaInfo solve(DataMatrix& matrix) override;
+  };
+
+  class PcaIterativeSolver : public PcaSolver {
+   public:
+    PcaIterativeSolver(size_t iterations, uint64_t seed);
+
+    PcaInfo solve(DataMatrix& matrix) override;
+
+  private:
+    size_t iterations;
+   uint64_t seed;
+  };
+
 class PcaReducer : public Reducer<VectorDistribution, PcaInfo, PcaResult> {
  public:
-  PcaReducer(size_t iterations, uint64_t seed);
+  PcaReducer(std::shared_ptr<PcaSolver> solver);
 
   PcaInfo evaluate(VectorDistribution& input) override;
 
  private:
-  size_t iterations;
-  uint64_t seed;
+  std::shared_ptr<PcaSolver> solver;
 };
 
 }  // namespace base
