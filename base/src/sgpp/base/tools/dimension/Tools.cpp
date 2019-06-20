@@ -40,10 +40,6 @@ sgpp::base::DataVector Tools::mult(sgpp::base::DataMatrix& m, const sgpp::base::
   return fromEigen(r);
 }
 
-sgpp::base::DataMatrix Tools::centerMean(sgpp::base::DataMatrix& matrix) {
-}
-
-
 void Tools::svd(const sgpp::base::DataMatrix& input, sgpp::base::DataMatrix& eigenVectorMatrix,
   sgpp::base::DataVector& eigenValues) {
   size_t dimensions = input.getNcols();

@@ -65,6 +65,6 @@ int main(int argc, char* argv[]) {
   // In this step, the function input is transformed using the transformation matrix from the result.
   auto reducedFunc = result.apply(func);
 
-  std::cout << reducedFunc->eval(sgpp::base::DataVector(0.4)) << std::endl;
+  std::cout << reducedFunc->eval(sgpp::base::DataVector(1, 0.4)) << std::endl;
   return 0;
 }
