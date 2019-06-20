@@ -28,11 +28,20 @@ struct AnovaResult
 
 };
 
-    class AnovaCutter : public sgpp::base::Cutter<AnovaInfo, GridSample<double>, AnovaResult> {};
+    class AnovaCutter : public sgpp::base::Cutter<GridSample<double>, AnovaInfo, AnovaResult> {};
 
+    class AnovaFixedCutter : public AnovaCutter {
+     public:
+      AnovaFixedCutter(size_t n);
+
+      AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
+
+     private:
+      size_t n;
+    };
   
   class AnovaVarianceCutter
-        : public sgpp::base::Cutter<GridSample<double>, AnovaInfo, AnovaResult> {
+        : public AnovaCutter {
  public:
     AnovaVarianceCutter(double maxVariance);
 

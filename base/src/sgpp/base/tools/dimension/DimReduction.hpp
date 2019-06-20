@@ -32,16 +32,6 @@ class Cutter {
 };
 
 template <class INPUT, class INFO, class OUTPUT>
-class FixedCutter : public Cutter<INPUT, INFO, OUTPUT> {
- public:
-  FixedCutter(size_t n) : n(n) {}
-
-
- private:
-  size_t n;
-};
-
-template <class INPUT, class INFO, class OUTPUT>
 class Reducer {
  public:
   Reducer() = default;

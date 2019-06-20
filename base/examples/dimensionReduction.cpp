@@ -5,6 +5,9 @@
 #include "sgpp/base/tools/dimension/AsMcReducer.hpp"
 #include "sgpp/optimization/function/vector/WrapperVectorFunction.hpp"
 #include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
+#include "sgpp/base/operation/hash/OperationQuadrature.hpp"
+#include "sgpp/base/tools/dimension/AsQuadReducer.hpp"
+#include "sgpp/base/operation/BaseOpFactory.hpp"
 
 double f(const sgpp::base::DataVector& v)
 { return v[0]; }
@@ -71,5 +74,28 @@ int main() {
 //  auto reducedFunc = result->apply(func);
 //
 //  std::cout << reducedFunc->eval(sgpp::base::DataVector(1, 0.4)) << std::endl;
+  auto func = sgpp::optimization::WrapperScalarFunction(2, f);
+    auto funcGradient = sgpp::optimization::WrapperVectorFunction(2, 2, f_gradient);
+    size_t dim = 2;
+    std::shared_ptr<sgpp::base::Grid> grid(sgpp::base::Grid::createBsplineGrid(dim, 2));
+    grid->getGenerator().regular(4);
+  
+    sgpp::base::GridSample<sgpp::base::DataVector> sample =
+        sgpp::base::SampleHelper::sampleGrid(grid, funcGradient);
+
+  std::shared_ptr<sgpp::base::OperationQuadrature> op(
+        sgpp::op_factory::createOperationQuadrature(*grid));
+
+   auto reducer = sgpp::base::AsQuadReducer(grid, op);
+
+  sgpp::base::AsInfo i = reducer.evaluate(sample);
+    
+  auto cutter = sgpp::base::AsQuadEigenValueCutter(0.1);
+   // auto cutter = sgpp::base::AsQuadFixedCutter(1);
+  sgpp::base::AsResult result = cutter.cut(sample, i);
+  auto reducedFunc = result.apply(func);
+
+  
+    std::cout << reducedFunc->eval(sgpp::base::DataVector(1, 0.4)) << std::endl;
   return 0;
 }

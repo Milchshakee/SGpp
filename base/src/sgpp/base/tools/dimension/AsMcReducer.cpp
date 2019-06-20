@@ -23,6 +23,12 @@ PointSample<DataMatrix> AsMcReducer::fromFiniteDifferences(optimization::ScalarF
   VectorDistribution& v) {
 }
 
+AsMcFixedCutter::AsMcFixedCutter(size_t n) : n(n) {
+}
+
+AsResult AsMcFixedCutter::cut(const PointSample<DataMatrix>& input, const AsInfo& info) {
+  return AsResult(info.eigenVectors, n);
+}
 
 AsMcIntervalCutter::AsMcIntervalCutter(size_t bootstrapSamples) : bootstrapSamples(bootstrapSamples) {
 }

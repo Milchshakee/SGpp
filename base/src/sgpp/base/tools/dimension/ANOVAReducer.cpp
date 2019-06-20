@@ -4,6 +4,13 @@
 #include "sgpp/base/operation/BaseOpFactory.hpp"
 
 
+sgpp::base::AnovaFixedCutter::AnovaFixedCutter(size_t n) : n(n) {
+}
+
+sgpp::base::AnovaResult sgpp::base::AnovaFixedCutter::cut(const GridSample<double>& input,
+  const AnovaInfo& info) {
+}
+
 sgpp::base::TransformationFunction sgpp::base::AnovaResult::createTransformationFunction() {
   DataMatrix mat = DataMatrix();
   for (size_t d = 0; d < activeDimensions.size(); d++) {

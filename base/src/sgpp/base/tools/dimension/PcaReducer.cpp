@@ -20,7 +20,7 @@ sgpp::base::PcaResult sgpp::base::PcaFixedCutter::cut(const VectorDistribution& 
   return PcaResult(info.principalAxes, n, sum);
 }
 
-sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double varianceShare) : varianceShare(varianceShare) {
+sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double varianceShare) : minVarianceShare(varianceShare) {
 }
 
 sgpp::base::PcaResult sgpp::base::PcaVarianceCutter::cut(const VectorDistribution& input,
@@ -28,7 +28,7 @@ sgpp::base::PcaResult sgpp::base::PcaVarianceCutter::cut(const VectorDistributio
   double sum = 0;
   for (size_t d = 0; d < info.eigenValues.size(); ++d) {
     sum += info.varianceShares[d];
-    if (sum >= varianceShare) {
+    if (sum >= minVarianceShare) {
       return PcaResult(info.principalAxes, d + 1, sum);
     }
   }

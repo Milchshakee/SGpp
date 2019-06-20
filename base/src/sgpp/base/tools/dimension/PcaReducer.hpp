@@ -37,12 +37,12 @@ namespace base {
 
     class PcaVarianceCutter : public PcaCutter {
    public:
-      PcaVarianceCutter(double variancePercentage);
+      PcaVarianceCutter(double minVarianceShare);
 
     PcaResult cut(const VectorDistribution& input, const PcaInfo& info) override;
 
     private:
-    double varianceShare;
+    double minVarianceShare;
   };
 
   class PcaFixedCutter : public PcaCutter

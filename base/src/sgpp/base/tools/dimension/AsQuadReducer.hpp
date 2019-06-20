@@ -3,8 +3,8 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef ACTIVESUBSPACEREDUCER_HPP
-#define ACTIVESUBSPACEREDUCER_HPP
+#ifndef ASQUADREDUCER_HPP
+#define ASQUADREDUCER_HPP
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
 #include <sgpp/optimization/function/vector/VectorFunction.hpp>
@@ -16,16 +16,27 @@
 namespace sgpp {
 namespace base {
 
-class AsQuadReducer : public AsReducer<PointSample<DataVector>> {
+    class AsQuadFixedCutter : public Cutter<GridSample<DataVector>, AsInfo, AsResult>
+    {
+    public:
+  AsQuadFixedCutter(size_t n);
+
+      AsResult cut(const GridSample<DataVector>& input, const AsInfo& info) override;
+
+    private:
+      size_t n;
+    };
+
+  class AsQuadEigenValueCutter : public AsEigenValueCutter<GridSample<DataVector>>
+  {
+  public:
+    AsQuadEigenValueCutter(double minEigenValue);
+  };
+
+class AsQuadReducer : public AsReducer<GridSample<DataVector>> {
  public:
+  AsInfo evaluate(GridSample<DataVector>& input) override;
 
-  AsQuadReducer(std::shared_ptr<Grid>& grid, std::shared_ptr<OperationQuadrature>& quad);
-
-  AsInfo evaluate(PointSample<DataVector>& input) override;
-
-private:
-  std::shared_ptr<Grid> grid;
- std::shared_ptr<OperationQuadrature> quad;
 };
 
 }  // namespace base

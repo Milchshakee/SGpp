@@ -3,8 +3,8 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef ACTIVESUBSPACEREDUCER_HPP
-#define ACTIVESUBSPACEREDUCER_HPP
+#ifndef ASMCREDUCER_HPP
+#define ASMCREDUCER_HPP
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
 #include <sgpp/optimization/function/vector/VectorFunction.hpp>
@@ -14,6 +14,16 @@
 
 namespace sgpp {
 namespace base {
+
+  class AsMcFixedCutter : public Cutter<PointSample<DataMatrix>, AsInfo, AsResult> {
+ public:
+  AsMcFixedCutter(size_t n);
+
+  AsResult cut(const PointSample<DataMatrix>& input, const AsInfo& info) override;
+
+ private:
+  size_t n;
+};
 
 class AsMcIntervalCutter: public Cutter<PointSample<DataMatrix>,AsInfo, AsResult> {
  public:
