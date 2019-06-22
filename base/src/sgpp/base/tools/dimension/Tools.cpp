@@ -1,32 +1,34 @@
+#include <eigen3/Eigen/Eigenvalues>
+#include <iostream>
 #include "Tools.hpp"
-#include <gsl/gsl_eigen.h>
 
-
-sgpp::base::DataVector Tools::fromEigen(Eigen::VectorXd& e) {
-  sgpp::base::DataVector v(e.data(), e.size());
+sgpp::base::DataVector Tools::fromEigen(const Eigen::VectorXd& e) {
+  Eigen::VectorXd copy = e;
+  sgpp::base::DataVector v(copy.data(), e.size());
   return std::move(v);
 }
 
-sgpp::base::DataMatrix Tools::fromEigen(Eigen::MatrixXd& e) {
+sgpp::base::DataMatrix Tools::fromEigen(const Eigen::MatrixXd& e) {
   sgpp::base::DataMatrix m(e.data(), e.cols(), e.rows());
   m.transpose();
   return std::move(m);
 }
 
-Eigen::MatrixXd Tools::toEigen(sgpp::base::DataMatrix& matrix) {
-  Eigen::Map<Eigen::MatrixXd> m(matrix.getPointer(), matrix.getNcols(), matrix.getNrows());
+Eigen::MatrixXd Tools::toEigen(const sgpp::base::DataMatrix& matrix) {
+  sgpp::base::DataMatrix copy = matrix;
+  Eigen::Map<Eigen::MatrixXd> m(copy.getPointer(), matrix.getNcols(), matrix.getNrows());
   Eigen::MatrixXd mat = m.matrix();
   mat.transposeInPlace();
   return std::move(mat);
 }
 
 Eigen::VectorXd Tools::toEigen(const sgpp::base::DataVector& vector) {
-  Eigen::Map<Eigen::VectorXd> v(const_cast<double*>(vector.data()), vector.size());
+  sgpp::base::DataVector copy = vector;
+  Eigen::Map<Eigen::VectorXd> v(copy.data(), vector.size());
   return std::move(v);
 }
 
-sgpp::base::DataMatrix Tools::mult(sgpp::base::DataMatrix& m1,
-                                   sgpp::base::DataMatrix& m2) {
+sgpp::base::DataMatrix Tools::mult(sgpp::base::DataMatrix& m1, sgpp::base::DataMatrix& m2) {
   Eigen::MatrixXd e1 = toEigen(m1);
   Eigen::MatrixXd e2 = toEigen(m2);
   Eigen::MatrixXd e3 = e1 * e2;
@@ -41,24 +43,19 @@ sgpp::base::DataVector Tools::mult(sgpp::base::DataMatrix& m, const sgpp::base::
 }
 
 void Tools::svd(const sgpp::base::DataMatrix& input, sgpp::base::DataMatrix& eigenVectorMatrix,
-  sgpp::base::DataVector& eigenValues) {
+                sgpp::base::DataVector& eigenValues) {
   size_t dimensions = input.getNcols();
   sgpp::base::DataMatrix copy = input;
-  gsl_matrix_view m = gsl_matrix_view_array(copy.getPointer(), dimensions, dimensions);
-  auto q = std::unique_ptr<gsl_matrix>{gsl_matrix_alloc(dimensions, dimensions)};
-  auto e = std::unique_ptr<gsl_vector>{gsl_vector_alloc(dimensions)};
-  gsl_eigen_symmv_workspace* ws = gsl_eigen_symmv_alloc(dimensions);
-  gsl_eigen_symmv(&m.matrix, e.get(), q.get(), ws);
-  gsl_eigen_symmv_free(ws);
+  Eigen::MatrixXd eigen = toEigen(copy);
 
-  for (size_t r = 0; r < dimensions; r++) {
-    for (size_t c = 0; c < dimensions; c++) {
-      eigenVectorMatrix.set(r, c, gsl_matrix_get(q.get(), r, c));
-    }
-  }
-  for (size_t c = 0; c < dimensions; c++) {
-    eigenValues.set(c, gsl_vector_get(e.get(), c));
-  }
+  Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(eigen);
+  if (eigensolver.info() != Eigen::Success) abort();
+  const Eigen::MatrixXcd& m = eigensolver.eigenvectors();
+  Eigen::MatrixXd realM = m.real();
+  eigenVectorMatrix = fromEigen(realM);
+  const Eigen::VectorXcd& v = eigensolver.eigenvalues();
+  Eigen::VectorXd realV = v.real();
+  eigenValues = fromEigen(realV);
 
   for (size_t c = 0; c < dimensions; c++) {
     size_t max = c;
@@ -79,4 +76,4 @@ void Tools::svd(const sgpp::base::DataMatrix& input, sgpp::base::DataMatrix& eig
     eigenValues[c] = eigenValues[max];
     eigenValues[max] = temp3;
   }
-  }
+}

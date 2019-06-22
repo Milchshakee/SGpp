@@ -10,9 +10,9 @@
 #include "sgpp/base/datatypes/DataMatrix.hpp"
 
 namespace Tools {
-sgpp::base::DataVector fromEigen(Eigen::VectorXd& e);
-sgpp::base::DataMatrix fromEigen(Eigen::MatrixXd& e);
-Eigen::MatrixXd toEigen(sgpp::base::DataMatrix& matrix);
+sgpp::base::DataVector fromEigen(const Eigen::VectorXd& e);
+sgpp::base::DataMatrix fromEigen(const Eigen::MatrixXd& e);
+Eigen::MatrixXd toEigen(const sgpp::base::DataMatrix& matrix);
 Eigen::VectorXd toEigen(const sgpp::base::DataVector& vector);
 sgpp::base::DataMatrix mult(sgpp::base::DataMatrix& m1, sgpp::base::DataMatrix& m2);
 sgpp::base::DataVector mult(sgpp::base::DataMatrix& m, const sgpp::base::DataVector& v);
