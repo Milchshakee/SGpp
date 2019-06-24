@@ -44,7 +44,7 @@ sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(GridSample<DataVector>& i
   AsInfo i;
   i.eigenVectors = sgpp::base::DataMatrix(input.getDimensions(), input.getDimensions());
     i.eigenValues = sgpp::base::DataVector(input.getDimensions());
-    Tools::svd(m, i.eigenVectors, i.eigenValues);
+    Tools::svd(Tools::toEigen(m), i.eigenVectors, i.eigenValues);
     return i;
 
 }

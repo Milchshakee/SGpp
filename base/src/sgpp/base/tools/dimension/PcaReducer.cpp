@@ -17,7 +17,7 @@ sgpp::base::PcaResult sgpp::base::PcaFixedCutter::cut(const VectorDistribution& 
   for (size_t d = 0; d < n; ++d) {
     sum += info.varianceShares[d];
   }
-  return PcaResult(info.principalAxes, n, sum);
+  return PcaResult(info.basis, n, sum);
 }
 
 sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double varianceShare) : minVarianceShare(varianceShare) {
@@ -26,13 +26,13 @@ sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double varianceShare) : minVari
 sgpp::base::PcaResult sgpp::base::PcaVarianceCutter::cut(const VectorDistribution& input,
                                                          const PcaInfo& info) {
   double sum = 0;
-  for (size_t d = 0; d < info.eigenValues.size(); ++d) {
+  for (size_t d = 0; d < info.activeComponentsCount; ++d) {
     sum += info.varianceShares[d];
     if (sum >= minVarianceShare) {
-      return PcaResult(info.principalAxes, d + 1, sum);
+      return PcaResult(info.basis, d + 1, sum);
     }
   }
-  return PcaResult(info.principalAxes, info.eigenValues.size(), sum);
+  return PcaResult(info.basis, info.activeComponentsCount, sum);
 }
 
 sgpp::base::FixedDistribution sgpp::base::PcaResult::apply(const VectorDistribution& input) {
@@ -66,11 +66,11 @@ sgpp::base::DataMatrix centerMean(sgpp::base::VectorDistribution& input) {
 
 sgpp::base::PcaInfo sgpp::base::PcaCovarianceSolver::solve(DataMatrix& matrix) {
   Eigen::MatrixXd b = Tools::toEigen(matrix);
-  Eigen::MatrixXd c = (b.transpose() * b) * (1 / (matrix.getNcols() - 1));
+  Eigen::MatrixXd c = (b.transpose() * b) * (1.0 / static_cast<double>(matrix.getNrows() - 1));
   PcaInfo i;
-  i.principalAxes = sgpp::base::DataMatrix(matrix.getNcols(), matrix.getNcols());
+  i.basis = sgpp::base::DataMatrix(matrix.getNcols(), matrix.getNcols());
   i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
-  Tools::svd(Tools::fromEigen(c), i.principalAxes, i.eigenValues);
+  Tools::svd(c, i.basis, i.eigenValues);
   return i;
 }
 
@@ -101,7 +101,7 @@ sgpp::base::PcaInfo sgpp::base::PcaIterativeSolver::solve(DataMatrix& matrix) {
 
   
   PcaInfo i;
-  i.principalAxes = Tools::fromEigen(r);
+  i.basis = Tools::fromEigen(r);
   i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
   for (size_t c = 0; c < dimension; c++) {
     i.eigenValues.set(c, e(c, c));
@@ -113,21 +113,33 @@ sgpp::base::PcaInfo sgpp::base::PcaIterativeSolver::solve(DataMatrix& matrix) {
 sgpp::base::PcaReducer::PcaReducer(std::shared_ptr<PcaSolver> solver) : solver(solver) {
 }
 
+const double MIN_EIGEN_VALUE = std::pow(10.0, -5.0);
+
 sgpp::base::PcaInfo sgpp::base::PcaReducer::evaluate(VectorDistribution& input) {
-  size_t dimension = input.getDimensions();
   DataMatrix dist = centerMean(input);
   PcaInfo i = solver->solve(dist);
+
+  size_t dimension = input.getDimensions();
   double sum = 0;
+  i.activeComponentsCount = dimension;
   for (size_t d = 0; d < i.eigenValues.size(); ++d) {
+    if (std::abs(i.eigenValues[d]) < MIN_EIGEN_VALUE) {
+      i.activeComponentsCount = d;
+      break;
+      }
     sum += i.eigenValues[d];
   }
 
-  i.varianceShares = DataVector(dimension);
-  i.singularValues = DataVector(dimension);
-  i.loadings = DataMatrix(dimension, dimension);
-  for (size_t d = 0; d < i.eigenValues.size(); ++d) {
-    i.varianceShares[d] = i.eigenValues[d] / sum;
-    i.singularValues[d] = std::sqrt(i.eigenValues[d] * (input.getSize() - 1));
+  i.principalAxes = i.basis;
+  i.principalAxes.resizeRowsCols(dimension, i.activeComponentsCount);
+  i.eigenValues.resize(i.activeComponentsCount);
+
+  i.varianceShares = DataVector(i.activeComponentsCount);
+  i.singularValues = DataVector(i.activeComponentsCount);
+  i.loadings = DataMatrix(dimension, i.activeComponentsCount);
+  for (size_t d = 0; d < i.activeComponentsCount; ++d) {
+    i.varianceShares[d] = i.eigenValues[d] / static_cast<double>(sum);
+    i.singularValues[d] = std::sqrt(i.eigenValues[d] * static_cast<double>(input.getSize() - 1));
     DataVector v(dimension);
     i.principalAxes.getColumn(d, v);
     v.mult(std::sqrt(i.eigenValues[d]));

@@ -3,8 +3,8 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef ITERATIVEPCAREDUCER_HPP
-#define ITERATIVEPCAREDUCER_HPP
+#ifndef PCAREDUCER_HPP
+#define PCAREDUCER_HPP
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
 #include <sgpp/optimization/function/vector/VectorFunction.hpp>
@@ -14,6 +14,8 @@ namespace sgpp {
 namespace base {
 
   struct PcaInfo {
+  size_t activeComponentsCount;
+  sgpp::base::DataMatrix basis;
   sgpp::base::DataMatrix principalAxes;
   sgpp::base::DataMatrix loadings;
     sgpp::base::DataVector eigenValues;

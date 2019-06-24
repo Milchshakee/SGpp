@@ -42,21 +42,16 @@ sgpp::base::DataVector Tools::mult(sgpp::base::DataMatrix& m, const sgpp::base::
   return fromEigen(r);
 }
 
-void Tools::svd(const sgpp::base::DataMatrix& input, sgpp::base::DataMatrix& eigenVectorMatrix,
+void Tools::svd(const Eigen::MatrixXd& input, sgpp::base::DataMatrix& eigenVectorMatrix,
                 sgpp::base::DataVector& eigenValues) {
-  size_t dimensions = input.getNcols();
-  sgpp::base::DataMatrix copy = input;
-  Eigen::MatrixXd eigen = toEigen(copy);
-
-  Eigen::EigenSolver<Eigen::MatrixXd> eigensolver(eigen);
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(input);
   if (eigensolver.info() != Eigen::Success) abort();
-  const Eigen::MatrixXcd& m = eigensolver.eigenvectors();
-  Eigen::MatrixXd realM = m.real();
-  eigenVectorMatrix = fromEigen(realM);
-  const Eigen::VectorXcd& v = eigensolver.eigenvalues();
-  Eigen::VectorXd realV = v.real();
-  eigenValues = fromEigen(realV);
+  const Eigen::MatrixXd& m = eigensolver.eigenvectors();
+  eigenVectorMatrix = fromEigen(m);
+  const Eigen::VectorXd& v = eigensolver.eigenvalues();
+  eigenValues = fromEigen(v);
 
+  size_t dimensions = input.cols();
   for (size_t c = 0; c < dimensions; c++) {
     size_t max = c;
     double maxValue = 0.0;

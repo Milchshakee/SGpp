@@ -45,7 +45,7 @@ AsInfo AsMcReducer::evaluate(PointSample<DataMatrix>& input) {
   AsInfo i;
   i.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
   i.eigenValues = sgpp::base::DataVector(dimensions);
-  Tools::svd(matrix, i.eigenVectors, i.eigenValues);
+  Tools::svd(Tools::toEigen(matrix), i.eigenVectors, i.eigenValues);
   return i;
 }
 
@@ -70,7 +70,7 @@ AsResult AsMcIntervalCutter::cut(const PointSample<DataMatrix>& input, const AsI
 
     sgpp::base::DataMatrix bootstrapEigenVectorMatrix(dimensions, dimensions);
     sgpp::base::DataVector bootstrapEigenValues(dimensions);
-    Tools::svd(bootstrapMatrix, bootstrapEigenVectorMatrix, bootstrapEigenValues);
+    Tools::svd(Tools::toEigen(bootstrapMatrix), bootstrapEigenVectorMatrix, bootstrapEigenValues);
     for (size_t d = 0; d < dimensions; ++d) {
       double e = bootstrapEigenValues[d];
       if (e < eigenValueIntervals[d].first) {

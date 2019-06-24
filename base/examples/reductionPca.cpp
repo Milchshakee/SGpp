@@ -5,8 +5,7 @@
 int main(int argc, char* argv[]) {
   // Create the data set.
   sgpp::base::DataMatrix data = sgpp::base::DataMatrix::fromString(
-      "[[0.3, 0.25],[-0.75, -0.5375],[0.9375, 0.9375],[-0.4375, -0.75],[0.75, 0.4375],[-1.0, "
-      "-0.9375],[0.4375, 0.5625],[-0.5625, -0.5625],[0.5625, 0.65]]");
+      "[[0, 0, 0],[1, 1, 2],[1,0,1],[0,1,1],[0.5,0.5,1]]");
   // Create a wrapper of the raw data for easier usage
   auto dist = sgpp::base::FixedDistribution(data);
 
@@ -21,17 +20,29 @@ int main(int argc, char* argv[]) {
   sgpp::base::PcaInfo info = reducer.evaluate(dist);
 
   // Print out all the information that the reducer has gathered from the data
-  for (size_t d = 0; d < dist.getDimensions(); ++d) {
+
+  //First, loop over all active principal components (principal directions with an eigen value bigger than 0)
+  for (size_t d = 0; d < info.activeComponentsCount; ++d) {
     std::cout << "dimension: " + std::to_string(d) << std::endl;
-    sgpp::base::DataVector pa(2);
+    sgpp::base::DataVector pa(3);
     info.principalAxes.getColumn(d, pa);
     std::cout << "principal direction: " + pa.toString() << std::endl;
-    sgpp::base::DataVector l(2);
+    sgpp::base::DataVector l(3);
     info.loadings.getColumn(d, l);
     std::cout << "loading: " + l.toString() << std::endl;
     std::cout << "eigen value: " + std::to_string(info.eigenValues[d]) << std::endl;
     std::cout << "singular value: " + std::to_string(info.singularValues[d]) << std::endl;
     std::cout << "share of variance: " + std::to_string(info.varianceShares[d]) << std::endl;
+    std::cout << std::endl;
+  }
+
+  // If info.activeComponentsCount != dimensions, we know that there are some inactive principal directions with an eigen value of 0
+  for (size_t d = info.activeComponentsCount; d < dist.getDimensions(); ++d) {
+    std::cout << "dimension: " + std::to_string(d) << " (inactive)" << std::endl;
+    sgpp::base::DataVector pa(3);
+    info.basis.getColumn(d, pa);
+    std::cout << "principal direction: " + pa.toString() << std::endl;
+    std::cout << "eigen value: 0" << std::endl;
     std::cout << std::endl;
   }
 
@@ -47,11 +58,12 @@ int main(int argc, char* argv[]) {
   sgpp::base::PcaResult result = cutter.cut(dist, info);
 
   // Print information of the result object.
-  std::cout << "transformation matrix used to reduce the dataset: " +
+  std::cout << "transformation matrix used to reduce the dataset:\n" +
                    result.transformation.toString()
             << std::endl;
   std::cout << "actual covered variance after reduction: " + std::to_string(result.coveredVariance)
             << std::endl;
+  std::cout << std::endl;
 
   // Apply the result to the actual data set.
   // In this step, the data vectors are transformed using the transformation matrix from the result.
@@ -59,8 +71,8 @@ int main(int argc, char* argv[]) {
   sgpp::base::DataMatrix reducedData = reduced.getAsDataMatrix();
 
   // Print information about the reduced data set.
-  std::cout << "dimensions after reduction: " + reduced.getDimensions() << std::endl;
-  std::cout << "reduced data: " + reducedData.toString() << std::endl;
+  std::cout << "dimensions after reduction: " + std::to_string(reduced.getDimensions()) << std::endl;
+  std::cout << "reduced data:\n" + reducedData.toString() << std::endl;
 
   return 0;
 }
