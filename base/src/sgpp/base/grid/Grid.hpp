@@ -239,6 +239,8 @@ class Grid {
    */
   static Grid* createAnovaBoundaryGrid(size_t dim, const std::vector<std::vector<bool>>& comps);
 
+    static Grid* createAnovaBoundaryGrid(size_t dim);
+
   /**
    * creates a linear boundary grid
    * <table border="0"><tr>

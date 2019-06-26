@@ -19,7 +19,7 @@ namespace sgpp {
 namespace base {
 
 AnovaBoundaryGridGenerator::AnovaBoundaryGridGenerator(
-    const AnovaComponentVector& components, HashGridStorage& storage)
+    const AnovaHelper::AnovaComponentVector& components, HashGridStorage& storage)
     : storage(storage), components(components) {}
 
 AnovaBoundaryGridGenerator::~AnovaBoundaryGridGenerator() = default;

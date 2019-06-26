@@ -7,9 +7,6 @@
 #define OPERATIONANOVA_HPP
 
 #include <sgpp/base/datatypes/DataVector.hpp>
-#include <sgpp/base/grid/Grid.hpp>
-
-#include <sgpp/globaldef.hpp>
 #include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 
@@ -24,11 +21,6 @@ class OperationAnova {
  public:
 
   /**
-   * Vector that holds levels for every dimension
-   */
-  typedef std::vector<sgpp::base::HashGridPoint::level_type> LevelVector;
-
-  /**
    * Constructor
    */
   OperationAnova(GridStorage& gridStorage) : gridStorage(gridStorage) {}
@@ -38,16 +30,7 @@ class OperationAnova {
    */
   ~OperationAnova() = default;
 
-  double calculateIncrementsVariance(const sgpp::base::DataVector& alpha,
-      const std::vector<LevelVector>& levels);
-
-  double calculateIncrementVariance(const DataVector& alpha,
-                                  const LevelVector& levels);
-
-  double calculateDimensionVariance(const DataVector& alpha,
-                                    const AnovaComponent& comp);
-
-  Sample<AnovaComponent, double> calculateAnovaOrderVariances(const DataVector& alpha);
+  Sample<AnovaHelper::AnovaComponent, double> calculateAnovaOrderVariances(const DataVector& alpha);
 
 
  private:

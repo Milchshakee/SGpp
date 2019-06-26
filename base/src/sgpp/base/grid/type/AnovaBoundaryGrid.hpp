@@ -18,6 +18,13 @@ namespace base {
 class AnovaBoundaryGrid : public Grid {
  public:
 
+    /**
+   * Constructor Linear Truncated Boundary Grid
+   *
+   * @param dim           the dimension of the grid
+   */
+  AnovaBoundaryGrid(size_t dim);
+
   /**
    * Constructor Linear Truncated Boundary Grid
    *
@@ -27,7 +34,7 @@ class AnovaBoundaryGrid : public Grid {
    *                      1 means same level,
    *                      2 means one level coarser, etc.
    */
-  explicit AnovaBoundaryGrid(size_t dim, const AnovaComponentVector& components);
+  AnovaBoundaryGrid(size_t dim, const AnovaHelper::AnovaComponentVector& components);
 
   /**
    * Constructor Linear Truncated Boundary Grid
@@ -38,7 +45,7 @@ class AnovaBoundaryGrid : public Grid {
    *                      1 means same level,
    *                      2 means one level coarser, etc.
    */
-  explicit AnovaBoundaryGrid(BoundingBox& BB, const AnovaComponentVector& components);
+  AnovaBoundaryGrid(BoundingBox& BB, const AnovaHelper::AnovaComponentVector& components);
 
   /**
    * Destructor

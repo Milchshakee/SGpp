@@ -20,7 +20,8 @@ class Sample {
  public:
   Sample() = default;
 
-  Sample(const std::vector<K>& keys, std::function<T(const K&)>& func) : keys(keys), values(keys.size()) {
+  Sample(const std::vector<K>& keys, std::function<T(const K&)>& func)
+      : keys(keys), values(keys.size()) {
     for (size_t i = 0; i < keys.size(); i++) {
       values[i] = func(keys[i]);
     }
@@ -38,7 +39,6 @@ class Sample {
     throw std::invalid_argument("Value not found");
   }
   size_t getSize() const { return values.size(); }
-  size_t getDimensions() const { return keys.empty() ? 0 : keys[0].getSize(); }
   const std::vector<K>& getKeys() const { return keys; }
   const std::vector<T>& getValues() const { return values; }
 
@@ -48,14 +48,27 @@ class Sample {
 };
 
 template <class T>
-using PointSample = Sample<DataVector, T>;
+class PointSample : public Sample<DataVector, T> {
+ public:
+  PointSample() = default;
+
+  PointSample(const std::vector<DataVector>& keys, std::function<T(const DataVector&)>& func)
+      : Sample<DataVector, T>(keys, func) {}
+
+  PointSample(const std::vector<DataVector>& keys, const std::vector<T>& values)
+      : Sample<DataVector, T>(keys, values) {}
+
+  size_t getDimensions() const {
+    return Sample<DataVector, T>::keys.empty() ? 0 : Sample<DataVector, T>::keys[0].getSize();
+  }
+};
 
 template <class T>
 class GridSample : public PointSample<T> {
  public:
   GridSample() = default;
 
-  GridSample(std::shared_ptr<Grid>& grid, std::function<T(const DataVector&)>& func) {
+  GridSample(std::shared_ptr<Grid>& grid, std::function<T(const DataVector&)>& func) : grid(grid) {
     PointSample<T>::keys = std::vector<DataVector>(grid->getSize());
     PointSample<T>::values = std::vector<T>(grid->getSize());
     GridDistribution d(*grid);
@@ -64,7 +77,7 @@ class GridSample : public PointSample<T> {
     }
   }
 
-  GridSample(std::shared_ptr<Grid>& grid, const std::vector<T>& values) {
+  GridSample(std::shared_ptr<Grid>& grid, const std::vector<T>& values) : grid(grid) {
     PointSample<T>::keys = std::vector<DataVector>(grid->getSize());
     PointSample<T>::values = std::vector<T>(values);
     GridDistribution d(*grid);
@@ -79,7 +92,8 @@ class GridSample : public PointSample<T> {
 
 namespace SampleHelper {
 template <class T>
-PointSample<T> sampleDistribution(VectorDistribution& dist, std::function<T(const DataVector&)>& func) {
+PointSample<T> sampleDistribution(VectorDistribution& dist,
+                                  std::function<T(const DataVector&)>& func) {
   std::vector<double> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     values[i] = func(dist.getVectors()[i]);
@@ -88,7 +102,7 @@ PointSample<T> sampleDistribution(VectorDistribution& dist, std::function<T(cons
 }
 
 inline PointSample<double> sampleScalarFunction(VectorDistribution& dist,
-                                         optimization::ScalarFunction& func) {
+                                                optimization::ScalarFunction& func) {
   std::vector<double> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     values[i] = func.eval(dist.getVectors()[i]);
@@ -104,7 +118,7 @@ inline GridSample<double> sampleGrid(std::shared_ptr<Grid>& grid,
 }
 
 inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
-                                             optimization::VectorFunction& func) {
+                                                    optimization::VectorFunction& func) {
   std::vector<DataVector> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     func.eval(dist.getVectors()[i], values[i]);
@@ -113,7 +127,7 @@ inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
 }
 
 inline GridSample<DataVector> sampleGrid(std::shared_ptr<Grid>& grid,
-                                   optimization::VectorFunction& func) {
+                                         optimization::VectorFunction& func) {
   GridDistribution d(*grid);
   PointSample<DataVector> s = sampleVectorFunction(d, func);
   return std::move(GridSample<DataVector>(grid, s.getValues()));

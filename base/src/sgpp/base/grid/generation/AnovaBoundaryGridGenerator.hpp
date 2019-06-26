@@ -12,13 +12,10 @@
 #include <sgpp/globaldef.hpp>
 
 #include <vector>
+#include "sgpp/base/tools/dimension/AnovaHelper.hpp"
 
 namespace sgpp {
 namespace base {
-
-  
-  typedef std::vector<bool> AnovaComponent;
-typedef std::vector<AnovaComponent> AnovaComponentVector;
 
 /**
  * This class provides the interface for the grid generation
@@ -31,7 +28,7 @@ class AnovaBoundaryGridGenerator : public GridGenerator {
    *
    * @param storage       template type that holds the grid points
    */
-  explicit AnovaBoundaryGridGenerator(const AnovaComponentVector& components, GridStorage& storage);
+  explicit AnovaBoundaryGridGenerator(const AnovaHelper::AnovaComponentVector& components, GridStorage& storage);
 
   /**
    * Destructor
@@ -54,7 +51,7 @@ class AnovaBoundaryGridGenerator : public GridGenerator {
  protected:
   /// reference to the grid's storage object
   GridStorage& storage;
-  AnovaComponentVector components;
+  AnovaHelper::AnovaComponentVector components;
 };
 
 }  // namespace base
