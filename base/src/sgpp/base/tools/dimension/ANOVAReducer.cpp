@@ -21,6 +21,11 @@ sgpp::base::TransformationFunction sgpp::base::AnovaResult::createTransformation
 }
 
 sgpp::base::GridSample<double> sgpp::base::AnovaResult::apply(GridSample<double>& sample) {
+  if (activeDimensions.empty()) {
+    //TODO
+    }
+
+
   size_t active = 0;
   for (size_t d = 0; d < activeDimensions.size(); d++) {
     if (activeDimensions[d]) {
@@ -47,10 +52,9 @@ sgpp::base::GridSample<double> sgpp::base::AnovaResult::apply(GridSample<double>
     std::get<1>(t) += sample.getValue(v);
   }
 
-  std::vector<double> newValues(newGrid->getSize());
   std::function<double(const DataVector&)> f = [collapsingPoints](const DataVector& v) {
     auto t = collapsingPoints.at(v);
-    return static_cast<double>(std::get<1>(t)) / std::get<0>(t);
+    return std::get<1>(t) / static_cast<double>(std::get<0>(t));
   };
   GridSample<double> s(newGrid, f);
   return std::move(s);

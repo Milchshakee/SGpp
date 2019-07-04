@@ -4,17 +4,115 @@ namespace sgpp {
 namespace base {
 namespace AnovaHelper {
 
-double getL2NormOfBasis(const AnovaHelper::LevelVector& levels) {
-  double result = 1;
-  for (size_t d = 0; d < levels.size(); d++) {
-    if (levels[d] == 0) {
-      result *= 1;
-    } else {
-      double integral = (1. / 3.) / static_cast<double>(1 << (levels[d] - 2));
-      result *= integral;
-    }
+AnovaGridIterator::AnovaGridIterator(HashGridStorage& storage)
+    : storage(storage), index(storage.getDimension()) {
+  resetToLevelZero();
   }
-  return result;
+
+void AnovaGridIterator::resetToLevelZero() {
+  for (size_t i = 0; i < storage.getDimension(); i++) {
+    index.push(i, 0, 0);
+  }
+
+  index.rehash();
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+void AnovaGridIterator::resetToLevelZeroInDim(size_t dim) {
+  index.set(dim, 0, 0);
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+void AnovaGridIterator::resetToLevelOneInDim(size_t d) {
+  index.set(d, 1, 2);
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+void AnovaGridIterator::resetToLevelTwoInDim(size_t d) {
+  index.set(d, 2, 2);
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+void AnovaGridIterator::leftChild(size_t dim) {
+  HashGridPoint::level_type l;
+  HashGridPoint::index_type i;
+  index.get(dim, l, i);
+  index.set(dim, l + 1, 2 * (i - 1));
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+void AnovaGridIterator::rightChild(size_t dim) {
+  HashGridPoint::level_type l;
+  HashGridPoint::index_type i;
+  index.get(dim, l, i);
+  index.set(dim, l + 1, 2 * (i + 1));
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+void AnovaGridIterator::up(size_t d) {
+  HashGridPoint::level_type l;
+  HashGridPoint::index_type i;
+  index.get(d, l, i);
+  i /= 2;
+  i = i % 4 == 1 ? i + 1 : i - 1;
+  index.set(d, l - 1, i);
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+void AnovaGridIterator::stepLeft(size_t d) {
+  HashGridPoint::level_type l;
+  HashGridPoint::index_type i;
+  index.get(d, l, i);
+  index.set(d, l, i - 4);
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+void AnovaGridIterator::stepRight(size_t d) {
+  HashGridPoint::level_type l;
+  HashGridPoint::index_type i;
+  index.get(d, l, i);
+  index.set(d, l, i + 4);
+  this->seq_ = storage.getSequenceNumber(index);
+}
+
+bool AnovaGridIterator::isInnerPoint() const { return index.isInnerPoint(); }
+
+bool AnovaGridIterator::hint() const { return storage.getPoint(this->seq_).isLeaf(); }
+
+bool AnovaGridIterator::hintLeft(size_t d) {
+  HashGridPoint::level_type l;
+  HashGridPoint::index_type i;
+  index.get(d, l, i);
+  index.set(d, l + 1, 2 * (i - 1));
+
+  bool hasIndex = storage.isContaining(index);
+
+  index.set(d, l, i);
+
+  return hasIndex;
+}
+
+bool AnovaGridIterator::hintRight(size_t d) {
+  HashGridPoint::level_type l;
+  HashGridPoint::index_type i;
+  index.get(d, l, i);
+  index.set(d, l + 1, 2 * (i + 1));
+
+  bool hasIndex = storage.isContaining(index);
+
+  index.set(d, l, i);
+
+  return hasIndex;
+}
+
+size_t AnovaGridIterator::seq() const { return seq_; }
+
+double getL2NormOfBasis(const AnovaHelper::LevelVector& levels) {
+  size_t levelSum = 0;
+  for (size_t d = 0; d < levels.size(); d++) {
+    levelSum += levels[d] - 1;
+  }
+  return std::pow(2.0 / 3.0, static_cast<double>(levels.size()) / 2.0) / std::pow(2.0, static_cast<double>(levelSum) / 2.0);
 }
 
 AnovaHelper::LevelVector getLevelVectorOfPoint(const GridPoint& point) {
@@ -25,17 +123,16 @@ AnovaHelper::LevelVector getLevelVectorOfPoint(const GridPoint& point) {
   return std::move(v);
 }
 
-  AnovaComponent getAnovaComponentOfPoint(const GridPoint& point) {
+AnovaComponent getAnovaComponentOfPoint(const GridPoint& point) {
   AnovaComponent currentComp(point.getDimension(), false);
-    for (size_t d = 0; d < point.getDimension(); d++) {
+  for (size_t d = 0; d < point.getDimension(); d++) {
     currentComp[d] = point.getLevel(d) > 0;
   }
-  
+  return currentComp;
 }
 
-double calculateIncrementsVariance(GridStorage& gridStorage,
-    const DataVector& alpha,
-    const std::vector<LevelVector>& levels) {
+double calculateIncrementsVariance(GridStorage& gridStorage, const DataVector& alpha,
+                                   const std::vector<LevelVector>& levels) {
   double sum = 0;
   for (size_t i = 0; i < gridStorage.getSize(); i++) {
     GridPoint& gp = gridStorage.getPoint(i);
@@ -51,7 +148,7 @@ double calculateIncrementsVariance(GridStorage& gridStorage,
 }
 
 double calculateIncrementVariance(GridStorage& gridStorage, const DataVector& alpha,
-                                                              const AnovaHelper::LevelVector& level) {
+                                  const AnovaHelper::LevelVector& level) {
   return calculateIncrementsVariance(gridStorage, alpha, {level});
 }
 
@@ -63,8 +160,7 @@ bool isValidLevel(size_t maxLevel, const LevelVector& levels) {
   return sum <= maxLevel + levels.size() - 1;
 }
 
-bool nextLevelRaw(size_t maxLevel, LevelVector& levels,
-                  const AnovaComponent& comp) {
+bool nextLevelRaw(size_t maxLevel, LevelVector& levels, const AnovaComponent& comp) {
   bool lastAdded = false;
   for (size_t i = 0; i < comp.size(); i++) {
     if (!comp[i]) {
@@ -86,8 +182,7 @@ bool nextLevelRaw(size_t maxLevel, LevelVector& levels,
   return false;
 }
 
-bool nextLevel(size_t maxLevel, LevelVector& levels,
-               const AnovaComponent& comp) {
+bool nextLevel(size_t maxLevel, LevelVector& levels, const AnovaComponent& comp) {
   while (true) {
     bool b = nextLevelRaw(maxLevel, levels, comp);
     if (!b) {
@@ -112,7 +207,7 @@ bool nextAnovaComponent(AnovaComponent& comp) {
 }
 
 double calculateDimensionVariance(GridStorage& gridStorage, const DataVector& alpha,
-                                                              const AnovaHelper::AnovaComponent& comp) {
+                                  const AnovaHelper::AnovaComponent& comp) {
   AnovaHelper::LevelVector levels;
   for (size_t i = 0; i < comp.size(); i++) {
     if (!comp[i]) {
@@ -142,6 +237,6 @@ Sample<AnovaComponent, double> calculateAnovaOrderVariances(GridStorage& gridSto
   return Sample<AnovaComponent, double>(components, variances);
 }
 
-  }
-  }  // namespace base
+}  // namespace AnovaHelper
+}  // namespace base
 }  // namespace sgpp

@@ -73,6 +73,7 @@ class GridSample : public PointSample<T> {
     PointSample<T>::values = std::vector<T>(grid->getSize());
     GridDistribution d(*grid);
     for (size_t i = 0; i < d.getSize(); i++) {
+      PointSample<T>::keys[i] = d.getVectors()[i];
       PointSample<T>::values[i] = func(d.getVectors()[i]);
     }
   }
