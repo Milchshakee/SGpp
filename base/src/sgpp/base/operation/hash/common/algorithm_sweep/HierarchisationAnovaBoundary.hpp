@@ -57,8 +57,6 @@ class HierarchisationAnovaBoundary {
   virtual void operator()(DataVector& source, DataVector& result, grid_iterator& index,
                           size_t dim);
 
-  virtual void operator()(DataVector& source, DataVector& result, HashGridIterator& index, size_t dim);
-
     /**
    * Recursive hierarchisaton algorithm, this algorithms works in-place -> source should be equal to
    * result
@@ -73,7 +71,7 @@ class HierarchisationAnovaBoundary {
    * @param fr right value of the current region regarded in this step of the recursion
    */
   void rec(DataVector& source, DataVector& result, grid_iterator& index, size_t dim, double fl,
-           double fr, double constant);
+           double fr);
 
   void hierarchiseConstant(DataVector& source, DataVector& result, grid_iterator& index, size_t dim);
 

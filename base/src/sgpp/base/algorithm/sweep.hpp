@@ -173,31 +173,6 @@ class sweep {
                        dim_sweep);
   }
 
-    /**
-   * Descends on all dimensions beside dim_sweep. Class functor for dim_sweep
-   * Boundaries are regarded
-   *
-   * @param source a DataVector containing the source coefficients of the grid points
-   * @param result a DataVector containing the result coefficients of the grid points
-   * @param dim_sweep the dimension in which the functor is executed
-   */
-  void sweep1D_AnovaBoundary(DataVector& source, DataVector& result, size_t dim_sweep) {
-    // generate a list of all dimension (-dim_sweep) from
-    // dimension recursion unrolling
-    std::vector<size_t> dim_list;
-
-    for (size_t i = 0; i < storage.getDimension(); i++) {
-      if (i != dim_sweep) {
-        dim_list.push_back(i);
-      }
-    }
-
-    AnovaHelper::AnovaGridIterator index(storage);
-    index.resetToLevelZero();
-
-    sweep_AnovaBoundary_rec(source, result, index, dim_list, storage.getDimension() - 1, dim_sweep);
-  }
-
  protected:
   /**
    * Descends on all dimensions beside dim_sweep. Class functor for dim_sweep.
@@ -346,71 +321,6 @@ class sweep {
         }
 
         index.resetToLeftLevelZero(dim_list[dim_rem - 1]);
-      }
-    }
-  }
-
-    /**
-   * Descends on all dimensions beside dim_sweep. Class functor for dim_sweep.
-   * Boundaries are regarded
-   *
-   * @param source coefficients of the sparse grid
-   * @param result coefficients of the function computed by sweep
-   * @param index current grid position
-   * @param dim_list list of dimensions, that should be handled
-   * @param dim_rem number of remaining dims
-   * @param dim_sweep static dimension, in this dimension the functor is executed
-   */
-  void sweep_AnovaBoundary_rec(DataVector& source, DataVector& result, AnovaHelper::AnovaGridIterator& index,
-                          std::vector<size_t>& dim_list, size_t dim_rem, size_t dim_sweep) {
-    if (dim_rem == 0) {
-      functor(source, result, index, dim_sweep);
-    } else {
-      typedef level_t level_type;
-      typedef index_t index_type;
-
-      level_type current_level;
-      index_type current_index;
-
-      index.get(dim_list[dim_rem - 1], current_level, current_index);
-
-      // handle level greater one
-      if (current_level > 1) {
-        // given current point to next dim
-        sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem - 1, dim_sweep);
-
-        if (!index.hint()) {
-          index.leftChild(dim_list[dim_rem - 1]);
-
-          if (!storage.isInvalidSequenceNumber(index.seq())) {
-            sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem, dim_sweep);
-          }
-
-          index.stepRight(dim_list[dim_rem - 1]);
-
-          if (!storage.isInvalidSequenceNumber(index.seq())) {
-            sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem, dim_sweep);
-          }
-
-          index.up(dim_list[dim_rem - 1]);
-        }
-      } else {  // handle level zero and one
-        if (current_level == 0) {
-          sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem - 1, dim_sweep);
-          index.resetToLevelOneInDim(dim_list[dim_rem - 1]);
-        }
-
-        sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem - 1, dim_sweep);
-
-        if (!index.hint()) {
-          index.resetToLevelTwoInDim(dim_list[dim_rem - 1]);
-
-          if (!storage.isInvalidSequenceNumber(index.seq())) {
-            sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem, dim_sweep);
-          }
-        }
-
-        index.resetToLevelZeroInDim(dim_list[dim_rem - 1]);
       }
     }
   }

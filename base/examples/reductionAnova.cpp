@@ -3,7 +3,7 @@
 #include "sgpp/base/tools/dimension/AnovaReducer.hpp"
 #include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
 
-double f(const sgpp::base::DataVector& v) {  return 2.0 + v[0]; }
+double f(const sgpp::base::DataVector& v) {  return 2.0 + v[0] + v[1]; }
 
 int main(int argc, char* argv[]) {
   auto func = sgpp::optimization::WrapperScalarFunction(2, f);

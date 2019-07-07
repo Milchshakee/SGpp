@@ -15,9 +15,6 @@ HierarchisationAnovaBoundary::HierarchisationAnovaBoundary(GridStorage& storage)
 
 HierarchisationAnovaBoundary::~HierarchisationAnovaBoundary() {}
 
-void HierarchisationAnovaBoundary::operator()(DataVector& source, DataVector& result,
-                                              HashGridIterator& index, size_t dim) {}
-
 void HierarchisationAnovaBoundary::hierarchiseConstantRec(DataVector& source, DataVector& result,
                                                           grid_iterator& index, size_t dim,
                                                           double constant) {
@@ -55,8 +52,10 @@ void HierarchisationAnovaBoundary::hierarchiseConstant(DataVector& source, DataV
   }
 }
 
+
+
 void HierarchisationAnovaBoundary::rec(DataVector& source, DataVector& result, grid_iterator& index,
-                                       size_t dim, double fl, double fr, double constant) {
+                                       size_t dim, double fl, double fr) {
   // current position on the grid
   size_t seq = index.seq();
   // value in the middle, needed for recursive call and
@@ -68,13 +67,13 @@ void HierarchisationAnovaBoundary::rec(DataVector& source, DataVector& result, g
     // descend left
     index.leftChild(dim);
     if (!storage.isInvalidSequenceNumber(index.seq())) {
-      rec(source, result, index, dim, fl, fm, constant);
+      rec(source, result, index, dim, fl, fm);
     }
 
     // descend right
     index.stepRight(dim);
     if (!storage.isInvalidSequenceNumber(index.seq())) {
-      rec(source, result, index, dim, fm, fr, constant);
+      rec(source, result, index, dim, fm, fr);
     }
 
     // ascend
@@ -82,29 +81,26 @@ void HierarchisationAnovaBoundary::rec(DataVector& source, DataVector& result, g
   }
 
   // hierarchisation
-  result[seq] = fm - ((fl + fr) / 2.0) - constant;
+  result[seq] = fm - ((fl + fr) / 2.0);
 }
 
 void HierarchisationAnovaBoundary::operator()(DataVector& source, DataVector& result,
                                               grid_iterator& index, size_t dim) {
   hierarchiseConstant(source, result, index, dim);
 
-  // left constant boundary
-  index.resetToLevelZeroInDim(dim);
-  double constant = source[index.seq()];
-
-  // right boundary
   index.resetToLevelOneInDim(dim);
-  double right_boundary = source[index.seq()];
+  if (!storage.isInvalidSequenceNumber(index.seq())) {
+    double right_boundary = source[index.seq()];
 
-  // see if we can go down further
-  if (!index.hint()) {
-    index.resetToLevelTwoInDim(dim);
-    if (!storage.isInvalidSequenceNumber(index.seq())) {
-      rec(source, result, index, dim, 0, right_boundary, constant);
+      // see if we can go down further
+    if (!index.hint()) {
+      index.resetToLevelTwoInDim(dim);
+      if (!storage.isInvalidSequenceNumber(index.seq())) {
+        rec(source, result, index, dim, 0, right_boundary);
+      }
     }
-    index.resetToLevelZeroInDim(dim);
   }
+  index.resetToLevelZeroInDim(dim);
 }
 
 }  // namespace base

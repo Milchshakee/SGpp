@@ -5,17 +5,17 @@
 
 #include <sgpp/base/operation/hash/OperationHierarchisationAnovaBoundary.hpp>
 
-#include <sgpp/base/algorithm/sweep.hpp>
 
 #include <sgpp/globaldef.hpp>
 #include "common/algorithm_sweep/HierarchisationAnovaBoundary.hpp"
+#include "sgpp/base/algorithm/sweep_anova.hpp"
 
 namespace sgpp {
 namespace base {
 
 void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_values) {
   HierarchisationAnovaBoundary func(storage);
-  sweep<HierarchisationAnovaBoundary> s(func, storage);
+  sweep_anova<HierarchisationAnovaBoundary> s(func, storage);
 
   // N D case
   if (this->storage.getDimension() > 1) {
@@ -23,7 +23,7 @@ void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_v
       s.sweep1D_AnovaBoundary(node_values, node_values, i);
     }
   } else {  // 1 D case
-    s.sweep1D(node_values, node_values, 0);
+    //s.sweep1D(node_values, node_values, 0);
   }
 }
 
