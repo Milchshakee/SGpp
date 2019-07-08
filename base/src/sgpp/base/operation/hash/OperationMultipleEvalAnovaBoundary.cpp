@@ -6,6 +6,7 @@
 #include <sgpp/base/algorithm/AlgorithmDGEMV.hpp>
 
 #include <sgpp/base/operation/hash/OperationMultipleEvalAnovaBoundary.hpp>
+#include "common/basis/AnovaBoundaryBasis.hpp"
 
 #include <sgpp/globaldef.hpp>
 
@@ -13,15 +14,15 @@ namespace sgpp {
 namespace base {
 
 void OperationMultipleEvalAnovaBoundary::mult(DataVector& alpha, DataVector& result) {
-  AlgorithmDGEMV<SLinearBoundaryBase> op;
-  LinearBoundaryBasis<unsigned int, unsigned int> base;
+  AlgorithmDGEMV<SAnovaBoundaryBasis> op;
+  AnovaBoundaryBasis<unsigned int, unsigned int> base;
 
   op.mult(storage, base, alpha, this->dataset, result);
 }
 
 void OperationMultipleEvalAnovaBoundary::multTranspose(DataVector& source, DataVector& result) {
-  AlgorithmDGEMV<SLinearBoundaryBase> op;
-  LinearBoundaryBasis<unsigned int, unsigned int> base;
+  AlgorithmDGEMV<SAnovaBoundaryBasis> op;
+  AnovaBoundaryBasis<unsigned int, unsigned int> base;
 
   op.mult_transposed(storage, base, source, this->dataset, result);
 }
