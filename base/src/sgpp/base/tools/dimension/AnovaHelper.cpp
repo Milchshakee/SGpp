@@ -109,10 +109,19 @@ size_t AnovaGridIterator::seq() const { return seq_; }
 
 double getL2NormOfBasis(const AnovaHelper::LevelVector& levels) {
   size_t levelSum = 0;
+  size_t level1Count = 0;
   for (size_t d = 0; d < levels.size(); d++) {
-    levelSum += levels[d] - 1;
+    levelSum += std::max<size_t>(levels[d] - 1, 0);
+    if (levels[d] == 1) {
+      level1Count++;
+      }
   }
-  return std::pow(2.0 / 3.0, static_cast<double>(levels.size()) / 2.0) / std::pow(2.0, static_cast<double>(levelSum) / 2.0);
+
+  double f = std::pow(2.0 / 3.0, static_cast<double>(levels.size()));
+  double exp = std::pow(2.0, -static_cast<double>(levelSum - level1Count));
+  double val = std::sqrt(f * exp);
+
+  return val;
 }
 
 AnovaHelper::LevelVector getLevelVectorOfPoint(const GridPoint& point) {

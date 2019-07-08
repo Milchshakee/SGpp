@@ -46,4 +46,4 @@ class OperationMultipleEvalAnovaBoundary : public OperationMultipleEval {
 }  // namespace base
 }  // namespace sgpp
 
-#endif /* OPERATIONMULTIPLEEVALLINEAR_HPP */
+#endif
