@@ -44,11 +44,10 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
     } else if (l == 1) {
       return x;
     } else {
-      return 1. / static_cast<double>(static_cast<IT>(1) << (l - 1));
+      return std::max(
+          1.0 - std::abs(static_cast<double>(static_cast<IT>(1) << (l - 1)) * x - static_cast<double>(i / 2)),
+          0.0);
     }
-    return std::max(
-        1.0 - std::abs(static_cast<double>(static_cast<IT>(1) << l) * x - static_cast<double>(i)),
-        0.0);
   }
 
   double getIntegral(LT level, IT index) override {

@@ -14,11 +14,13 @@
 #include <sgpp/base/operation/hash/common/basis/PolyBoundaryBasis.hpp>
 #include <sgpp/base/operation/hash/common/basis/PolyClenshawCurtisBoundaryBasis.hpp>
 #include <sgpp/base/operation/hash/common/basis/PrewaveletBasis.hpp>
+#include <sgpp/base/operation/hash/common/basis/AnovaBoundaryBasis.hpp>
 
 #include <sgpp/globaldef.hpp>
 
 #include <utility>
 #include <vector>
+#include "sgpp/base/tools/dimension/AnovaHelper.hpp"
 
 namespace sgpp {
 namespace base {
@@ -413,6 +415,129 @@ class GetAffectedBasisFunctions<LinearBoundaryBasis<unsigned int, unsigned int> 
     }
 
     working.resetToLeftLevelZero(current_dim);
+  }
+};
+
+  
+/**
+ * Template Specialization for LinearBoundaryBasis basis.
+ */
+template <>
+class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> > {
+  typedef AnovaBoundaryBasis<unsigned int, unsigned int> SLinearBoundaryBase;
+
+ public:
+  explicit GetAffectedBasisFunctions(GridStorage& storage)
+      : storage(storage), BB(storage.getBoundingBox()) {}
+
+  ~GetAffectedBasisFunctions() {}
+
+  void operator()(SLinearBoundaryBase& basis, const DataVector& point,
+                  std::vector<std::pair<size_t, double> >& result) {
+    bool useBB = false;
+
+    // Check for special bounding box
+    if (!this->BB->isUnitCube()) {
+      useBB = true;
+    }
+
+    AnovaHelper::AnovaGridIterator working(storage);
+
+    working.resetToLevelZero();
+    result.clear();
+
+    if (useBB == false) {
+      rec(basis, point, 0, 1.0, working, result);
+    } else {
+      //recBB(basis, point, 0, 1.0, working, result);
+    }
+  }
+
+ protected:
+  GridStorage& storage;
+  BoundingBox* BB;
+
+  void rec(SLinearBoundaryBase& basis, const DataVector& point, size_t current_dim, double value,
+           AnovaHelper::AnovaGridIterator& working,
+           std::vector<std::pair<size_t, double> >& result) {
+    while (true) {
+      index_t work_index;
+      level_t work_level;
+
+      if (storage.isInvalidSequenceNumber(working.seq())) {
+        break;
+      } else {
+        working.get(current_dim, work_level, work_index);
+
+        if (work_level > 1) {
+          double new_value = basis.eval(work_level, work_index, point[current_dim]);
+
+          if (current_dim == storage.getDimension() - 1) {
+            result.push_back(std::make_pair(working.seq(), value * new_value));
+          } else {
+            rec(basis, point, current_dim + 1, value * new_value, working, result);
+          }
+        } else {  // handle boundaries if we are on level 0 or 1
+          // level 0
+          if (work_level == 0) {
+            working.resetToLevelZeroInDim(current_dim);
+            size_t seq_lz_left = working.seq();
+            if (current_dim == storage.getDimension() - 1) {
+              result.push_back(std::make_pair(seq_lz_left, value));
+            } else {
+              rec(basis, point, current_dim + 1, value, working, result);
+            }
+
+          }
+
+          // level 1
+          working.resetToLevelOneInDim(current_dim);
+          if (storage.isInvalidSequenceNumber(working.seq())) {
+            break;
+          }
+          size_t seq_lz_right = working.seq();
+          double new_value_l_zero_right = basis.eval(1, 2, point[current_dim]);
+
+          if (current_dim == storage.getDimension() - 1) {
+            result.push_back(std::make_pair(seq_lz_right, value * new_value_l_zero_right));
+          } else {
+            rec(basis, point, current_dim + 1, value * new_value_l_zero_right, working, result);
+          }
+        }
+      }
+
+      // there are no levels left
+      if (working.hint()) {
+        break;
+      }
+
+      // this decides in which direction we should descend by evaluating //
+      // the corresponding bit
+      // the bits are coded from left to right starting with level 1
+      // being in position max_level
+      if (work_level > 1) {
+        double hat = 0.0;
+        level_t h = 0;
+
+        h = 1 << (work_level - 1);
+
+        hat = (1.0 / static_cast<double>(h)) * static_cast<double>(work_index);
+
+        if (point[current_dim] == hat) break;
+
+        if (point[current_dim] < hat) {
+          working.leftChild(current_dim);
+        } else {
+          working.rightChild(current_dim);
+        }
+      } else {
+        if (point[current_dim] == 0.0 || point[current_dim] == 1.0) break;
+
+        working.resetToLevelTwoInDim(current_dim);
+      }
+    }
+
+    working.resetToLevelZeroInDim(current_dim);
   }
 };
 

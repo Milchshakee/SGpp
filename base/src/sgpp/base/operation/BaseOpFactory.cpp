@@ -112,6 +112,7 @@
 #include <sgpp/base/operation/hash/OperationEvalPoly.hpp>
 #include <sgpp/base/operation/hash/OperationEvalPolyBoundary.hpp>
 #include <sgpp/base/operation/hash/OperationEvalPrewavelet.hpp>
+#include <sgpp/base/operation/hash/OperationEvalAnovaBoundary.hpp>
 
 #include <sgpp/base/operation/hash/OperationMultipleEvalLinear.hpp>
 #include <sgpp/base/operation/hash/OperationMultipleEvalLinearBoundary.hpp>
@@ -470,6 +471,8 @@ base::OperationEval* createOperationEval(base::Grid& grid) {
     return new base::OperationEvalLinearStretchedBoundary(grid.getStorage());
   } else if (grid.getType() == base::GridType::Periodic) {
     return new base::OperationEvalPeriodic(grid.getStorage());
+  } else if (grid.getType() == base::GridType::AnovaBoundary) {
+    return new base::OperationEvalAnovaBoundary(grid.getStorage());
   } else {
     throw base::factory_exception(
         "createOperationEval is not implemented for this grid type. "
