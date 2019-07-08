@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
   auto func = sgpp::optimization::WrapperScalarFunction(2, f);
   size_t dim = 2;
   std::shared_ptr<sgpp::base::Grid> grid(sgpp::base::Grid::createAnovaBoundaryGrid(dim));
-  grid->getGenerator().regular(0);
+  grid->getGenerator().regular(2);
 
   sgpp::base::GridSample<double> sample = sgpp::base::SampleHelper::sampleGrid(grid, func);
 

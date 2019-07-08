@@ -2,6 +2,7 @@
 #include "AnovaReducer.hpp"
 #include "sgpp/base/grid/Grid.hpp"
 #include "sgpp/base/operation/BaseOpFactory.hpp"
+#include "DimReduction.hpp"
 
 sgpp::base::AnovaFixedCutter::AnovaFixedCutter(size_t n) : n(n) {}
 
