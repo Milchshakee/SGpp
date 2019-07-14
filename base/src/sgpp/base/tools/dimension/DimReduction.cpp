@@ -1,6 +1,6 @@
 #include "DimReduction.hpp"
 #include <random>
-#include "Tools.hpp"
+#include "EigenHelper.hpp"
 
 namespace sgpp {
 namespace base {
@@ -10,7 +10,7 @@ TransformationFunction::TransformationFunction(DataMatrix transformation) : Vect
 }
 
 void TransformationFunction::eval(const base::DataVector& x, DataVector& out) {
-  out = Tools::mult(transformation, x);
+  out = EigenHelper::mult(transformation, x);
 }
 
 void TransformationFunction::clone(std::unique_ptr<VectorFunction>& clone) const {

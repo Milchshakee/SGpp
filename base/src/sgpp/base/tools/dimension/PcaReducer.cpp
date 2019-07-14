@@ -1,5 +1,5 @@
 #include <sgpp/base/tools/dimension/PcaReducer.hpp>
-#include "Tools.hpp"
+#include "EigenHelper.hpp"
 
 
 sgpp::base::PcaResult::PcaResult(const DataMatrix& m, size_t n, double coveredVariance) : coveredVariance(coveredVariance) {
@@ -38,7 +38,7 @@ sgpp::base::PcaResult sgpp::base::PcaVarianceCutter::cut(const VectorDistributio
 sgpp::base::FixedDistribution sgpp::base::PcaResult::apply(const VectorDistribution& input) {
   std::vector<DataVector> newDist(input.getSize(), DataVector(transformation.getNrows()));
   for (size_t c = 0; c < input.getSize(); c++) {
-    newDist[c] = Tools::mult(transformation, input.getVectors()[c]);
+    newDist[c] = EigenHelper::mult(transformation, input.getVectors()[c]);
   }
   return FixedDistribution(input.getSize(), transformation.getNrows(), newDist);
 }
@@ -65,12 +65,12 @@ sgpp::base::DataMatrix centerMean(sgpp::base::VectorDistribution& input) {
 
 
 sgpp::base::PcaInfo sgpp::base::PcaCovarianceSolver::solve(DataMatrix& matrix) {
-  Eigen::MatrixXd b = Tools::toEigen(matrix);
+  Eigen::MatrixXd b = EigenHelper::toEigen(matrix);
   Eigen::MatrixXd c = (b.transpose() * b) * (1.0 / static_cast<double>(matrix.getNrows() - 1));
   PcaInfo i;
   i.basis = sgpp::base::DataMatrix(matrix.getNcols(), matrix.getNcols());
   i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
-  Tools::svd(c, i.basis, i.eigenValues);
+  EigenHelper::svd(c, i.basis, i.eigenValues);
   return i;
 }
 
@@ -86,8 +86,8 @@ sgpp::base::PcaInfo sgpp::base::PcaIterativeSolver::solve(DataMatrix& matrix) {
     random.setColumn(d, orientations.getVectors()[d]);
   }
 
-  Eigen::MatrixXd x = Tools::toEigen(matrix);
-  Eigen::MatrixXd r = Tools::toEigen(random);
+  Eigen::MatrixXd x = EigenHelper::toEigen(matrix);
+  Eigen::MatrixXd r = EigenHelper::toEigen(random);
   Eigen::MatrixXd s(dimension, dimension);
   Eigen::MatrixXd e(dimension, dimension);
   for (size_t it = 0; it < iterations; ++it) {
@@ -101,7 +101,7 @@ sgpp::base::PcaInfo sgpp::base::PcaIterativeSolver::solve(DataMatrix& matrix) {
 
   
   PcaInfo i;
-  i.basis = Tools::fromEigen(r);
+  i.basis = EigenHelper::fromEigen(r);
   i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
   for (size_t c = 0; c < dimension; c++) {
     i.eigenValues.set(c, e(c, c));

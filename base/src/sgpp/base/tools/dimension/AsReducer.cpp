@@ -1,5 +1,5 @@
 #include "AsReducer.hpp"
-#include "Tools.hpp"
+#include "EigenHelper.hpp"
 
 sgpp::base::AsReducedFunction::AsReducedFunction(
     std::unique_ptr<sgpp::optimization::ScalarFunction>&& function, sgpp::base::DataMatrix transformation) :
@@ -7,7 +7,7 @@ sgpp::base::AsReducedFunction::AsReducedFunction(
     function(std::move(function)), transformation(transformation) {}
 
 double sgpp::base::AsReducedFunction::eval(const base::DataVector& x) {
-  DataVector y = Tools::mult(transformation, x);
+  DataVector y = EigenHelper::mult(transformation, x);
   return function->eval(y);
 }
 

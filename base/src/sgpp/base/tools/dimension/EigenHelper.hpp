@@ -9,7 +9,7 @@
 #include <eigen3/Eigen/Core>
 #include "sgpp/base/datatypes/DataMatrix.hpp"
 
-namespace Tools {
+namespace EigenHelper {
 sgpp::base::DataVector fromEigen(const Eigen::VectorXd& e);
 sgpp::base::DataMatrix fromEigen(const Eigen::MatrixXd& e);
 Eigen::MatrixXd toEigen(const sgpp::base::DataMatrix& matrix);

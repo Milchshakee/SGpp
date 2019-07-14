@@ -1,5 +1,5 @@
 #include "AsMcReducer.hpp"
-#include "Tools.hpp"
+#include "EigenHelper.hpp"
 
 namespace sgpp {
 namespace base {
@@ -45,7 +45,7 @@ AsInfo AsMcReducer::evaluate(PointSample<DataMatrix>& input) {
   AsInfo i;
   i.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
   i.eigenValues = sgpp::base::DataVector(dimensions);
-  Tools::svd(Tools::toEigen(matrix), i.eigenVectors, i.eigenValues);
+  EigenHelper::svd(EigenHelper::toEigen(matrix), i.eigenVectors, i.eigenValues);
   return i;
 }
 
@@ -70,7 +70,7 @@ AsResult AsMcIntervalCutter::cut(const PointSample<DataMatrix>& input, const AsI
 
     sgpp::base::DataMatrix bootstrapEigenVectorMatrix(dimensions, dimensions);
     sgpp::base::DataVector bootstrapEigenValues(dimensions);
-    Tools::svd(Tools::toEigen(bootstrapMatrix), bootstrapEigenVectorMatrix, bootstrapEigenValues);
+    EigenHelper::svd(EigenHelper::toEigen(bootstrapMatrix), bootstrapEigenVectorMatrix, bootstrapEigenValues);
     for (size_t d = 0; d < dimensions; ++d) {
       double e = bootstrapEigenValues[d];
       if (e < eigenValueIntervals[d].first) {

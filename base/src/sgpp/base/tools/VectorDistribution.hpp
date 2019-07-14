@@ -76,7 +76,6 @@ class RandomOrientationDistribution : public RandomDistribution {
   double length;
   std::uniform_real_distribution<double> distribution;
 };
-
 }  // namespace base
 }  // namespace sgpp
 

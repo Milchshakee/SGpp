@@ -1,5 +1,5 @@
 #include "AsQuadReducer.hpp"
-#include "Tools.hpp"
+#include "EigenHelper.hpp"
 #include "sgpp/base/operation/BaseOpFactory.hpp"
 
 
@@ -44,7 +44,7 @@ sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(GridSample<DataVector>& i
   AsInfo i;
   i.eigenVectors = sgpp::base::DataMatrix(input.getDimensions(), input.getDimensions());
     i.eigenValues = sgpp::base::DataVector(input.getDimensions());
-    Tools::svd(Tools::toEigen(m), i.eigenVectors, i.eigenValues);
+    EigenHelper::svd(EigenHelper::toEigen(m), i.eigenVectors, i.eigenValues);
     return i;
 
 }

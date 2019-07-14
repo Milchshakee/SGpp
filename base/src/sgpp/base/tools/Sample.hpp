@@ -11,6 +11,7 @@
 #include "sgpp/base/grid/Grid.hpp"
 #include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
 #include "sgpp/optimization/function/vector/VectorFunction.hpp"
+#include "sgpp/base/operation/BaseOpFactory.hpp"
 
 namespace sgpp {
 namespace base {
@@ -27,10 +28,20 @@ class Sample {
     }
   }
 
+  Sample(const std::map<K, T> map)
+      : keys(map.size()), values(map.size()) {
+    size_t counter = 0;
+    for (auto i = map.begin(); i != map.end(); ++i) {
+      keys[counter] = i->first;
+      values[counter] = i->second;
+      counter++;
+    }
+  }
+
   Sample(const std::vector<K>& vectors, const std::vector<T>& values)
       : keys(vectors), values(values) {}
 
-  const T& getValue(const K& key) {
+  const T& getValue(const K& key) const {
     for (size_t i = 0; i < getSize(); i++) {
       if (key == keys[i]) {
         return values[i];
@@ -83,6 +94,14 @@ class GridSample : public PointSample<T> {
     PointSample<T>::values = std::vector<T>(values);
     GridDistribution d(*grid);
     PointSample<T>::keys = d.getVectors();
+  }
+
+  void hierarchise() {
+    sgpp::base::DataVector alpha(Sample<DataVector,T>::values);
+    std::unique_ptr<sgpp::base::OperationHierarchisation>(
+        sgpp::op_factory::createOperationHierarchisation(*grid))
+        ->doHierarchisation(alpha);
+    Sample<DataVector, T>::values = alpha;
   }
 
   const Grid& getGrid() const { return *grid; }

@@ -30,7 +30,7 @@ class OperationAnova {
    */
   ~OperationAnova() = default;
 
-  Sample<AnovaHelper::AnovaComponent, double> calculateAnovaOrderVariances(const DataVector& alpha);
+  Sample<AnovaHelper::AnovaComponent, double> calculateAnovaComponentVariances(const DataVector& alpha);
 
 
  private:

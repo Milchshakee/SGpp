@@ -1,7 +1,7 @@
 #include <iostream>
 #include "AnovaReducer.hpp"
 #include "sgpp/base/grid/Grid.hpp"
-#include "sgpp/base/operation/BaseOpFactory.hpp"
+#include "OperationAnova.hpp"
 #include "DimReduction.hpp"
 
 sgpp::base::AnovaFixedCutter::AnovaFixedCutter(size_t n) : n(n) {}
@@ -22,11 +22,6 @@ sgpp::base::TransformationFunction sgpp::base::AnovaResult::createTransformation
 }
 
 sgpp::base::GridSample<double> sgpp::base::AnovaResult::apply(GridSample<double>& sample) {
-  if (activeDimensions.empty()) {
-    //TODO
-    }
-
-
   size_t active = 0;
   for (size_t d = 0; d < activeDimensions.size(); d++) {
     if (activeDimensions[d]) {
@@ -34,31 +29,28 @@ sgpp::base::GridSample<double> sgpp::base::AnovaResult::apply(GridSample<double>
     }
   }
 
+  bool hasZeroComponent = false;
+  for (size_t i = 0; i < activeComponents.size(); i++) {
+    if (activeComponents[i] == AnovaHelper::AnovaComponent(active, false)) {
+      hasZeroComponent = true;
+      break;
+    }
+  }
+
+  AnovaHelper::AnovaComponentVector newComps(activeComponents);
+  if (!hasZeroComponent) {
+    newComps.emplace_back(AnovaHelper::AnovaComponent(active, false));
+    }
+
   std::shared_ptr<Grid> newGrid(
       sgpp::base::Grid::createAnovaBoundaryGrid(active, activeComponents));
   newGrid->getGenerator().regular(const_cast<Grid&>(sample.getGrid()).getStorage().getMaxLevel());
 
-  TransformationFunction t = createTransformationFunction();
-  std::map<DataVector, std::tuple<size_t, double>> collapsingPoints;
-  GridDistribution dist(*newGrid);
-  for (const DataVector& v : dist.getVectors()) {
-    collapsingPoints.emplace(v, std::tuple<size_t, double>{0, 0.0});
-  }
-
-  for (const DataVector& v : sample.getKeys()) {
-    DataVector newV;
-    t.eval(v, newV);
-    std::tuple<size_t, double>& t = collapsingPoints.at(newV);
-    std::get<0>(t)++;
-    std::get<1>(t) += sample.getValue(v);
-  }
-
-  std::function<double(const DataVector&)> f = [collapsingPoints](const DataVector& v) {
-    auto t = collapsingPoints.at(v);
-    return std::get<1>(t) / static_cast<double>(std::get<0>(t));
+    std::function<double(const DataVector&)> f = [sample](const DataVector& v) {
+    return sample.getValue(v);
   };
-  GridSample<double> s(newGrid, f);
-  return std::move(s);
+  GridSample<double> newSample(newGrid, f);
+  return std::move(newSample);
 }
 
 sgpp::base::AnovaVarianceCutter::AnovaVarianceCutter(double minVariance)
@@ -95,13 +87,9 @@ sgpp::base::AnovaResult sgpp::base::AnovaVarianceCutter::cut(const GridSample<do
 
 sgpp::base::AnovaInfo sgpp::base::AnovaReducer::evaluate(GridSample<double>& input) {
   DataVector v(input.getValues());
-  std::unique_ptr<sgpp::base::OperationHierarchisation>(
-      sgpp::op_factory::createOperationHierarchisation(const_cast<Grid&>(input.getGrid())))
-      ->doHierarchisation(v);
-  std::unique_ptr<sgpp::base::OperationAnova> op(
-      sgpp::op_factory::createOperationAnova(const_cast<Grid&>(input.getGrid())));
+  OperationAnova op(const_cast<Grid&>(input.getGrid()).getStorage());
   sgpp::base::Sample<AnovaHelper::AnovaComponent, double> variances =
-      op->calculateAnovaOrderVariances(v);
+      op.calculateAnovaComponentVariances(v);
 
   return AnovaInfo{variances};
 }
