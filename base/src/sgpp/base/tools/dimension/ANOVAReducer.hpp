@@ -7,53 +7,60 @@
 #define ANOVAREDUCER_HPP
 
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
-#include "sgpp/base/tools/Sample.hpp"
 #include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
+#include "sgpp/base/tools/Sample.hpp"
 
 namespace sgpp {
 namespace base {
 
-struct AnovaInfo
-{
+struct AnovaInfo {
   sgpp::base::Sample<AnovaHelper::AnovaComponent, double> variances;
+  double totalVariance;
 };
 
-struct AnovaResult
-{
+struct AnovaResult {
   std::vector<bool> activeDimensions;
   AnovaHelper::AnovaComponentVector activeComponents;
+  double coveredVariance;
+  size_t dimensions;
 
   TransformationFunction createTransformationFunction();
   GridSample<double> apply(GridSample<double>& sample);
-
 };
 
-    class AnovaCutter : public sgpp::base::Cutter<GridSample<double>, AnovaInfo, AnovaResult>
-    {
-    };
+class AnovaCutter : public sgpp::base::Cutter<GridSample<double>, AnovaInfo, AnovaResult> {};
 
-    class AnovaFixedCutter : public AnovaCutter {
-     public:
-      AnovaFixedCutter(size_t n);
-
-      AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
-
-     private:
-      size_t n;
-    };
-  
-  class AnovaVarianceCutter
-        : public AnovaCutter {
+class AnovaFixedCutter : public AnovaCutter {
  public:
-    AnovaVarianceCutter(double minVariance);
+  AnovaFixedCutter(size_t n);
+
+  AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
+
+ private:
+  size_t n;
+};
+
+  class AnovaDimensionVarianceShareCutter : public AnovaCutter {
+ public:
+    AnovaDimensionVarianceShareCutter(double minCoveredVariance);
+
+  AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
+
+ private:
+  double minCoveredVariance;
+  };
+
+class AnovaComponentVarianceCutter : public AnovaCutter {
+ public:
+  AnovaComponentVarianceCutter(double minVariance);
 
   AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
 
  private:
   double minVariance;
-  };
+};
 
-class AnovaReducer : public sgpp::base::Reducer<GridSample<double>,AnovaInfo,AnovaResult> {
+class AnovaReducer : public sgpp::base::Reducer<GridSample<double>, AnovaInfo, AnovaResult> {
  public:
   AnovaInfo evaluate(GridSample<double>& input) override;
 };

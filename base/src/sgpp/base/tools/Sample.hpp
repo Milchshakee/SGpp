@@ -12,6 +12,7 @@
 #include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
 #include "sgpp/optimization/function/vector/VectorFunction.hpp"
 #include "sgpp/base/operation/BaseOpFactory.hpp"
+#include "OperationQuadratureMC.hpp"
 
 namespace sgpp {
 namespace base {
@@ -103,6 +104,30 @@ class GridSample : public PointSample<T> {
         ->doHierarchisation(alpha);
     Sample<DataVector, T>::values = alpha;
   }
+
+  double quadrature()
+  {
+    std::unique_ptr<sgpp::base::OperationQuadrature> opQ(
+        sgpp::op_factory::createOperationQuadrature(*grid));
+    double res = opQ->doQuadrature(Sample<DataVector, T>::values);
+    return res;
+  }
+
+  double mcQuadrature(size_t paths)
+  {
+    sgpp::base::OperationQuadratureMC opMC(*grid, paths);
+    return opMC.doQuadrature(Sample<DataVector, T>::values);
+  }
+
+    double mcL2Error(FUNC f, size_t paths) {
+    sgpp::base::OperationQuadratureMC opMC(*grid, paths);
+    return opMC.doQuadratureL2Error(f, nullptr, alpha);
+  }
+
+    double mcL2Error(optimization::ScalarFunction& f, size_t paths) {
+      sgpp::base::OperationQuadratureMC opMC(*grid, paths);
+      return opMC.doQuadratureL2Error(f, nullptr, alpha);
+    }
 
   const Grid& getGrid() const { return *grid; }
 

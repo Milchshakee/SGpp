@@ -26,9 +26,32 @@ int main(int argc, char* argv[]) {
 
   auto reducer = sgpp::base::AnovaReducer();
   sgpp::base::AnovaInfo info = reducer.evaluate(sample);
-  sgpp::base::AnovaVarianceCutter cutter(0.5);
+
+  sgpp::base::AnovaDimensionVarianceShareCutter cutter(0.95);
+  // sgpp::base::AnovaComponentVarianceCutter cutter(0.5);
+
+  
+  //sgpp::base::AnovaFixedCutter cutter(1);
 
   sgpp::base::AnovaResult result = cutter.cut(sample, info);
+
+  
+    std::cout << "covered variance: " + std::to_string(result.coveredVariance) << std::endl;
+
+  // Loop over all dimensions and check if they are removed from the reduced grid
+  for (size_t d = 0; d < result.dimensions; ++d) {
+    std::cout << "dimension: " + std::to_string(d) << std::endl;
+    std::cout << "active: " + std::to_string(result.activeDimensions[d]) << std::endl;
+    }
+
+  // Loop over all active ANOVA components of the grid
+  for (sgpp::base::AnovaHelper::AnovaComponent component : result.activeComponents) {
+      std::string str(component.begin(), component.end());
+      std::cout << "component: " + str << std::endl;
+      std::cout << "component variance: " + std::to_string(info.variances.getValue(component)) << std::endl;
+  }
+
+
   auto reducedSample = result.apply(sample);
 
   std::cout << reducedSample.getDimensions() << std::endl;
