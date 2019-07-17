@@ -13,6 +13,7 @@
 
 // Better random number generator in C++11
 #include <random>
+#include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
 
 namespace sgpp {
 namespace base {
@@ -60,6 +61,14 @@ class OperationQuadratureMC : public OperationQuadrature {
   double doQuadratureFunc(FUNC func, void* clientdata);
 
   /**
+   * Quadrature of an arbitrary function using
+   * simple MC in @f$\Omega=[0,1]^d@f$.
+   *
+   * @param func The function to integrate
+   */
+  double doQuadratureFunc(optimization::ScalarFunction& func);
+
+  /**
    * Quadrature of the @f$L^2@f$-norm of the error,
    * @f$ ||f(x)-u(x)||_{L^2} @f$, between a given function and the
    * current sparse grid function using
@@ -70,6 +79,17 @@ class OperationQuadratureMC : public OperationQuadrature {
    * @param alpha Coefficient vector for current grid
    */
   double doQuadratureL2Error(FUNC func, void* clientdata, sgpp::base::DataVector& alpha);
+
+  /**
+   * Quadrature of the @f$L^2@f$-norm of the error,
+   * @f$ ||f(x)-u(x)||_{L^2} @f$, between a given function and the
+   * current sparse grid function using
+   * simple MC in @f$\Omega=[0,1]^d@f$.
+   *
+   * @param func The function @f$f(x)@f$
+   * @param alpha Coefficient vector for current grid
+   */
+  double doQuadratureL2Error(optimization::ScalarFunction& func, sgpp::base::DataVector& alpha);
 
  protected:
   // Pointer to the grid object

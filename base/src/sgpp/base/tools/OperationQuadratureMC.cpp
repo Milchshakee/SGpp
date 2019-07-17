@@ -117,5 +117,62 @@ double OperationQuadratureMC::doQuadratureL2Error(FUNC func, void* clientdata, D
   return sqrt(res / static_cast<double>(mcPaths) * determinant);
 }
 
+
+double OperationQuadratureMC::doQuadratureFunc(optimization::ScalarFunction& func) {
+  size_t dim = grid->getDimension();
+  BoundingBox& boundingBox = grid->getBoundingBox();
+  sgpp::base::DataVector point(dim);
+
+  // create number of paths (uniformly drawn from [0,1]^d)
+  double res = 0;
+
+  for (size_t i = 0; i < mcPaths; i++) {
+    for (size_t d = 0; d < dim; d++) {
+      /*p[d] = boundingBox.transformPointToBoundingBox(d, static_cast<double>(rand()) / RAND_MAX);*/
+      point[d] = boundingBox.transformPointToBoundingBox(
+          d, static_cast<double>(this->simple_rand()) / RAND_MAX);
+    }
+
+    res += func.eval(point);
+  }
+
+  // multiply with determinant of "unit cube -> BoundingBox" transformation
+  double determinant = 1.0;
+
+  for (size_t d = 0; d < dim; d++) {
+    determinant *= boundingBox.getIntervalWidth(d);
+  }
+
+  return res / static_cast<double>(mcPaths) * determinant;
+}
+
+double OperationQuadratureMC::doQuadratureL2Error(optimization::ScalarFunction& func,
+  sgpp::base::DataVector& alpha) {
+  size_t dim = grid->getDimension();
+  BoundingBox& boundingBox = grid->getBoundingBox();
+
+  sgpp::base::DataVector point(dim);
+  std::unique_ptr<OperationEval> opEval(sgpp::op_factory::createOperationEval(*grid));
+  // create number of paths (uniformly drawn from [0,1]^d)
+  double res = 0;
+
+  for (size_t i = 0; i < mcPaths; i++) {
+    for (size_t d = 0; d < dim; d++) {
+      point[d] = boundingBox.transformPointToBoundingBox(
+          d, static_cast<double>(this->simple_rand()) / RAND_MAX);
+    }
+    double val = func.eval(point);
+    res += pow(val - opEval->eval(alpha, point), 2);
+  }
+
+  // multiply with determinant of "unit cube -> BoundingBox" transformation
+  double determinant = 1.0;
+
+  for (size_t d = 0; d < dim; d++) {
+    determinant *= boundingBox.getIntervalWidth(d);
+  }
+
+  return sqrt(res / static_cast<double>(mcPaths) * determinant);
+}
 }  // namespace base
 }  // namespace sgpp
