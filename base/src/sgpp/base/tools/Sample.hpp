@@ -7,12 +7,12 @@
 #define SAMPLE_HPP
 
 #include <vector>
+#include "OperationQuadratureMC.hpp"
 #include "VectorDistribution.hpp"
 #include "sgpp/base/grid/Grid.hpp"
+#include "sgpp/base/operation/BaseOpFactory.hpp"
 #include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
 #include "sgpp/optimization/function/vector/VectorFunction.hpp"
-#include "sgpp/base/operation/BaseOpFactory.hpp"
-#include "OperationQuadratureMC.hpp"
 
 namespace sgpp {
 namespace base {
@@ -29,8 +29,7 @@ class Sample {
     }
   }
 
-  Sample(const std::map<K, T> map)
-      : keys(map.size()), values(map.size()) {
+  Sample(const std::map<K, T> map) : keys(map.size()), values(map.size()) {
     size_t counter = 0;
     for (auto i = map.begin(); i != map.end(); ++i) {
       keys[counter] = i->first;
@@ -97,42 +96,73 @@ class GridSample : public PointSample<T> {
     PointSample<T>::keys = d.getVectors();
   }
 
-  void hierarchise() {
-    sgpp::base::DataVector alpha(Sample<DataVector,T>::values);
-    std::unique_ptr<sgpp::base::OperationHierarchisation>(
-        sgpp::op_factory::createOperationHierarchisation(*grid))
-        ->doHierarchisation(alpha);
-    Sample<DataVector, T>::values = alpha;
+  const Grid& getGrid() const { return *grid; }
+
+ protected:
+  std::shared_ptr<Grid> grid;
+};
+
+class SGridSample : public GridSample<double> {
+ public:
+  SGridSample() = default;
+
+  SGridSample(std::shared_ptr<Grid>& grid, std::function<double(const DataVector&)>& func)
+      : GridSample<double>(grid, func), valuesView(values.data(), values.size()) {}
+
+  SGridSample(std::shared_ptr<Grid>& grid, optimization::ScalarFunction& func) {
+    GridSample<double>::grid = grid;
+    keys = std::vector<DataVector>(grid->getSize());
+    values = std::vector<double>(grid->getSize());
+
+    GridDistribution d(*grid);
+    for (size_t i = 0; i < d.getSize(); i++) {
+      keys[i] = d.getVectors()[i];
+      values[i] = func.eval(d.getVectors()[i]);
+    }
+    valuesView = DataVector(values.data(), values.size());
   }
 
-  double quadrature()
-  {
+  SGridSample(std::shared_ptr<Grid>& grid, const std::vector<double>& values)
+      : GridSample<double>(grid, values),
+        valuesView(GridSample<double>::values.data(), GridSample<double>::values.size()) {}
+
+  void hierarchise() {
+    std::unique_ptr<sgpp::base::OperationHierarchisation>(
+        sgpp::op_factory::createOperationHierarchisation(*grid))
+        ->doHierarchisation(valuesView);
+  }
+
+  double eval(const DataVector& point) {
+    std::unique_ptr<sgpp::base::OperationEval> op(sgpp::op_factory::createOperationEval(*grid));
+    return op->eval(valuesView, point);
+  }
+
+  double quadrature() {
     std::unique_ptr<sgpp::base::OperationQuadrature> opQ(
         sgpp::op_factory::createOperationQuadrature(*grid));
-    double res = opQ->doQuadrature(Sample<DataVector, T>::values);
+    double res = opQ->doQuadrature(valuesView);
     return res;
   }
 
-  double mcQuadrature(size_t paths)
-  {
+  double mcQuadrature(size_t paths) {
     sgpp::base::OperationQuadratureMC opMC(*grid, paths);
-    return opMC.doQuadrature(Sample<DataVector, T>::values);
+    return opMC.doQuadrature(valuesView);
   }
 
-    double mcL2Error(FUNC f, size_t paths) {
+  double mcL2Error(FUNC f, void* clientdata, size_t paths) {
     sgpp::base::OperationQuadratureMC opMC(*grid, paths);
-    return opMC.doQuadratureL2Error(f, nullptr, alpha);
+    return opMC.doQuadratureL2Error(f, clientdata, valuesView);
   }
 
-    double mcL2Error(optimization::ScalarFunction& f, size_t paths) {
-      sgpp::base::OperationQuadratureMC opMC(*grid, paths);
-      return opMC.doQuadratureL2Error(f, nullptr, alpha);
-    }
+  double mcL2Error(optimization::ScalarFunction& f, size_t paths) {
+    sgpp::base::OperationQuadratureMC opMC(*grid, paths);
+    return opMC.doQuadratureL2Error(f, valuesView);
+  }
 
-  const Grid& getGrid() const { return *grid; }
+  const DataVector& getValuesView() const { return valuesView; }
 
  private:
-  std::shared_ptr<Grid> grid;
+  DataVector valuesView;
 };
 
 namespace SampleHelper {
@@ -153,13 +183,6 @@ inline PointSample<double> sampleScalarFunction(VectorDistribution& dist,
     values[i] = func.eval(dist.getVectors()[i]);
   }
   return PointSample<double>(dist.getVectors(), values);
-}
-
-inline GridSample<double> sampleGrid(std::shared_ptr<Grid>& grid,
-                                     optimization::ScalarFunction& func) {
-  GridDistribution d(*grid);
-  PointSample<double> s = sampleScalarFunction(d, func);
-  return std::move(GridSample<double>(grid, s.getValues()));
 }
 
 inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,

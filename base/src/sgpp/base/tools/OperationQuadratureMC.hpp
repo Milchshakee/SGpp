@@ -40,7 +40,7 @@ class OperationQuadratureMC : public OperationQuadrature {
    * @param mcPaths Number of Monte Carlo samples
    *
    */
-  OperationQuadratureMC(sgpp::base::Grid& grid, int mcPaths);
+  OperationQuadratureMC(sgpp::base::Grid& grid, size_t mcPaths);
 
   ~OperationQuadratureMC() override {}
 

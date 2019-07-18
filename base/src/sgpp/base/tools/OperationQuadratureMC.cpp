@@ -17,7 +17,7 @@
 namespace sgpp {
 namespace base {
 
-OperationQuadratureMC::OperationQuadratureMC(Grid& grid, int mcPaths)
+OperationQuadratureMC::OperationQuadratureMC(Grid& grid, size_t mcPaths)
     : grid(&grid), mcPaths(mcPaths) {
   // init seed for random number generator
   srand((unsigned)time(0));

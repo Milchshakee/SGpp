@@ -12,9 +12,9 @@
 namespace sgpp {
 namespace base {
 
-    
 class TransformationFunction : public sgpp::optimization::VectorFunction {
  public:
+  TransformationFunction() : VectorFunction(0, 0) {};
   TransformationFunction(DataMatrix transformation);
   ~TransformationFunction() override = default;
 
@@ -31,6 +31,13 @@ class Cutter {
   virtual OUTPUT cut(const INPUT& input, const INFO& info) = 0;
 };
 
+template <class T>
+class Result {
+ public:
+  virtual TransformationFunction& getTransformationFunction() = 0;
+  virtual T& getReducedOutput() = 0;
+};
+
 template <class INPUT, class INFO, class OUTPUT>
 class Reducer {
  public:
@@ -44,7 +51,6 @@ class Reducer {
   }
 
   virtual INFO evaluate(INPUT& input) = 0;
-
 };
 }  // namespace base
 }  // namespace sgpp

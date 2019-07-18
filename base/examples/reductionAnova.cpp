@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
   std::shared_ptr<sgpp::base::Grid> grid(sgpp::base::Grid::createAnovaBoundaryGrid(dim));
   grid->getGenerator().regular(2);
 
-  sgpp::base::GridSample<double> sample = sgpp::base::SampleHelper::sampleGrid(grid, func);
+  sgpp::base::SGridSample sample(grid, func);
   sample.hierarchise();
 
   //std::unique_ptr<sgpp::base::OperationEval> op(
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
   }
 
 
-  auto reducedSample = result.apply(sample);
+  sgpp::base::SGridSample& reducedSample = result.getReducedOutput();
 
   std::cout << reducedSample.getDimensions() << std::endl;
 }

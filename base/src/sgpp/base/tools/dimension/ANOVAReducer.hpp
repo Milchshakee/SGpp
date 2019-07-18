@@ -18,23 +18,34 @@ struct AnovaInfo {
   double totalVariance;
 };
 
-struct AnovaResult {
-  std::vector<bool> activeDimensions;
-  AnovaHelper::AnovaComponentVector activeComponents;
-  double coveredVariance;
-  size_t dimensions;
+class AnovaResult : public Result<SGridSample> {
+public:
+  const std::vector<bool> activeDimensions;
+ const AnovaHelper::AnovaComponentVector activeComponents;
+  const double coveredVariance;
+ const size_t dimensions;
 
-  TransformationFunction createTransformationFunction();
-  GridSample<double> apply(GridSample<double>& sample);
+  AnovaResult(std::vector<bool>& activeDimensions,
+             AnovaHelper::AnovaComponentVector& activeComponents, double coveredVariance,
+             size_t dimensions, SGridSample sample);
+
+ double calcMcL2Error(optimization::ScalarFunction& func, size_t paths, uint64_t seed = std::mt19937_64::default_seed);
+
+  TransformationFunction& getTransformationFunction();
+  SGridSample& getReducedOutput();
+
+ private:
+  TransformationFunction f;
+  SGridSample reducedSample;
 };
 
-class AnovaCutter : public sgpp::base::Cutter<GridSample<double>, AnovaInfo, AnovaResult> {};
+class AnovaCutter : public sgpp::base::Cutter<SGridSample, AnovaInfo, AnovaResult> {};
 
 class AnovaFixedCutter : public AnovaCutter {
  public:
   AnovaFixedCutter(size_t n);
 
-  AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
+  AnovaResult cut(const SGridSample& input, const AnovaInfo& info) override;
 
  private:
   size_t n;
@@ -44,7 +55,7 @@ class AnovaFixedCutter : public AnovaCutter {
  public:
     AnovaDimensionVarianceShareCutter(double minCoveredVariance);
 
-  AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
+  AnovaResult cut(const SGridSample& input, const AnovaInfo& info) override;
 
  private:
   double minCoveredVariance;
@@ -54,15 +65,15 @@ class AnovaComponentVarianceCutter : public AnovaCutter {
  public:
   AnovaComponentVarianceCutter(double minVariance);
 
-  AnovaResult cut(const GridSample<double>& input, const AnovaInfo& info) override;
+  AnovaResult cut(const SGridSample& input, const AnovaInfo& info) override;
 
  private:
   double minVariance;
 };
 
-class AnovaReducer : public sgpp::base::Reducer<GridSample<double>, AnovaInfo, AnovaResult> {
+class AnovaReducer : public sgpp::base::Reducer<SGridSample, AnovaInfo, AnovaResult> {
  public:
-  AnovaInfo evaluate(GridSample<double>& input) override;
+  AnovaInfo evaluate(SGridSample& input) override;
 };
 
 }  // namespace base
