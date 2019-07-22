@@ -6,7 +6,10 @@
 #include "sgpp/base/tools/dimension/AnovaReducer.hpp"
 #include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
 
-double f(const sgpp::base::DataVector& v) { return 2.0 + v[0] + v[1]; }
+double f(const sgpp::base::DataVector& v) {
+  //return 2.0 + v[0];
+  return 2.0 + std::exp(v[0]) + v[0] * std::exp(-0.5 * v[1]) + std::exp(3 * v[1]);
+}
 
 size_t dim = 2;
 size_t maxLevel = 10;
@@ -27,11 +30,13 @@ int main(int argc, char* argv[]) {
     m.set(1, l, normalL2Error);
 
     sgpp::base::AnovaInfo info = reducer.evaluate(sample);
-    sgpp::base::AnovaDimensionVarianceShareCutter cutter(0.95);
+    sgpp::base::AnovaFixedCutter cutter(1);
     sgpp::base::AnovaResult result = cutter.cut(sample, info);
     auto& reducedSample = result.getReducedOutput();
+    //double test = reducedSample.eval(sgpp::base::DataVector(1, 0.4));
     double reducedL2Error = result.calcMcL2Error(func, paths);
-    m.set(2, l, normalL2Error);
+    m.set(2, l, reducedL2Error);
   }
+  m.transpose();
   m.toFile("results.txt");
 }

@@ -20,10 +20,10 @@ struct AnovaInfo {
 
 class AnovaResult : public Result<SGridSample> {
 public:
-  const std::vector<bool> activeDimensions;
- const AnovaHelper::AnovaComponentVector activeComponents;
-  const double coveredVariance;
- const size_t dimensions;
+  std::vector<bool> activeDimensions;
+ AnovaHelper::AnovaComponentVector activeComponents;
+  double coveredVariance;
+ size_t dimensions;
 
   AnovaResult(std::vector<bool>& activeDimensions,
              AnovaHelper::AnovaComponentVector& activeComponents, double coveredVariance,
@@ -36,6 +36,7 @@ public:
 
  private:
   TransformationFunction f;
+  SGridSample orginialSample;
   SGridSample reducedSample;
 };
 

@@ -6,13 +6,39 @@
 sgpp::base::AnovaComponentVarianceCutter::AnovaComponentVarianceCutter(double minVariance)
     : minVariance(minVariance) {}
 
-sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& activeDimensions,
-                                     AnovaHelper::AnovaComponentVector& activeComponents,
-                                     double coveredVariance, size_t dimensions, SGridSample sample)
-    : activeDimensions(activeDimensions),
-      activeComponents(activeComponents),
-      coveredVariance(coveredVariance),
-      dimensions(dimensions) {
+sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad,
+                                     AnovaHelper::AnovaComponentVector& ac,
+                                     double cv, size_t d, SGridSample sample)
+    : activeDimensions(ad),
+      activeComponents(ac),
+      coveredVariance(cv),
+      dimensions(d),
+orginialSample(sample){
+  size_t active = 0;
+  for (size_t d = 0; d < activeDimensions.size(); d++) {
+    if (activeDimensions[d]) {
+      active++;
+    }
+  }
+  if (active == 0) {
+    activeDimensions[0] = true;
+    active++;
+    activeComponents.clear();
+    dimensions++;
+  }
+
+  bool hasZeroComponent = false;
+  for (size_t i = 0; i < activeComponents.size(); i++) {
+    if (activeComponents[i] == AnovaHelper::AnovaComponent(active, false)) {
+      hasZeroComponent = true;
+      break;
+    }
+  }
+
+  if (!hasZeroComponent) {
+    activeComponents.emplace_back(AnovaHelper::AnovaComponent(active, false));
+  }
+
   // create transformation function
 
   DataMatrix mat(0, activeDimensions.size());
@@ -26,33 +52,22 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& activeDimensions,
   f = TransformationFunction(mat);
 
   // create reduced sample
-
-  size_t active = 0;
-  for (size_t d = 0; d < activeDimensions.size(); d++) {
-    if (activeDimensions[d]) {
-      active++;
-    }
-  }
-
-  bool hasZeroComponent = false;
-  for (size_t i = 0; i < activeComponents.size(); i++) {
-    if (activeComponents[i] == AnovaHelper::AnovaComponent(active, false)) {
-      hasZeroComponent = true;
-      break;
-    }
-  }
-
-  AnovaHelper::AnovaComponentVector newComps(activeComponents);
-  if (!hasZeroComponent) {
-    newComps.emplace_back(AnovaHelper::AnovaComponent(active, false));
-  }
-
   std::shared_ptr<Grid> newGrid(
       sgpp::base::Grid::createAnovaBoundaryGrid(active, activeComponents));
   newGrid->getGenerator().regular(const_cast<Grid&>(sample.getGrid()).getStorage().getMaxLevel());
 
-  std::function<double(const DataVector&)> f = [sample](const DataVector& v) {
-    return sample.getValue(v);
+  std::function<double(const DataVector&)> f = [this,sample](const DataVector& v) {
+    DataVector newV(sample.getDimensions());
+    size_t counter = 0;
+    for (size_t d = 0; d < activeDimensions.size(); d++) {
+      if (activeDimensions[d]) {
+        newV[d] = v[counter];
+        counter++;
+      } else {
+        newV[d] = 0;
+        }
+    }
+    return sample.getValue(newV);
   };
   reducedSample = SGridSample(newGrid, f);
 }
@@ -61,22 +76,24 @@ double sgpp::base::AnovaResult::calcMcL2Error(optimization::ScalarFunction& func
                                               uint64_t seed) {
   std::mt19937_64 rand(seed);
   std::uniform_real_distribution<double> dist(0, 1);
-  size_t dim = func.getNumberOfParameters();
-  BoundingBox& boundingBox = const_cast<Grid&>(reducedSample.getGrid()).getBoundingBox();
+  size_t funcDimensions = func.getNumberOfParameters();
+  BoundingBox& boundingBox = const_cast<Grid&>(orginialSample.getGrid()).getBoundingBox();
 
-  sgpp::base::DataVector point(dim);
+  sgpp::base::DataVector point(funcDimensions);
   double res = 0;
 
   for (size_t i = 0; i < paths; i++) {
-    for (size_t d = 0; d < dim; d++) {
+    for (size_t d = 0; d < funcDimensions; d++) {
       point[d] = boundingBox.transformPointToBoundingBox(d, dist(rand));
     }
     double val = func.eval(point);
-    res += pow(val - reducedSample.eval(point), 2);
+    DataVector out(dimensions);
+    f.eval(point, out);
+    res += pow(val - reducedSample.eval(out), 2);
   }
 
   double determinant = 1.0;
-  for (size_t d = 0; d < dim; d++) {
+  for (size_t d = 0; d < dimensions; d++) {
     determinant *= boundingBox.getIntervalWidth(d);
   }
 
@@ -131,18 +148,21 @@ sgpp::base::AnovaDimensionVarianceShareCutter::AnovaDimensionVarianceShareCutter
     : minCoveredVariance(minCoveredVariance) {}
 
 void cutRec(double minShare, double* currentVar, double totalVar, size_t* dim,
-            const sgpp::base::AnovaInfo& info, sgpp::base::AnovaHelper::AnovaComponentVector& comps,
+            sgpp::base::Sample<sgpp::base::AnovaHelper::AnovaComponent, double>& variances,
             std::vector<bool>& activeDimensions, size_t minDim = 1) {
-  if (*dim < minDim) {
+  if (*dim <= minDim) {
     return;
-    }
+  }
+
+  std::vector<sgpp::base::AnovaHelper::AnovaComponent>& comps =
+      const_cast<std::vector<sgpp::base::AnovaHelper::AnovaComponent>&>(variances.getKeys());
 
   std::vector<double> vars(*dim);
   for (size_t d = 0; d < *dim; d++) {
     double var = 0;
-    for (sgpp::base::AnovaHelper::AnovaComponent c : comps) {
+    for (sgpp::base::AnovaHelper::AnovaComponent& c : comps) {
       if (c[d]) {
-        var += info.variances.getValue(c);
+        var += variances.getValue(c);
       }
     }
     vars[d] = var;
@@ -180,7 +200,7 @@ void cutRec(double minShare, double* currentVar, double totalVar, size_t* dim,
 
     (*currentVar) -= removedVar;
     (*dim) -= 1;
-    cutRec(minShare, currentVar, totalVar, dim, info, comps, activeDimensions, minDim);
+    cutRec(minShare, currentVar, totalVar, dim, variances, activeDimensions, minDim);
   }
 }
 
@@ -188,24 +208,30 @@ sgpp::base::AnovaFixedCutter::AnovaFixedCutter(size_t n) : n(n) {}
 
 sgpp::base::AnovaResult sgpp::base::AnovaFixedCutter::cut(const SGridSample& input,
                                                           const AnovaInfo& info) {
-  AnovaHelper::AnovaComponentVector comps(info.variances.getKeys());
   double var = info.totalVariance;
   size_t dim = input.getDimensions();
   std::vector<bool> activeDimensions(dim, true);
-  cutRec(0.0, &var, info.totalVariance, &dim, info, comps, activeDimensions, n);
+  sgpp::base::Sample<sgpp::base::AnovaHelper::AnovaComponent, double> variances = info.variances;
+  cutRec(0.0, &var, info.totalVariance, &dim, variances, activeDimensions, n);
 
-  return AnovaResult(activeDimensions, comps, var, dim, input);
+  return AnovaResult(
+      activeDimensions,
+      const_cast<std::vector<sgpp::base::AnovaHelper::AnovaComponent>&>(variances.getKeys()), var,
+      dim, input);
 }
 
 sgpp::base::AnovaResult sgpp::base::AnovaDimensionVarianceShareCutter::cut(const SGridSample& input,
                                                                            const AnovaInfo& info) {
-  AnovaHelper::AnovaComponentVector comps(info.variances.getKeys());
   double var = info.totalVariance;
   size_t dim = input.getDimensions();
   std::vector<bool> activeDimensions(dim, true);
-  cutRec(minCoveredVariance, &var, info.totalVariance, &dim, info, comps, activeDimensions);
+  sgpp::base::Sample<sgpp::base::AnovaHelper::AnovaComponent, double> variances = info.variances;
+  cutRec(minCoveredVariance, &var, info.totalVariance, &dim, variances, activeDimensions);
 
-  return AnovaResult(activeDimensions, comps, var, dim, input);
+  return AnovaResult(
+      activeDimensions,
+      const_cast<std::vector<sgpp::base::AnovaHelper::AnovaComponent>&>(variances.getKeys()),
+      var / info.totalVariance, dim, input);
 }
 
 sgpp::base::AnovaInfo sgpp::base::AnovaReducer::evaluate(SGridSample& input) {

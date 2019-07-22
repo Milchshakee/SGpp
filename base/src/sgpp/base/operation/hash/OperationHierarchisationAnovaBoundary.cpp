@@ -17,14 +17,9 @@ void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_v
   HierarchisationAnovaBoundary func(storage);
   sweep_anova<HierarchisationAnovaBoundary> s(func, storage);
 
-  // N D case
-  if (this->storage.getDimension() > 1) {
     for (size_t i = 0; i < this->storage.getDimension(); i++) {
       s.sweep1D_AnovaBoundary(node_values, node_values, i);
     }
-  } else {  // 1 D case
-    //s.sweep1D(node_values, node_values, 0);
-  }
 }
 
 void OperationHierarchisationAnovaBoundary::doDehierarchisation(DataVector& alpha) {

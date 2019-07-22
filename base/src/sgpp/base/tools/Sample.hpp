@@ -130,6 +130,7 @@ class SGridSample : public GridSample<double> {
     std::unique_ptr<sgpp::base::OperationHierarchisation>(
         sgpp::op_factory::createOperationHierarchisation(*grid))
         ->doHierarchisation(valuesView);
+    update();
   }
 
   double eval(const DataVector& point) {
@@ -162,6 +163,10 @@ class SGridSample : public GridSample<double> {
   const DataVector& getValuesView() const { return valuesView; }
 
  private:
+  void update() {
+    values = std::vector<double>(valuesView.begin(), valuesView.end());
+  }
+
   DataVector valuesView;
 };
 

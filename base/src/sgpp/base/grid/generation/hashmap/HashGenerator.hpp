@@ -567,22 +567,11 @@ class HashGenerator {
 
         idx.setLeaf(!hasZeroLevel && idx.getLevelSum() == n);
 
-        storage.insert(idx);
-      }
-
-      // Cut out any ansatz function
-      if (!components.empty()) {
-        std::list<size_t> toRemove;
-        const size_t gridSize = storage.getSize();
-        for (size_t g = 0; g < gridSize; g++) {
-          GridPoint& idx = storage.getPoint(g);
-          AnovaHelper::AnovaComponent comp = AnovaHelper::getAnovaComponentOfPoint(idx);
-
-          if (std::find(components.begin(), components.end(), comp) == components.end()) {
-            toRemove.emplace_back(g);
-          }
+        // Cut out any ansatz function
+        AnovaHelper::AnovaComponent comp = AnovaHelper::getAnovaComponentOfPoint(idx);
+        if (components.empty() || std::find(components.begin(), components.end(), comp) != components.end()) {
+          storage.insert(idx);
         }
-        storage.deletePoints(toRemove);
       }
     }
   }

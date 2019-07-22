@@ -1,5 +1,6 @@
 #include "AsMcReducer.hpp"
 #include "EigenHelper.hpp"
+#include "sgpp/base/tools/Sample.hpp"
 
 namespace sgpp {
 namespace base {
