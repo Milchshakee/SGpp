@@ -19,49 +19,26 @@ struct AsInfo {
   sgpp::base::DataVector eigenValues;
 };
 
-class AsReducedFunction : public sgpp::optimization::ScalarFunction {
- public:
-  AsReducedFunction(std::unique_ptr<sgpp::optimization::ScalarFunction>&& function,
-                    DataMatrix transformation);
-  ~AsReducedFunction() override = default;
+template <class T>
+struct AsResult : Result<T>{
+  AsResult(const DataMatrix& m, size_t n) {
+    DataMatrix transformation = m;
+    //transformation.resizeRowsCols(m.getNrows(), n);
+    transformation.setColumn(1, DataVector(2, 0));
+    transformation.transpose();
+    f = TransformationFunction(transformation);
+  }
 
-  double eval(const base::DataVector& x) override;
-  void clone(std::unique_ptr<ScalarFunction>& clone) const override;
-
- private:
-  std::unique_ptr<sgpp::optimization::ScalarFunction> function;
-  DataMatrix transformation;
-};
-
-struct AsResult {
-  AsResult(const DataMatrix& m, size_t n);
-
-  DataMatrix transformation;
-
-  std::unique_ptr<AsReducedFunction> apply(sgpp::optimization::ScalarFunction& input);
-};
-
-  template <class INPUT>
-class AsEigenValueCutter : public Cutter<INPUT, AsInfo, AsResult> {
- public:
-    AsEigenValueCutter(double minValue) : minEigenValue(minValue) {}
-
-  AsResult cut(const INPUT& input, const AsInfo& info) override
-  {
-    for (size_t d = 0; d < info.eigenValues.size(); ++d) {
-      if (info.eigenValues[d] < minEigenValue) {
-        return AsResult(info.eigenVectors, d + 1);
-      }
-    }
-    return AsResult(info.eigenVectors, info.eigenValues.size());
+  TransformationFunction& getTransformationFunction() override
+  { return f;
   };
 
  private:
-  double minEigenValue;
+  TransformationFunction f;
 };
 
 template <class I>
-class AsReducer : public sgpp::base::Reducer<I, AsInfo, AsResult> {
+class AsReducer : public sgpp::base::Reducer<I, AsInfo, AsResult<I>> {
 };
 
 }  // namespace base

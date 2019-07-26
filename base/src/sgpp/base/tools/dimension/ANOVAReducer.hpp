@@ -29,14 +29,13 @@ public:
              AnovaHelper::AnovaComponentVector& activeComponents, double coveredVariance,
              size_t dimensions, SGridSample sample);
 
- double calcMcL2Error(optimization::ScalarFunction& func, size_t paths, uint64_t seed = std::mt19937_64::default_seed);
-
   TransformationFunction& getTransformationFunction();
   SGridSample& getReducedOutput();
+  optimization::ScalarFunction& getReducedFunction() override;
 
  private:
+  EvalFunction eval;
   TransformationFunction f;
-  SGridSample orginialSample;
   SGridSample reducedSample;
 };
 

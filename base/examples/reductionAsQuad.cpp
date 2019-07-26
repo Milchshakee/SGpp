@@ -32,39 +32,39 @@ int main(int argc, char* argv[]) {
   auto reducer = sgpp::base::AsQuadReducer();
 
 
-  // Use the reducer to first evaluate the function using the sampled gradients
-  sgpp::base::AsInfo info = reducer.evaluate(sample);
+  //// Use the reducer to first evaluate the function using the sampled gradients
+  //sgpp::base::AsInfo info = reducer.evaluate(sample);
 
-  // Print out all the information that the reducer has gathered
-  for (size_t d = 0; d < dim; ++d) {
-    std::cout << "dimension: " + std::to_string(d) << std::endl;
-  
-    sgpp::base::DataVector e(dim);
-    info.eigenVectors.getColumn(d, e);
-    std::cout << "eigen vector: " + e.toString() << std::endl;
+  //// Print out all the information that the reducer has gathered
+  //for (size_t d = 0; d < dim; ++d) {
+  //  std::cout << "dimension: " + std::to_string(d) << std::endl;
+  //
+  //  sgpp::base::DataVector e(dim);
+  //  info.eigenVectors.getColumn(d, e);
+  //  std::cout << "eigen vector: " + e.toString() << std::endl;
 
-    std::cout << "eigen value: " + std::to_string(info.eigenValues[d]) << std::endl;
-    std::cout << std::endl;
-  }
+  //  std::cout << "eigen value: " + std::to_string(info.eigenValues[d]) << std::endl;
+  //  std::cout << std::endl;
+  //}
 
 
-  //Create the cutter used to cut off some dimensions
-  //In this case we cut every dimension that has an eigen value of less than 0.1
-  auto cutter = sgpp::base::AsQuadEigenValueCutter(0.1);
-  // Alternatively, we can also reduce the dimensions to a fixed parameter without caring about the accuracy of that reduction.
-  // auto cutter = sgpp::base::AsQuadFixedCutter(1);
+  ////Create the cutter used to cut off some dimensions
+  ////In this case we cut every dimension that has an eigen value of less than 0.1
+  //auto cutter = sgpp::base::AsQuadEigenValueCutter(0.1);
+  //// Alternatively, we can also reduce the dimensions to a fixed parameter without caring about the accuracy of that reduction.
+  //// auto cutter = sgpp::base::AsQuadFixedCutter(1);
 
-  
-  // Use the cutter to remove unwanted dimensions
-  sgpp::base::AsResult result = cutter.cut(sample, info);
-  std::cout << "transformation matrix used to reduce the function: " +
-                   result.transformation.toString()
-            << std::endl;
+  //
+  //// Use the cutter to remove unwanted dimensions
+  //sgpp::base::AsResult result = cutter.cut(sample, info);
+  //std::cout << "transformation matrix used to reduce the function: " +
+  //                 result.transformation.toString()
+  //          << std::endl;
 
   // Apply the result to the function
   // In this step, the function input is transformed using the transformation matrix from the result.
-  auto reducedFunc = result.apply(func);
+  //auto reducedFunc = result.apply(func);
 
-  std::cout << reducedFunc->eval(sgpp::base::DataVector(1, 0.4)) << std::endl;
+  //std::cout << reducedFunc->eval(sgpp::base::DataVector(1, 0.4)) << std::endl;
   return 0;
 }

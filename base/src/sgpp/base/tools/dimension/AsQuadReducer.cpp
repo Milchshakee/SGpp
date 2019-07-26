@@ -3,37 +3,44 @@
 #include "sgpp/base/operation/BaseOpFactory.hpp"
 
 
+sgpp::base::AsQuadResult::AsQuadResult(const SGridSample& input, const DataMatrix& m, size_t n) : AsResult<sgpp::base::SGridSample>(m, n) {
+
+}
+
+sgpp::optimization::ScalarFunction& sgpp::base::AsQuadResult::getReducedFunction() {
+
+}
+
+sgpp::base::SGridSample& sgpp::base::AsQuadResult::getReducedOutput() { return reduced; }
+
 sgpp::base::AsQuadFixedCutter::AsQuadFixedCutter(size_t n) : n(n) {
 }
 
-sgpp::base::AsResult sgpp::base::AsQuadFixedCutter::cut(const GridSample<DataVector>& input,
+sgpp::base::AsQuadResult sgpp::base::AsQuadFixedCutter::cut(const AsQuadInput& input,
                                                         const AsInfo& info) {
-  return AsResult(info.eigenVectors, n);
+  return AsQuadResult(input.functionSample, info.eigenVectors, n);
 }
 
-sgpp::base::AsQuadEigenValueCutter::AsQuadEigenValueCutter(double minEigenValue) : AsEigenValueCutter<sgpp::base::GridSample<sgpp::base::DataVector>>(minEigenValue) {
-}
+sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(AsQuadInput& input) {
 
-sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(GridSample<DataVector>& input) {
-
-  std::vector<PointSample<double>> samples(input.getDimensions());
-    for (size_t i = 0; i < input.getDimensions(); ++i) {
+  std::vector<PointSample<double>> samples(input.gradientSample.getDimensions());
+    for (size_t i = 0; i < input.gradientSample.getDimensions(); ++i) {
     std::function<double(const DataVector&)> f = [i](const DataVector& v) { return v[i]; };
-      PointSample<double> grad(input.getValues(), f);
+      PointSample<double> grad(input.gradientSample.getValues(), f);
     samples[i] = grad;
       }
     std::unique_ptr<sgpp::base::OperationQuadrature> op(
-        sgpp::op_factory::createOperationQuadrature(const_cast<Grid&>(input.getGrid())));
-    sgpp::base::DataMatrix m(input.getDimensions(), input.getDimensions());
-  for (size_t i = 0; i < input.getDimensions(); ++i) {
-        for (size_t j = 0; j < input.getDimensions(); ++j) {
+        sgpp::op_factory::createOperationQuadrature(const_cast<Grid&>(input.gradientSample.getGrid())));
+    sgpp::base::DataMatrix m(input.gradientSample.getDimensions(), input.gradientSample.getDimensions());
+  for (size_t i = 0; i < input.gradientSample.getDimensions(); ++i) {
+        for (size_t j = 0; j < input.gradientSample.getDimensions(); ++j) {
       size_t counter = 0;
           std::function<double(const DataVector&)> f = [&counter, i, j, samples](const DataVector& v) {
             double val = samples[i].getValues()[counter] * samples[j].getValues()[counter];
         counter++;
         return val;
           };
-      PointSample<double> alphas(input.getKeys(), f);
+      PointSample<double> alphas(input.gradientSample.getKeys(), f);
           DataVector v(alphas.getValues());
           double val = op->doQuadrature(v);
           m.set(i, j, val);
@@ -42,8 +49,9 @@ sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(GridSample<DataVector>& i
     }
 
   AsInfo i;
-  i.eigenVectors = sgpp::base::DataMatrix(input.getDimensions(), input.getDimensions());
-    i.eigenValues = sgpp::base::DataVector(input.getDimensions());
+    i.eigenVectors = sgpp::base::DataMatrix(input.gradientSample.getDimensions(),
+                                          input.gradientSample.getDimensions());
+  i.eigenValues = sgpp::base::DataVector(input.gradientSample.getDimensions());
     EigenHelper::svd(EigenHelper::toEigen(m), i.eigenVectors, i.eigenValues);
     return i;
 

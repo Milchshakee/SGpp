@@ -12,8 +12,7 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad,
     : activeDimensions(ad),
       activeComponents(ac),
       coveredVariance(cv),
-      dimensions(d),
-orginialSample(sample){
+      dimensions(d) {
   size_t active = 0;
   for (size_t d = 0; d < activeDimensions.size(); d++) {
     if (activeDimensions[d]) {
@@ -70,39 +69,14 @@ orginialSample(sample){
     return sample.getValue(newV);
   };
   reducedSample = SGridSample(newGrid, f);
-}
-
-double sgpp::base::AnovaResult::calcMcL2Error(optimization::ScalarFunction& func, size_t paths,
-                                              uint64_t seed) {
-  std::mt19937_64 rand(seed);
-  std::uniform_real_distribution<double> dist(0, 1);
-  size_t funcDimensions = func.getNumberOfParameters();
-  BoundingBox& boundingBox = const_cast<Grid&>(orginialSample.getGrid()).getBoundingBox();
-
-  sgpp::base::DataVector point(funcDimensions);
-  double res = 0;
-
-  for (size_t i = 0; i < paths; i++) {
-    for (size_t d = 0; d < funcDimensions; d++) {
-      point[d] = boundingBox.transformPointToBoundingBox(d, dist(rand));
-    }
-    double val = func.eval(point);
-    DataVector out(dimensions);
-    f.eval(point, out);
-    res += pow(val - reducedSample.eval(out), 2);
-  }
-
-  double determinant = 1.0;
-  for (size_t d = 0; d < dimensions; d++) {
-    determinant *= boundingBox.getIntervalWidth(d);
-  }
-
-  return sqrt(res / static_cast<double>(paths) * determinant);
+  eval = EvalFunction(reducedSample);
 }
 
 sgpp::base::TransformationFunction& sgpp::base::AnovaResult::getTransformationFunction() {
   return f;
 }
+
+sgpp::optimization::ScalarFunction& sgpp::base::AnovaResult::getReducedFunction() { return eval; }
 
 sgpp::base::SGridSample& sgpp::base::AnovaResult::getReducedOutput() { return reducedSample; }
 

@@ -16,26 +16,37 @@
 namespace sgpp {
 namespace base {
 
-    class AsQuadFixedCutter : public Cutter<GridSample<DataVector>, AsInfo, AsResult>
+  struct AsQuadInput
+  {
+  SGridSample functionSample;
+  GridSample<DataVector> gradientSample;
+  };
+
+  class AsQuadResult : public AsResult<SGridSample>
+  {
+  public:
+    AsQuadResult(const SGridSample& input, const DataMatrix& m, size_t n);
+
+    optimization::ScalarFunction& getReducedFunction() override;
+    SGridSample& getReducedOutput() override;
+  private:
+    SGridSample reduced;
+  };
+
+    class AsQuadFixedCutter : public Cutter<AsQuadInput, AsInfo, AsQuadResult>
     {
     public:
   AsQuadFixedCutter(size_t n);
 
-      AsResult cut(const GridSample<DataVector>& input, const AsInfo& info) override;
+      AsQuadResult cut(const AsQuadInput& input, const AsInfo& info) override;
 
     private:
       size_t n;
     };
 
-  class AsQuadEigenValueCutter : public AsEigenValueCutter<GridSample<DataVector>>
-  {
-  public:
-    AsQuadEigenValueCutter(double minEigenValue);
-  };
-
-class AsQuadReducer : public AsReducer<GridSample<DataVector>> {
+class AsQuadReducer : public AsReducer<AsQuadInput> {
  public:
-  AsInfo evaluate(GridSample<DataVector>& input) override;
+  AsInfo evaluate(AsQuadInput& input) override;
 
 };
 

@@ -133,7 +133,7 @@ class SGridSample : public GridSample<double> {
     update();
   }
 
-  double eval(const DataVector& point) {
+  double eval(const DataVector& point) const {
     std::unique_ptr<sgpp::base::OperationEval> op(sgpp::op_factory::createOperationEval(*grid));
     return op->eval(valuesView, point);
   }
@@ -192,7 +192,7 @@ inline PointSample<double> sampleScalarFunction(VectorDistribution& dist,
 
 inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
                                                     optimization::VectorFunction& func) {
-  std::vector<DataVector> values(dist.getSize());
+  std::vector<DataVector> values(dist.getSize(), DataVector(dist.getDimensions()));
   for (size_t i = 0; i < dist.getSize(); i++) {
     func.eval(dist.getVectors()[i], values[i]);
   }
