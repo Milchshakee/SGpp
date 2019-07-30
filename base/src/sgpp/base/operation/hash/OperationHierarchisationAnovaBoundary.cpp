@@ -14,10 +14,10 @@ namespace sgpp {
 namespace base {
 
 void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_values) {
-  HierarchisationAnovaBoundary func(storage);
-  sweep_anova<HierarchisationAnovaBoundary> s(func, storage);
+  HierarchisationAnovaBoundary func(grid);
+  sweep_anova<HierarchisationAnovaBoundary> s(func, grid.getStorage());
 
-    for (size_t i = 0; i < this->storage.getDimension(); i++) {
+    for (size_t i = 0; i < grid.getStorage().getDimension(); i++) {
       s.sweep1D_AnovaBoundary(node_values, node_values, i);
     }
 }

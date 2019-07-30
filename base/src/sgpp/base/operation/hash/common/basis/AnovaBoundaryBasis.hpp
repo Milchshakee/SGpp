@@ -33,6 +33,8 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
   ~AnovaBoundaryBasis() override {}
 
   /**
+   * Do not call this function for level -1
+   *
    * @param l     level of basis function
    * @param i     index of basis function
    * @param x     evaluation point
@@ -40,23 +42,21 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
    */
   inline double eval(LT l, IT i, double x) override {
     if (l == 0) {
-      return 1;
-    } else if (l == 1) {
       return x;
     } else {
       return std::max(
-          1.0 - std::abs(static_cast<double>(static_cast<IT>(1) << (l - 1)) * x - static_cast<double>(i / 2)),
+          1.0 - std::abs(static_cast<double>(static_cast<IT>(1) << (l)) * x - static_cast<double>(i)),
           0.0);
     }
   }
-
+  /**
+   * Do not call this function for level -1
+   */
   double getIntegral(LT level, IT index) override {
     if (level == 0) {
-      return 1;
-    } else if (level == 1) {
       return 0.5;
     } else {
-      return 1. / static_cast<double>(static_cast<IT>(1) << (level - 1));
+      return 1. / static_cast<double>(static_cast<IT>(1) << (level));
     }
   }
 
@@ -64,6 +64,7 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
 };
 
 // default type-def (unsigned int for level and index)
+// This works because we don't need the level -1 (Because it is always 1)
 typedef AnovaBoundaryBasis<unsigned int, unsigned int> SAnovaBoundaryBasis;
 
 }  // namespace base

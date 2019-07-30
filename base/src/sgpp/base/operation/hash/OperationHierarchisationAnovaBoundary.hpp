@@ -10,6 +10,7 @@
 #include <sgpp/base/operation/hash/OperationHierarchisation.hpp>
 
 #include <sgpp/globaldef.hpp>
+#include "sgpp/base/grid/Grid.hpp"
 
 namespace sgpp {
 namespace base {
@@ -25,7 +26,7 @@ class OperationHierarchisationAnovaBoundary : public OperationHierarchisation {
    *
    * @param storage the grid's GridStorage object
    */
-  explicit OperationHierarchisationAnovaBoundary(GridStorage& storage) : storage(storage) {}
+  explicit OperationHierarchisationAnovaBoundary(Grid& grid) : grid(grid) {}
 
   /**
    * Destructor
@@ -36,8 +37,7 @@ class OperationHierarchisationAnovaBoundary : public OperationHierarchisation {
   void doDehierarchisation(DataVector& alpha) override;
 
  protected:
-  /// Pointer to GridStorage object
-  GridStorage& storage;
+  Grid& grid;
 };
 
 }  // namespace base

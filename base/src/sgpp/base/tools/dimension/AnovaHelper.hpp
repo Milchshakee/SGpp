@@ -9,28 +9,35 @@ namespace sgpp {
 namespace base {
 namespace AnovaHelper {
 
+typedef int32_t level_t;
+
 class AnovaGridIterator {
  public:
   /// type of grid points
   typedef HashGridPoint index_type;
   /// index type
   typedef HashGridPoint::index_type index_t;
-  /// level type
-  typedef HashGridPoint::level_type level_t;
 
   explicit AnovaGridIterator(HashGridStorage& storage);
 
   /**
-   *  Sets 0,0 in every dimension (Left Level zero ansatzfunction)
+   *  Sets -1,0 in every dimension (Left Level zero ansatzfunction)
    */
-  void resetToLevelZero();
+  void resetToLevelMinusOne();
 
   /**
    * left level zero ansatz function for a given dimension
    *
    * @param dim dimension in which we should step to level zero
    */
-  void resetToLevelZeroInDim(size_t dim);
+  void resetToLevelMinusOneInDim(size_t dim);
+
+  /**
+   * resets the iterator to the top if dimension d
+   *
+   * @param d the moving direction
+   */
+  void resetToLevelZeroInDim(size_t d);
 
   /**
    * resets the iterator to the top if dimension d
@@ -38,13 +45,6 @@ class AnovaGridIterator {
    * @param d the moving direction
    */
   void resetToLevelOneInDim(size_t d);
-
-  /**
-   * resets the iterator to the top if dimension d
-   *
-   * @param d the moving direction
-   */
-  void resetToLevelTwoInDim(size_t d);
 
   /**
    * left child in direction dim
@@ -118,44 +118,12 @@ class AnovaGridIterator {
    * @param l the ansatz function's level
    * @param i the ansatz function's index
    */
-  inline void get(size_t d, index_type::level_type& l, index_type::index_type& i) const {
-    index.get(d, l, i);
-  }
-
-  /**
-   * Sets level @c l and index @c i in dimension @c d of the current grid point.
-   * Recomputes the hash value of the current grid point.
-   *
-   * @param d the dimension of interest
-   * @param l the ansatz function's level
-   * @param i the ansatz function's index
-   */
-  inline void set(size_t d, index_type::level_type l, index_type::index_type i) {
-    index.set(d, l, i);
-    this->seq_ = storage.getSequenceNumber(index);
-  }
-
-  /**
-   * Sets the iterator to a grid point.
-   * Recomputes the hash value of the current grid point.
-   *
-   * @param point new grid point
-   */
-  inline void set(const index_type& point) {
-    index = point;
-    this->seq_ = storage.getSequenceNumber(index);
-  }
-
-  /**
-   * Sets level @c l and index @c i in dimension @c d of the current grid point.
-   * Does not recompute hash value of the current grid point.
-   *
-   * @param d the dimension of the gridpoint
-   * @param l the ansatz function's level
-   * @param i the ansatz function's index
-   */
-  inline void push(size_t d, index_type::level_type l, index_type::index_type i) {
-    index.push(d, l, i);
+  inline void get(size_t d, int32_t& l, index_t& i) const {
+    HashGridPoint::level_type lRaw;
+    HashGridPoint::index_type iRaw;
+    index.get(d, lRaw, iRaw);
+    l = lRaw - 1;
+    i = iRaw / 2;
   }
 
   /**

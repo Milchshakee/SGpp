@@ -138,10 +138,10 @@ class SGridSample : public GridSample<double> {
     return op->eval(valuesView, point);
   }
 
-  double quadrature() {
+  double quadrature() const {
     std::unique_ptr<sgpp::base::OperationQuadrature> opQ(
         sgpp::op_factory::createOperationQuadrature(*grid));
-    double res = opQ->doQuadrature(valuesView);
+    double res = opQ->doQuadrature(const_cast<DataVector&>(valuesView));
     return res;
   }
 

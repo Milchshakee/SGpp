@@ -442,7 +442,7 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
 
     AnovaHelper::AnovaGridIterator working(storage);
 
-    working.resetToLevelZero();
+    working.resetToLevelMinusOne();
     result.clear();
 
     if (useBB == false) {
@@ -461,26 +461,24 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
            std::vector<std::pair<size_t, double> >& result) {
     while (true) {
       index_t work_index;
-      level_t work_level;
+      AnovaHelper::level_t work_level;
 
       if (storage.isInvalidSequenceNumber(working.seq())) {
         break;
       } else {
         working.get(current_dim, work_level, work_index);
-
-        // handle boundaries if we are on level 0 or 1
-        if (work_level == 0) {
-          // level 0
+       if (work_level == -1) {
+          // handle boundaries if we are on level -
           size_t seq_lz_left = working.seq();
           if (current_dim == storage.getDimension() - 1) {
             result.push_back(std::make_pair(seq_lz_left, value));
           } else {
             rec(basis, point, current_dim + 1, value, working, result);
           }
-        } else if (work_level == 1) {
-          // level 1
+        } else if (work_level == 0) {
+          // handle boundaries if we are on level 0
           size_t seq_lz_right = working.seq();
-          double new_value_l_zero_right = basis.eval(1, 2, point[current_dim]);
+          double new_value_l_zero_right = basis.eval(0, 1, point[current_dim]);
 
           if (current_dim == storage.getDimension() - 1) {
             result.push_back(std::make_pair(seq_lz_right, value * new_value_l_zero_right));
@@ -504,12 +502,12 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
       // the corresponding bit
       // the bits are coded from left to right starting with level 1
       // being in position max_level
-      if (work_level == 0) {
+      if (work_level == -1) {
         if (point[current_dim] == 0.0) break;
-        working.resetToLevelOneInDim(current_dim);
-      } else if (work_level == 1) {
+        working.resetToLevelZeroInDim(current_dim);
+      } else if (work_level == 0) {
         if (point[current_dim] == 1.0) break;
-        working.resetToLevelTwoInDim(current_dim);
+        working.resetToLevelOneInDim(current_dim);
       }
 
       else {
@@ -521,9 +519,9 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
         double hat = 0.0;
         level_t h = 0;
 
-        h = 1 << (work_level - 1);
+        h = 1 << (work_level);
 
-        hat = (1.0 / static_cast<double>(h)) * static_cast<double>(work_index / 2);
+        hat = (1.0 / static_cast<double>(h)) * static_cast<double>(work_index);
 
         if (point[current_dim] == hat) break;
 
@@ -535,7 +533,7 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
       }
     }
 
-    working.resetToLevelZeroInDim(current_dim);
+    working.resetToLevelMinusOneInDim(current_dim);
   }
 };
 

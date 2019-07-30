@@ -10,8 +10,10 @@
 namespace sgpp {
 namespace base {
 
-HierarchisationAnovaBoundary::HierarchisationAnovaBoundary(GridStorage& storage)
-    : storage(storage) {}
+HierarchisationAnovaBoundary::HierarchisationAnovaBoundary(Grid& grid, std::vector<level_t>& anchor)
+    : grid(grid), anchor(anchor) {}
+
+HierarchisationAnovaBoundary::HierarchisationAnovaBoundary(Grid& grid) : grid(grid) {}
 
 HierarchisationAnovaBoundary::~HierarchisationAnovaBoundary() {}
 
@@ -22,13 +24,13 @@ void HierarchisationAnovaBoundary::hierarchiseConstantRec(DataVector& source, Da
   if (index.hint() == false) {
     // descend left
     index.leftChild(dim);
-    if (!storage.isInvalidSequenceNumber(index.seq())) {
+    if (!grid.getStorage().isInvalidSequenceNumber(index.seq())) {
       hierarchiseConstantRec(source, result, index, dim, constant);
     }
 
     // descend right
     index.stepRight(dim);
-    if (!storage.isInvalidSequenceNumber(index.seq())) {
+    if (!grid.getStorage().isInvalidSequenceNumber(index.seq())) {
       hierarchiseConstantRec(source, result, index, dim, constant);
     }
 
@@ -42,17 +44,33 @@ void HierarchisationAnovaBoundary::hierarchiseConstantRec(DataVector& source, Da
 
 void HierarchisationAnovaBoundary::hierarchiseConstant(DataVector& source, DataVector& result,
                                                        grid_iterator& index, size_t dim) {
-  // left constant boundary
-  index.resetToLevelZeroInDim(dim);
+  index.resetToLevelMinusOneInDim(dim);
+  if (index.seq() == 0) {
+    double anchorValue = 0;
+    if (anchor.empty()) {
+      std::unique_ptr<sgpp::base::OperationQuadrature> opQ(
+          sgpp::op_factory::createOperationQuadrature(grid));
+      anchorValue = opQ->doQuadrature(source);
+    } else {
+      for (size_t i = 0; i < grid.getStorage().getSize(); ++i) {
+        GridPoint& gp = grid.getStorage().getPoint(i);
+        for (size_t d = 0; d < grid.getStorage().getDimension(); ++d) {
+          if (!gp.getLevel(d) == anchor[d]) {
+            break;
+          }
+          anchorValue = source[i];
+        }
+      }
+    }
+    source[0] = anchorValue;
+  }
+  
   double constant = source[index.seq()];
-
-  index.resetToLevelOneInDim(dim);
-  if (!storage.isInvalidSequenceNumber(index.seq())) {
+  index.resetToLevelZeroInDim(dim);
+  if (!grid.getStorage().isInvalidSequenceNumber(index.seq())) {
     hierarchiseConstantRec(source, result, index, dim, constant);
   }
 }
-
-
 
 void HierarchisationAnovaBoundary::rec(DataVector& source, DataVector& result, grid_iterator& index,
                                        size_t dim, double fl, double fr) {
@@ -66,13 +84,13 @@ void HierarchisationAnovaBoundary::rec(DataVector& source, DataVector& result, g
   if (index.hint() == false) {
     // descend left
     index.leftChild(dim);
-    if (!storage.isInvalidSequenceNumber(index.seq())) {
+    if (!grid.getStorage().isInvalidSequenceNumber(index.seq())) {
       rec(source, result, index, dim, fl, fm);
     }
 
     // descend right
     index.stepRight(dim);
-    if (!storage.isInvalidSequenceNumber(index.seq())) {
+    if (!grid.getStorage().isInvalidSequenceNumber(index.seq())) {
       rec(source, result, index, dim, fm, fr);
     }
 
@@ -88,19 +106,19 @@ void HierarchisationAnovaBoundary::operator()(DataVector& source, DataVector& re
                                               grid_iterator& index, size_t dim) {
   hierarchiseConstant(source, result, index, dim);
 
-  index.resetToLevelOneInDim(dim);
-  if (!storage.isInvalidSequenceNumber(index.seq())) {
+  index.resetToLevelZeroInDim(dim);
+  if (!grid.getStorage().isInvalidSequenceNumber(index.seq())) {
     double right_boundary = source[index.seq()];
 
-      // see if we can go down further
+    // see if we can go down further
     if (!index.hint()) {
-      index.resetToLevelTwoInDim(dim);
-      if (!storage.isInvalidSequenceNumber(index.seq())) {
+      index.resetToLevelOneInDim(dim);
+      if (!grid.getStorage().isInvalidSequenceNumber(index.seq())) {
         rec(source, result, index, dim, 0, right_boundary);
       }
     }
   }
-  index.resetToLevelZeroInDim(dim);
+  index.resetToLevelMinusOneInDim(dim);
 }
 
 }  // namespace base

@@ -10,8 +10,6 @@
 #include <sgpp/base/grid/GridStorage.hpp>
 #include <sgpp/base/tools/dimension/AnovaHelper.hpp>
 
-#include <sgpp/base/operation/hash/common/algorithm_sweep/HierarchisationLinear.hpp>
-
 #include <sgpp/globaldef.hpp>
 
 namespace sgpp {
@@ -32,7 +30,15 @@ class HierarchisationAnovaBoundary {
    * @param storage the grid storage object of the the grid, on which the hierarchisation should be
    * executed
    */
-  explicit HierarchisationAnovaBoundary(GridStorage& storage);
+  explicit HierarchisationAnovaBoundary(Grid& grid, std::vector<level_t>& anchor);
+
+  /**
+   * Constructor, must be bind to a grid
+   *
+   * @param storage the grid storage object of the the grid, on which the hierarchisation should be
+   * executed
+   */
+  explicit HierarchisationAnovaBoundary(Grid& grid);
 
   /**
    * Destructor
@@ -79,7 +85,8 @@ class HierarchisationAnovaBoundary {
                               size_t dim, double constant);
 
 private:
-  GridStorage& storage;
+  Grid& grid;
+  std::vector<level_t> anchor;
 };
 
 }  // namespace base

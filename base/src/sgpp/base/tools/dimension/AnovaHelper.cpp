@@ -6,10 +6,10 @@ namespace AnovaHelper {
 
 AnovaGridIterator::AnovaGridIterator(HashGridStorage& storage)
     : storage(storage), index(storage.getDimension()) {
-  resetToLevelZero();
+  resetToLevelMinusOne();
   }
 
-void AnovaGridIterator::resetToLevelZero() {
+void AnovaGridIterator::resetToLevelMinusOne() {
   for (size_t i = 0; i < storage.getDimension(); i++) {
     index.push(i, 0, 0);
   }
@@ -18,17 +18,17 @@ void AnovaGridIterator::resetToLevelZero() {
   this->seq_ = storage.getSequenceNumber(index);
 }
 
-void AnovaGridIterator::resetToLevelZeroInDim(size_t dim) {
+void AnovaGridIterator::resetToLevelMinusOneInDim(size_t dim) {
   index.set(dim, 0, 0);
   this->seq_ = storage.getSequenceNumber(index);
 }
 
-void AnovaGridIterator::resetToLevelOneInDim(size_t d) {
+void AnovaGridIterator::resetToLevelZeroInDim(size_t d) {
   index.set(d, 1, 2);
   this->seq_ = storage.getSequenceNumber(index);
 }
 
-void AnovaGridIterator::resetToLevelTwoInDim(size_t d) {
+void AnovaGridIterator::resetToLevelOneInDim(size_t d) {
   index.set(d, 2, 2);
   this->seq_ = storage.getSequenceNumber(index);
 }

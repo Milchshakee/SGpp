@@ -88,7 +88,7 @@ class sweep_anova {
     }
 
     grid_iterator index(storage);
-    index.resetToLevelZero();
+    index.resetToLevelMinusOne();
 
     sweep_AnovaBoundary_rec(source, result, index, dim_list, storage.getDimension() - 1, dim_sweep);
   }
@@ -111,16 +111,14 @@ class sweep_anova {
     if (dim_rem == 0) {
       functor(source, result, index, dim_sweep);
     } else {
-      typedef level_t level_type;
       typedef index_t index_type;
 
-      level_type current_level;
+      AnovaHelper::level_t current_level;
       index_type current_index;
 
       index.get(dim_list[dim_rem - 1], current_level, current_index);
 
-      // handle level greater one
-      if (current_level > 1) {
+      if (current_level >= 1) {
         // given current point to next dim
         sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem - 1, dim_sweep);
 
@@ -139,25 +137,26 @@ class sweep_anova {
 
           index.up(dim_list[dim_rem - 1]);
         }
-      } else {  // handle level zero and one
-        if (current_level == 0) {
+      } else {  
+        // handle level minus one
+        if (current_level == -1) {
           sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem - 1, dim_sweep);
         }
 
-        index.resetToLevelOneInDim(dim_list[dim_rem - 1]);
-        //Check if level 1 exists
+        index.resetToLevelZeroInDim(dim_list[dim_rem - 1]);
+        //Check if level zero exists
         if (!storage.isInvalidSequenceNumber(index.seq())) {
           sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem - 1, dim_sweep);
 
-          index.resetToLevelTwoInDim(dim_list[dim_rem - 1]);
+          index.resetToLevelOneInDim(dim_list[dim_rem - 1]);
 
-          // Check if level 2 exists
+          // Check if level one exists
           if (!storage.isInvalidSequenceNumber(index.seq())) {
             sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_rem, dim_sweep);
           }
         }
 
-        index.resetToLevelZeroInDim(dim_list[dim_rem - 1]);
+        index.resetToLevelMinusOneInDim(dim_list[dim_rem - 1]);
       }
     }
   }
