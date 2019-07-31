@@ -41,7 +41,7 @@ class Sample {
   Sample(const std::vector<K>& vectors, const std::vector<T>& values)
       : keys(vectors), values(values) {}
 
-  const T& getValue(const K& key) const {
+  T& getValue(const K& key) {
     for (size_t i = 0; i < getSize(); i++) {
       if (key == keys[i]) {
         return values[i];
@@ -49,7 +49,19 @@ class Sample {
     }
     throw std::invalid_argument("Value not found");
   }
+
+    const T& getValue(const K& key) const {
+    for (size_t i = 0; i < getSize(); i++) {
+      if (key == keys[i]) {
+        return values[i];
+      }
+    }
+    throw std::invalid_argument("Value not found");
+  }
+
   size_t getSize() const { return values.size(); }
+  std::vector<K>& getKeys() { return keys; }
+  std::vector<T>& getValues() { return values; }
   const std::vector<K>& getKeys() const { return keys; }
   const std::vector<T>& getValues() const { return values; }
 
@@ -130,7 +142,7 @@ class SGridSample : public GridSample<double> {
     std::unique_ptr<sgpp::base::OperationHierarchisation>(
         sgpp::op_factory::createOperationHierarchisation(*grid))
         ->doHierarchisation(valuesView);
-    update();
+    sync();
   }
 
   double eval(const DataVector& point) const {
@@ -162,10 +174,10 @@ class SGridSample : public GridSample<double> {
 
   const DataVector& getValuesView() const { return valuesView; }
 
+  DataVector& getValuesView() { return valuesView; }
+
  private:
-  void update() {
-    values = std::vector<double>(valuesView.begin(), valuesView.end());
-  }
+  void sync() { values = std::vector<double>(valuesView.begin(), valuesView.end()); }
 
   DataVector valuesView;
 };

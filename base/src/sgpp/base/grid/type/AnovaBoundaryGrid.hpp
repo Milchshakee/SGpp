@@ -17,35 +17,85 @@ namespace base {
  */
 class AnovaBoundaryGrid : public Grid {
  public:
+  typedef std::vector<bool> AnovaComponent;
+  typedef std::vector<AnovaComponent> AnovaComponentVector;
 
+  
+
+static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
+{
+    AnovaComponent currentComp(point.getDimension(), false);
+    for (size_t d = 0; d < point.getDimension(); d++) {
+      currentComp[d] = point.getLevel(d) > 0;
+    }
+    return currentComp;
+  }
+
+  typedef int32_t level_t;
+
+  struct LevelIndexPair {
     /**
+     * Level of the grid point in the hierarchy.
+     */
+    level_t level;
+    /**
+     * Index of the grid point in the index set for that particular level.
+     */
+    sgpp::base::HashGridPoint::index_type index;
+  };
+
+  static level_t fromNormalLevel(base::level_t l) {
+    if (l == 0) {
+      return -1;
+    } else {
+      return static_cast<level_t>(l - 1);
+    }
+  }
+
+  static base::level_t toNormalLevel(level_t l) {
+    if (l == -1) {
+      return 0;
+    } else {
+      return static_cast<base::level_t>(l + 1);
+    }
+  }
+
+  static void toNormalGridPointLevelIndex(level_t l, HashGridPoint::index_type i,
+                                                   HashGridPoint::level_type& lOut,
+                                                   HashGridPoint::index_type& iOut) {
+    if (l == -1) {
+      lOut = 0;
+      iOut = 0;
+    } else if (l == 0) {
+      lOut = 0;
+      iOut = 1;
+    } else {
+      lOut = l;
+      iOut = i;
+    }
+  }
+
+  static void fromNormalGridPointLevelIndex(HashGridPoint::level_type l,
+                                            HashGridPoint::index_type i, level_t& lOut,
+                                            HashGridPoint::index_type& iOut) {
+    if (l == 0 && i == 0) {
+      lOut = -1;
+      iOut = 0;
+    } else if (l == 0 && i == 1) {
+      lOut = 0;
+      iOut = 1;
+    } else {
+      lOut = l;
+      iOut = i;
+    }
+  }
+
+  /**
    * Constructor Linear Truncated Boundary Grid
    *
    * @param dim           the dimension of the grid
    */
   AnovaBoundaryGrid(size_t dim);
-
-  /**
-   * Constructor Linear Truncated Boundary Grid
-   *
-   * @param dim           the dimension of the grid
-   * @param boundaryLevel 1 + how much levels the boundary is coarser than
-   *                      the main axes, 0 means one level finer,
-   *                      1 means same level,
-   *                      2 means one level coarser, etc.
-   */
-  AnovaBoundaryGrid(size_t dim, const AnovaHelper::AnovaComponentVector& components);
-
-  /**
-   * Constructor Linear Truncated Boundary Grid
-   *
-   * @param BB the BoundingBox of the grid
-   * @param boundaryLevel 1 + how much levels the boundary is coarser than
-   *                      the main axes, 0 means one level finer,
-   *                      1 means same level,
-   *                      2 means one level coarser, etc.
-   */
-  AnovaBoundaryGrid(BoundingBox& BB, const AnovaHelper::AnovaComponentVector& components);
 
   /**
    * Destructor

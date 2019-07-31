@@ -4,12 +4,11 @@
 #include <vector>
 #include "sgpp/base/grid/storage/hashmap/HashGridPoint.hpp"
 #include "sgpp/base/tools/Sample.hpp"
+#include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
 
 namespace sgpp {
 namespace base {
 namespace AnovaHelper {
-
-typedef int32_t level_t;
 
 class AnovaGridIterator {
  public:
@@ -118,12 +117,11 @@ class AnovaGridIterator {
    * @param l the ansatz function's level
    * @param i the ansatz function's index
    */
-  inline void get(size_t d, int32_t& l, index_t& i) const {
+  inline void get(size_t d, AnovaBoundaryGrid::level_t& l, index_t& i) const {
     HashGridPoint::level_type lRaw;
     HashGridPoint::index_type iRaw;
     index.get(d, lRaw, iRaw);
-    l = lRaw - 1;
-    i = iRaw / 2;
+    AnovaBoundaryGrid::fromNormalGridPointLevelIndex(lRaw, iRaw, l, i);
   }
 
   /**
@@ -141,14 +139,6 @@ class AnovaGridIterator {
   /// the current gridpoint's index
   size_t seq_;
 };
-
-typedef std::vector<bool> AnovaComponent;
-typedef std::vector<AnovaComponent> AnovaComponentVector;
-
-AnovaComponent getAnovaComponentOfPoint(const GridPoint& point);
-
-Sample<AnovaComponent, double> calculateAnovaComponentVariances(GridStorage& gridStorage,
-                                                            const DataVector& alpha);
 
 }  // namespace AnovaHelper
 }  // namespace base

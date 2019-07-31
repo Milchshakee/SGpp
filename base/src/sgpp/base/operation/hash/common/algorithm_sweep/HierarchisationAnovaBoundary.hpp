@@ -11,6 +11,7 @@
 #include <sgpp/base/tools/dimension/AnovaHelper.hpp>
 
 #include <sgpp/globaldef.hpp>
+#include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
 
 namespace sgpp {
 namespace base {
@@ -30,15 +31,8 @@ class HierarchisationAnovaBoundary {
    * @param storage the grid storage object of the the grid, on which the hierarchisation should be
    * executed
    */
-  explicit HierarchisationAnovaBoundary(Grid& grid, std::vector<level_t>& anchor);
-
-  /**
-   * Constructor, must be bind to a grid
-   *
-   * @param storage the grid storage object of the the grid, on which the hierarchisation should be
-   * executed
-   */
   explicit HierarchisationAnovaBoundary(Grid& grid);
+
 
   /**
    * Destructor
@@ -86,7 +80,6 @@ class HierarchisationAnovaBoundary {
 
 private:
   Grid& grid;
-  std::vector<level_t> anchor;
 };
 
 }  // namespace base

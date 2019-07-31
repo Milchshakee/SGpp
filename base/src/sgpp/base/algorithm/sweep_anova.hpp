@@ -113,7 +113,7 @@ class sweep_anova {
     } else {
       typedef index_t index_type;
 
-      AnovaHelper::level_t current_level;
+      AnovaBoundaryGrid::level_t current_level;
       index_type current_index;
 
       index.get(dim_list[dim_rem - 1], current_level, current_index);

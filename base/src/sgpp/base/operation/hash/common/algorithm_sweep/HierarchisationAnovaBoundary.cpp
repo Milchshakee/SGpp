@@ -10,10 +10,9 @@
 namespace sgpp {
 namespace base {
 
-HierarchisationAnovaBoundary::HierarchisationAnovaBoundary(Grid& grid, std::vector<level_t>& anchor)
-    : grid(grid), anchor(anchor) {}
-
-HierarchisationAnovaBoundary::HierarchisationAnovaBoundary(Grid& grid) : grid(grid) {}
+HierarchisationAnovaBoundary::HierarchisationAnovaBoundary(
+    Grid& grid)
+    : grid(grid) {}
 
 HierarchisationAnovaBoundary::~HierarchisationAnovaBoundary() {}
 
@@ -45,26 +44,6 @@ void HierarchisationAnovaBoundary::hierarchiseConstantRec(DataVector& source, Da
 void HierarchisationAnovaBoundary::hierarchiseConstant(DataVector& source, DataVector& result,
                                                        grid_iterator& index, size_t dim) {
   index.resetToLevelMinusOneInDim(dim);
-  if (index.seq() == 0) {
-    double anchorValue = 0;
-    if (anchor.empty()) {
-      std::unique_ptr<sgpp::base::OperationQuadrature> opQ(
-          sgpp::op_factory::createOperationQuadrature(grid));
-      anchorValue = opQ->doQuadrature(source);
-    } else {
-      for (size_t i = 0; i < grid.getStorage().getSize(); ++i) {
-        GridPoint& gp = grid.getStorage().getPoint(i);
-        for (size_t d = 0; d < grid.getStorage().getDimension(); ++d) {
-          if (!gp.getLevel(d) == anchor[d]) {
-            break;
-          }
-          anchorValue = source[i];
-        }
-      }
-    }
-    source[0] = anchorValue;
-  }
-  
   double constant = source[index.seq()];
   index.resetToLevelZeroInDim(dim);
   if (!grid.getStorage().isInvalidSequenceNumber(index.seq())) {

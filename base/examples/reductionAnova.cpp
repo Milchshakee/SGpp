@@ -44,12 +44,12 @@ int main(int argc, char* argv[]) {
     std::cout << "active: " + std::to_string(result.activeDimensions[d]) << std::endl;
     }
 
-  // Loop over all active ANOVA components of the grid
-  for (sgpp::base::AnovaHelper::AnovaComponent component : result.activeComponents) {
-      std::string str(component.begin(), component.end());
-      std::cout << "component: " + str << std::endl;
-      std::cout << "component variance: " + std::to_string(info.variances.getValue(component)) << std::endl;
-  }
+  //// Loop over all active ANOVA components of the grid
+  //for (sgpp::base::AnovaBoundaryGrid::AnovaComponent component : info.variances) {
+  //    std::string str(component.begin(), component.end());
+  //    std::cout << "component: " + str << std::endl;
+  //    std::cout << "component variance: " + std::to_string(info.variances.getValue(component)) << std::endl;
+  //}
 
 
   sgpp::base::SGridSample& reducedSample = result.getReducedOutput();

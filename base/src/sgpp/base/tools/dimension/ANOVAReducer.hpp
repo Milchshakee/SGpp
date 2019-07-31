@@ -14,19 +14,17 @@ namespace sgpp {
 namespace base {
 
 struct AnovaInfo {
-  sgpp::base::Sample<AnovaHelper::AnovaComponent, double> variances;
+  sgpp::base::Sample<AnovaBoundaryGrid::AnovaComponent, double> variances;
   double totalVariance;
 };
 
 class AnovaResult : public Result<SGridSample> {
 public:
   std::vector<bool> activeDimensions;
- AnovaHelper::AnovaComponentVector activeComponents;
   double coveredVariance;
  size_t dimensions;
 
-  AnovaResult(std::vector<bool>& activeDimensions,
-             AnovaHelper::AnovaComponentVector& activeComponents, double coveredVariance,
+  AnovaResult(std::vector<bool>& activeDimensions, double coveredVariance,
              size_t dimensions, SGridSample sample);
 
   TransformationFunction& getTransformationFunction();

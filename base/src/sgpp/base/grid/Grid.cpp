@@ -69,10 +69,6 @@ Grid* Grid::createAnovaBoundaryGrid(size_t dim) {
   return new AnovaBoundaryGrid(dim);
 }
 
-Grid* Grid::createAnovaBoundaryGrid(size_t dim, const AnovaHelper::AnovaComponentVector& comps) {
-   return new AnovaBoundaryGrid(dim, comps);
-}
-
 Grid* Grid::createLinearBoundaryGrid(size_t dim, level_t boundaryLevel) {
   if (boundaryLevel == 0) {
     return new LinearL0BoundaryGrid(dim);
@@ -171,7 +167,7 @@ Grid* Grid::createGrid(RegularGridConfiguration gridConfig) {
   } else {
     switch (gridConfig.type_) {
       case GridType::AnovaBoundary:
-        return Grid::createAnovaBoundaryGrid(gridConfig.dim_, std::vector<std::vector<bool>>());
+        return Grid::createAnovaBoundaryGrid(gridConfig.dim_);
       case GridType::Linear:
         return Grid::createLinearGrid(gridConfig.dim_);
       case GridType::LinearStretched:
@@ -261,7 +257,7 @@ Grid* Grid::createGridOfEquivalentType(size_t numDims) {
       newGrid = Grid::createLinearBoundaryGrid(numDims);
       break;
     case GridType::AnovaBoundary:
-      newGrid = Grid::createAnovaBoundaryGrid(numDims, std::vector<std::vector<bool>>());
+      newGrid = Grid::createAnovaBoundaryGrid(numDims);
       break;
     case GridType::LinearBoundary:
       boundaryLevel =

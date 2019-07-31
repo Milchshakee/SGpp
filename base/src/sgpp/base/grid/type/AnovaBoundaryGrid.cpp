@@ -13,13 +13,8 @@ namespace sgpp {
 namespace base {
 
 
-AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim) : AnovaBoundaryGrid(dim, {}) {}
-
-AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim, const AnovaHelper::AnovaComponentVector& components)
-    : Grid(dim), generator(components, storage) {}
-
-AnovaBoundaryGrid::AnovaBoundaryGrid(BoundingBox& BB, const AnovaHelper::AnovaComponentVector& components)
-    : Grid(BB), generator(components, storage) {}
+AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim)
+    : Grid(dim), generator(storage) {}
 
 sgpp::base::GridType AnovaBoundaryGrid::getType() { return sgpp::base::GridType::AnovaBoundary; }
 

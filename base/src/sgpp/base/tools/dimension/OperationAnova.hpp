@@ -30,7 +30,8 @@ class OperationAnova {
    */
   ~OperationAnova() = default;
 
-  Sample<AnovaHelper::AnovaComponent, double> calculateAnovaComponentVariances(const DataVector& alpha);
+  Sample<AnovaBoundaryGrid::AnovaComponent, double> calculateAnovaComponentVariances(
+      const DataVector& alpha);
 
 
  private:

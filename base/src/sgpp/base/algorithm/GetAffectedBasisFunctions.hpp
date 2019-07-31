@@ -461,14 +461,14 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
            std::vector<std::pair<size_t, double> >& result) {
     while (true) {
       index_t work_index;
-      AnovaHelper::level_t work_level;
+      AnovaBoundaryGrid::level_t work_level;
 
       if (storage.isInvalidSequenceNumber(working.seq())) {
         break;
       } else {
         working.get(current_dim, work_level, work_index);
        if (work_level == -1) {
-          // handle boundaries if we are on level -
+          // handle boundaries if we are on level -1
           size_t seq_lz_left = working.seq();
           if (current_dim == storage.getDimension() - 1) {
             result.push_back(std::make_pair(seq_lz_left, value));
