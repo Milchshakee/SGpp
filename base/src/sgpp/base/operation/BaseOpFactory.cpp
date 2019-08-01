@@ -84,6 +84,7 @@
 #include <sgpp/base/operation/hash/OperationQuadraturePolyBoundary.hpp>
 #include <sgpp/base/operation/hash/OperationQuadraturePolyClenshawCurtis.hpp>
 #include <sgpp/base/operation/hash/OperationQuadraturePolyClenshawCurtisBoundary.hpp>
+#include <sgpp/base/operation/hash/OperationQuadratureAnovaBoundary.hpp>
 
 #include <sgpp/base/operation/hash/OperationSecondMomentBspline.hpp>
 #include <sgpp/base/operation/hash/OperationSecondMomentBsplineBoundary.hpp>
@@ -290,6 +291,8 @@ base::OperationQuadrature* createOperationQuadrature(base::Grid& grid) {
   } else if (grid.getType() == base::GridType::LinearL0Boundary ||
              grid.getType() == base::GridType::LinearBoundary) {
     return new base::OperationQuadratureLinearBoundary(grid.getStorage());
+  } else if (grid.getType() == base::GridType::AnovaBoundary) {
+    return new base::OperationQuadratureAnovaBoundary(grid.getStorage());
   } else if (grid.getType() == base::GridType::ModLinear) {
     return new base::OperationQuadratureModLinear(grid.getStorage());
   } else if (grid.getType() == base::GridType::LinearClenshawCurtis) {

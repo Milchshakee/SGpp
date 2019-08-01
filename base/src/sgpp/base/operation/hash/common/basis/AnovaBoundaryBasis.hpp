@@ -64,7 +64,7 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
 };
 
 // default type-def (unsigned int for level and index)
-// This works because we don't need the level -1 (Because it is always 1)
+// This works because we don't need the level -1 (Because the value is always 1)
 typedef AnovaBoundaryBasis<unsigned int, unsigned int> SAnovaBoundaryBasis;
 
 }  // namespace base

@@ -2,16 +2,16 @@
 
 double getL2NormOfBasis(const sgpp::base::GridPoint& gp) {
   size_t levelSum = 0;
-  size_t level1Count = 0;
+  size_t level0Count = 0;
   for (size_t d = 0; d < gp.getDimension(); d++) {
     levelSum += std::max<size_t>(gp.getLevel(d), 1) - 1;
-    if (gp.getLevel(d) == 1) {
-      level1Count++;
+    if (sgpp::base::AnovaBoundaryGrid::fromNormalLevel(gp.getLevel(d)) == 0) {
+      level0Count++;
     }
   }
 
   double f = std::pow(2.0 / 3.0, static_cast<double>(gp.getDimension()));
-  double exp = std::pow(2.0, -(static_cast<double>(levelSum) - static_cast<double>(level1Count)));
+  double exp = std::pow(2.0, -(static_cast<double>(levelSum) - static_cast<double>(level0Count)));
   double val = std::sqrt(f * exp);
 
   return val;

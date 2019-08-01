@@ -7,6 +7,7 @@
 #include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
 #include "sgpp/base/tools/dimension/AsMcReducer.hpp"
 #include "sgpp/optimization/function/vector/WrapperVectorFunction.hpp"
+#include "sgpp/base/operation/hash/OperationHierarchisationAnovaBoundary.hpp"
 
 double f(const sgpp::base::DataVector& v) {
   //return 2.0 + v[0];
@@ -23,6 +24,7 @@ size_t maxLevel = 10;
 size_t paths = 10000;
 
 int main(int argc, char* argv[]) {
+  sgpp::base::OperationHierarchisationAnovaBoundary::setIntegralPolicy();
   auto func = sgpp::optimization::WrapperScalarFunction(2, f);
   auto reducer = sgpp::base::AnovaReducer();
 

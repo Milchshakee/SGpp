@@ -33,24 +33,33 @@ double OperationHierarchisationAnovaBoundary::getAnchorValue(
 }
 
 void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_values) {
+  if (!anchor.empty()) {
+    double a = getAnchorValue(anchor, node_values);
+    node_values[0] = a;
+  }
+
+  DataVector copy;
+  if (integral) {
+    copy = node_values;
+    }
+
   HierarchisationAnovaBoundary func(grid);
   sweep_anova<HierarchisationAnovaBoundary> s(func, grid.getStorage());
   for (size_t i = 0; i < grid.getStorage().getDimension(); i++) {
     s.sweep1D_AnovaBoundary(node_values, node_values, i);
   }
-  double offset = 0;
   if (integral) {
-    auto a = defaultAnchor(grid.getDimension());
-    offset = getAnchorValue(a, node_values);
+    std::unique_ptr<sgpp::base::OperationQuadrature> opQ(
+        sgpp::op_factory::createOperationQuadrature(grid));
+    double q = opQ->doQuadrature(node_values);
+    node_values[0] = q;
 
-  } else if (!anchor.empty()) {
-    offset = getAnchorValue(anchor, node_values);
-  } else {
-    offset = node_values[0];
-  }
-  double change = offset - node_values[0];
-  for (size_t i = 0; i < node_values.size(); ++i) {
-    node_values[i] += change;
+    HierarchisationAnovaBoundary func(grid);
+    sweep_anova<HierarchisationAnovaBoundary> s(func, grid.getStorage());
+    for (size_t i = 0; i < grid.getStorage().getDimension(); i++) {
+      s.sweep1D_AnovaBoundary(copy, copy, i);
+    }
+    node_values = copy;
   }
 }
 
