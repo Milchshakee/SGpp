@@ -6,13 +6,15 @@
 #ifndef HASHGENERATOR_HPP
 #define HASHGENERATOR_HPP
 
+#include <sgpp/base/datatypes/DataVector.hpp>
+#include <sgpp/base/exception/generation_exception.hpp>
+#include <sgpp/base/grid/GridStorage.hpp>
+#include <sgpp/globaldef.hpp>
+
 #include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <iterator>
-#include <sgpp/base/exception/generation_exception.hpp>
-#include <sgpp/base/grid/GridStorage.hpp>
-#include <sgpp/globaldef.hpp>
 #include <unordered_set>
 #include <vector>
 #include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
@@ -130,6 +132,19 @@ class HashGenerator {
     }
 
     this->createFullGridIterative(storage, level);
+  }
+  /**
+   * Generates an anisotropic full grid of the level vector
+   *
+   * @param storage Hashmap that stores the grid points
+   * @param dimlevels grid level vector (vector of non-negative values)
+   */
+  void anisotropicFull(GridStorage& storage, std::vector<size_t>& dimlevels) {
+    if (storage.getSize() > 0) {
+      throw generation_exception("storage not empty");
+    }
+
+    this->createAnisotropicFullGrid(storage, dimlevels);
   }
 
   /**
@@ -572,57 +587,12 @@ class HashGenerator {
   }
 
 
-    /**
-     * Generate a regular sparse grid iteratively (much faster than
-     * recursively) with truncated boundary, i.e.,
-     * the sparse grid on the \f$(d-1)\f$-dimensional faces of
-     * \f$[0, 1]^d\f$ has a coarser level than the main axes
-     * \f$x_t = 0.5, t = 1, ..., d\f$.
-     *
-     * The function adds all hierarchical subspaces \f$W_{\vec{\ell}}\f$
-     * where
-     * * \f$\norm{\vec{\ell}}_1 \le n + d - 1\f$ with
-     *   \f$\forall_t\; \ell_t \ge 1\f$,
-     * * \f$\norm{\vec{\ell}}_1 \le n + d - b - N_{\vec{\ell}}\f$ with
-     *   \f$N_{\vec{\ell}} := |\{t \mid \ell_t = 0\}| \ge 1\f$, or
-     * * \f$\vec{\ell} = \vec{0}\f$.
-     *
-     * The previous implementation inserted the 1D boundary grid points
-     * at higher levels (e.g., at boundaryLevel = 2), which
-     * led to the effect that corner points were missing in
-     * higher-dimensional grids: For example, if \f$d = 2\f$,
-     * \f$n = 3\f$, and \f$\mathtt{boundaryLevel} = 3\f$,
-     * then the four corners had level sum
-     * \f$2 \cdot \mathtt{boundaryLevel} = 6\f$ (which is greater than
-     * \f$n + d - 1 = 4\f$), thus they were missing in the sparse grid.
-     * The midpoints of the four edges, however, had level sum
-     * \f$\mathtt{boundaryLevel} + 1 = 4 \le n + d - 1\f$
-     * and were thus included in the grid. To get the corners into the
-     * grid, too, one would have to choose \f$n \ge 4\f$.
-     *
-     * In contrast, the new implementation makes sure that the corners
-     * will always appear first in the grid when increasing the level
-     * \f$n = 1, 2, 3, \dotsc\f$ of the regular grid.
-     *
-     * @param storage       pointer to storage object into which
-     *                      the grid points should be stored
-     * @param n             level of regular sparse grid
-     * @param boundaryLevel 1 + how much levels the boundary is coarser than
-     *                      the main axes, 1 means same level,
-     *                      2 means one level coarser, etc.; must be >= 1
-     * @param T             modifier for subgrid selection, T = 0 implies standard sparse grid.
-     *                      For further information see Griebel and Knapek's paper
-     *                      optimized tensor-product approximation spaces
-     */
-    void regular_boundary_truncated_iter(GridStorage & storage, level_t n,
-                                         level_t boundaryLevel = 1, double T = 0) {
-      const size_t dim = storage.getDimension();
-
-      if (dim == 0) {
-        return;
-      }
-
-      GridPoint idx_1d(dim);
+      // loop over all current grid points
+      for (size_t g = 0; g < gridSize; g++) {
+        level_t levelSum = 0;
+        level_t numberOfZeroLevels = 0;
+        GridPoint idx(storage.getPoint(g));
+        bool firstPoint = true;
 
       for (size_t d = 0; d < dim; d++) {
         idx_1d.push(d, 1, 1, false);
@@ -990,95 +960,15 @@ class HashGenerator {
       }
     }
 
-    //  /**
-    //   * recursive construction of the spare grid without boundaries
-    //   *
-    //   * @param storage hashmap that stores the grid points
-    //   * @param index point's index
-    //   * @param current_dim current working dimension
-    //   * @param current_level current level in this construction step
-    //   * @param level maximum level of the sparse grid
-    //   */
-    //  void regular_rec(GridStorage& storage, GridPoint& index,
-    //  size_t current_dim, level_t current_level, level_t level)
-    //  {
-    //    if(current_dim == 0)
-    //    {
-    //      regular_rec_1d(storage, index, current_level, level);
-    //    }
-    //    else
-    //    {
-    //      index_t source_index;
-    //      level_t source_level;
-    //
-    //      index.get(current_dim, source_level, source_index);
-    //
-    //      if(current_level <= level)
-    //      {
-    //        // set Leaf option of index
-    //        if (current_level == level)
-    //        {
-    //          index.setLeaf(true);
-    //        }
-    //        else
-    //        {
-    //          index.setLeaf(false);
-    //        }
-    //
-    //        // d-1 recursion
-    //        this->regular_rec(storage, index, current_dim - 1, current_level,
-    //        level);
-    //      }
-    //
-    //      if(current_level < level)
-    //      {
-    //        // current_level + 1 recursion
-    //        index.push(current_dim, source_level + 1, 2*source_index - 1);
-    //        this->regular_rec(storage, index, current_dim, current_level + 1,
-    //        level);
-    //
-    //        index.push(current_dim, source_level + 1, 2*source_index + 1);
-    //        this->regular_rec(storage, index, current_dim, current_level + 1,
-    //        level);
-    //      }
-    //
-    //      index.push(current_dim, source_level, source_index);
-    //    }
-    //  }
-    //
-    //  /**
-    //   * generate points of the last dimension (dim == 0), without boundaries
-    //   *
-    //   * @param storage the hashmap that stores the grid points
-    //   * @param index point's index that should be created on the grid
-    //   * @param current_level current level of the grid generation
-    //   * @param level maximum level of grid
-    //   */
-    //  void regular_rec_1d(GridStorage& storage, GridPoint& index,
-    //  level_t current_level, level_t level)
-    //  {
-    //        for(level_t l = 1; l <= level-current_level + 1; l++)
-    //        {
-    //            if (l == level-current_level+1)
-    //            {
-    //              for(index_t i = 1;
-    //              static_cast<int>(i) <= static_cast<int>(1<<(l-1)); i++)
-    //                {
-    //                    index.push(0, l, 2*i-1, true);
-    //                    storage.insert(index);
-    //                }
-    //            }
-    //            else
-    //            {
-    //              for(index_t i = 1;
-    //              static_cast<int>(i) <= static_cast<int>(1<<(l-1)); i++)
-    //                {
-    //                    index.push(0, l, 2*i-1, false);
-    //                    storage.insert(index);
-    //                }
-    //            }
-    //        }
-    //  }
+  /**
+   * Generate a full grid iteratively (much faster than recursively)
+   * with truncated boundary.
+   *
+   * @param storage Pointer to the storage object into which the grid points should be stored
+   * @param n Level of full grid
+   */
+  void createFullGridTruncatedIterative(GridStorage& storage, level_t n) {
+    if (storage.getDimension() == 0) return;
 
     /**
      * recursive construction of the spare grid with boundaries, pentagon cut
@@ -1187,19 +1077,112 @@ class HashGenerator {
       }
     }
 
-    /**
-     * recursive construction of the spare grid with boundaries, classic level 0 approach, only for
-     *level 0 and 1
-     *
-     * @param storage hashmap that stores the grid points
-     * @param index point's index
-     * @param current_dim current working dimension
-     * @param current_level current level in this construction step
-     * @param level maximum level of the sparse grid
-     */
+  //  /**
+  //   * recursive construction of the spare grid without boundaries
+  //   *
+  //   * @param storage hashmap that stores the grid points
+  //   * @param index point's index
+  //   * @param current_dim current working dimension
+  //   * @param current_level current level in this construction step
+  //   * @param level maximum level of the sparse grid
+  //   */
+  //  void regular_rec(GridStorage& storage, GridPoint& index,
+  //  size_t current_dim, level_t current_level, level_t level)
+  //  {
+  //    if(current_dim == 0)
+  //    {
+  //      regular_rec_1d(storage, index, current_level, level);
+  //    }
+  //    else
+  //    {
+  //      index_t source_index;
+  //      level_t source_level;
+  //
+  //      index.get(current_dim, source_level, source_index);
+  //
+  //      if(current_level <= level)
+  //      {
+  //        // set Leaf option of index
+  //        if (current_level == level)
+  //        {
+  //          index.setLeaf(true);
+  //        }
+  //        else
+  //        {
+  //          index.setLeaf(false);
+  //        }
+  //
+  //        // d-1 recursion
+  //        this->regular_rec(storage, index, current_dim - 1, current_level,
+  //        level);
+  //      }
+  //
+  //      if(current_level < level)
+  //      {
+  //        // current_level + 1 recursion
+  //        index.push(current_dim, source_level + 1, 2*source_index - 1);
+  //        this->regular_rec(storage, index, current_dim, current_level + 1,
+  //        level);
+  //
+  //        index.push(current_dim, source_level + 1, 2*source_index + 1);
+  //        this->regular_rec(storage, index, current_dim, current_level + 1,
+  //        level);
+  //      }
+  //
+  //      index.push(current_dim, source_level, source_index);
+  //    }
+  //  }
+  //
+  //  /**
+  //   * generate points of the last dimension (dim == 0), without boundaries
+  //   *
+  //   * @param storage the hashmap that stores the grid points
+  //   * @param index point's index that should be created on the grid
+  //   * @param current_level current level of the grid generation
+  //   * @param level maximum level of grid
+  //   */
+  //  void regular_rec_1d(GridStorage& storage, GridPoint& index,
+  //  level_t current_level, level_t level)
+  //  {
+  //        for(level_t l = 1; l <= level-current_level + 1; l++)
+  //        {
+  //            if (l == level-current_level+1)
+  //            {
+  //              for(index_t i = 1;
+  //              static_cast<int>(i) <= static_cast<int>(1<<(l-1)); i++)
+  //                {
+  //                    index.push(0, l, 2*i-1, true);
+  //                    storage.insert(index);
+  //                }
+  //            }
+  //            else
+  //            {
+  //              for(index_t i = 1;
+  //              static_cast<int>(i) <= static_cast<int>(1<<(l-1)); i++)
+  //                {
+  //                    index.push(0, l, 2*i-1, false);
+  //                    storage.insert(index);
+  //                }
+  //            }
+  //        }
+  //  }
 
-    void boundaries_rec(GridStorage & storage, GridPoint & index, size_t current_dim,
-                        level_t current_level, level_t level) {
+  /**
+   * recursive construction of the spare grid with boundaries, pentagon cut
+   *
+   * @param storage hashmap that stores the grid points
+   * @param index point's index
+   * @param current_dim current working dimension
+   * @param current_level current level in this construction step
+   * @param level maximum level of the sparse grid
+   * @param bLevelZero specifies if the current index has a level zero component
+   */
+
+  void boundaries_truncated_rec(GridStorage& storage, GridPoint& index, size_t current_dim,
+                                level_t current_level, level_t level, bool bLevelZero) {
+    if (current_dim == 0) {
+      boundaries_Truncated_rec_1d(storage, index, current_level, level, bLevelZero);
+    } else {
       index_t source_index;
       level_t source_level;
 
@@ -1229,8 +1212,29 @@ class HashGenerator {
             index.push(current_dim, 0, 0, bLeafProperty);
             this->boundaries_rec(storage, index, current_dim - 1, current_level, level);
 
-            index.push(current_dim, 0, 1, bLeafProperty);
-            this->boundaries_rec(storage, index, current_dim - 1, current_level, level);
+        index.push(current_dim, source_level + 1, 2 * source_index + 1);
+        this->boundaries_truncated_rec(storage, index, current_dim, current_level + 1, level,
+                                       bLevelZero);
+      }
+
+      index.push(current_dim, source_level, source_index);
+    }
+  }
+
+  /**
+   * generate points of the last dimension (dim == 0), version of pentagon cut in
+   * sub space scheme
+   *
+   * @param storage the hashmap that stores the grid points
+   * @param index point's index that should be created on the grid
+   * @param current_level current level of the grid generation
+   * @param level maximum level of grid
+   * @param bLevelZero specifies if the current index has a level zero component
+   */
+
+  void boundaries_Truncated_rec_1d(GridStorage& storage, GridPoint& index, level_t current_level,
+                                   level_t level, bool bLevelZero) {
+    bool bLevelGreaterZero = !bLevelZero;
 
             index.push(current_dim, source_level, source_index, bSaveLeafProperty);
           }
@@ -1247,13 +1251,21 @@ class HashGenerator {
         }
       }
 
-      if (current_level < level) {
-        if (source_level == 0 && source_index == 0) {
-          index.push(current_dim, source_level + 1, 1);
-          this->boundaries_rec(storage, index, current_dim, current_level + 1, level);
-        } else {
-          index.push(current_dim, source_level + 1, 2 * source_index - 1);
-          this->boundaries_rec(storage, index, current_dim, current_level + 1, level);
+  /**
+   * recursive construction of the spare grid with boundaries, classic level 0 approach, only for
+   *level 0 and 1
+   *
+   * @param storage hashmap that stores the grid points
+   * @param index point's index
+   * @param current_dim current working dimension
+   * @param current_level current level in this construction step
+   * @param level maximum level of the sparse grid
+   */
+
+  void boundaries_rec(GridStorage& storage, GridPoint& index, size_t current_dim,
+                      level_t current_level, level_t level) {
+    index_t source_index;
+    level_t source_level;
 
           index.push(current_dim, source_level + 1, 2 * source_index + 1);
           this->boundaries_rec(storage, index, current_dim, current_level + 1, level);
@@ -1358,13 +1370,24 @@ class HashGenerator {
      *in the construction of the sparse grid)
      */
 
-    void trunc_rec(GridStorage & storage, GridPoint & index, size_t current_dim,
-                   level_t current_level, level_t level, level_t minlevel) {
-      index_t source_index;
-      level_t source_level;
+    index.push(current_dim, source_level, source_index);
+  }
+  /**
+   * recursive construction of a square root grid with boundaries
+   *
+   * @param storage hashmap that stores the grid points
+   * @param index point's index
+   * @param current_dim current working dimension
+   * @param level maximum level of the square root grid
+   * @param small_level level of coarsest descretization
+   * @param tail true if there is a level of the index>level/2
+   * @param sum sum of all levels
+   */
 
-      index.get(current_dim, source_level, source_index);
-      bool bSaveLeafProperty = index.isLeaf();
+  void square_rec(GridStorage& storage, GridPoint& index, size_t current_dim, level_t level,
+                  level_t small_level, bool tail, size_t sum) {
+    index_t source_index;
+    level_t source_level;
 
       if (current_level <= level) {
         // set Leaf option of index
@@ -1409,6 +1432,50 @@ class HashGenerator {
           index.setLeaf(bSaveLeafProperty);
         }
       }
+    }
+
+    /**If the level of the node is smaller than small_level or we didn't have yet a level greater
+    than small_level(!tail) and the level is smaller then level then
+    we can then proceed to the next level on this dimension, otherwise we reached the maximum
+    possible level*
+    */
+    if ((source_level < small_level) || ((!tail) && (source_level < level))) {
+      if (source_level == 0 && source_index == 0) {
+        index.push(current_dim, source_level + 1, 1);
+        this->square_rec(storage, index, current_dim, level, small_level, tail, sum + 1);
+      } else {
+        index.push(current_dim, source_level + 1, 2 * source_index - 1);
+        this->square_rec(storage, index, current_dim, level, small_level, tail, sum + 1);
+
+        index.push(current_dim, source_level + 1, 2 * source_index + 1);
+        this->square_rec(storage, index, current_dim, level, small_level, tail, sum + 1);
+      }
+    }
+  }
+  /**
+   * recursive construction of a super truncated grid with boundaries
+   *
+   * @param storage hashmap that stores the grid points
+   * @param index point's index
+   * @param current_dim current working dimension
+   * @param current_level the current level of the gridpoint so far, starts from minlevel*dim
+   * @param level the maximum level of the gridpoint
+   * @param minlevel the level limit given by the user(tells us which fullgrids won't be present in
+   *the construction of the sparse grid)
+   */
+
+  void trunc_rec(GridStorage& storage, GridPoint& index, size_t current_dim, level_t current_level,
+                 level_t level, level_t minlevel) {
+    index_t source_index;
+    level_t source_level;
+
+    index.get(current_dim, source_level, source_index);
+    bool bSaveLeafProperty = index.isLeaf();
+
+    if (current_level <= level) {
+      // set Leaf option of index
+
+      bool bLeafProperty = bSaveLeafProperty;
 
       if (source_level < minlevel) {
         /**

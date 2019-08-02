@@ -34,7 +34,8 @@ def doConfigure(env, moduleFolders, languageWrapperFolders):
   config = env.Configure(custom_tests={"CheckExec" : Helper.CheckExec,
                                        "CheckJNI" : Helper.CheckJNI,
                                        "CheckFlag" : Helper.CheckFlag,
-                                       "CheckCompiler" : Helper.CheckCompiler})
+                                       "CheckCompiler" : Helper.CheckCompiler,
+                                       "CheckMKL" : Helper.CheckMklScalapack})
 
   # now set up all further environment settings that should never fail
   # compiler setup should be always after checking headers and flags,
@@ -75,10 +76,9 @@ def doConfigure(env, moduleFolders, languageWrapperFolders):
     # beware: if symbols are missing that are actually required
     # (because the symbols don't reside in a shared library),
     # there will be no error during compilation
-    # the python binding (pysgpp) requires lpython and a flat namespace
     # also for the python binding, the library must be suffixed with '*.so' even
     # though it is a dynamiclib and not a bundle (see SConscript in src/pysgpp)
-    config.env.AppendUnique(LINKFLAGS=["-flat_namespace", "-undefined", "dynamic_lookup", "-lpython"])
+    config.env.AppendUnique(LINKFLAGS=["-undefined", "dynamic_lookup"])
     # The GNU assembler (GAS) is not supported in Mac OS X.
     # A solution that fixed this problem is by adding -Wa,-q to the compiler flags.
     # From the man pages for as (version 1.38):
@@ -118,6 +118,8 @@ def doConfigure(env, moduleFolders, languageWrapperFolders):
   checkOpenCL(config)
   detectGSL(config)
   detectZlib(config)
+  detectScaLAPACK(config)
+  detectPythonAPI(config)
   checkDAKOTA(config)
   checkCGAL(config)
   checkBoostTests(config)
@@ -263,19 +265,6 @@ def checkCGAL(config):
     if config.env["USE_CGAL"]:
         if not config.CheckCXXHeader("CGAL/basic.h"):
             Helper.printErrorAndExit("CGAL/basic.h not found, but required for CGAL. Consider setting the flag 'CPPPATH'.")
-
-def checkGSL(config):
-  if config.env["USE_GSL"]:
-    config.env.AppendUnique(CPPPATH=[config.env["GSL_INCLUDE_PATH"]])
-    if "GSL_LIBRARY_PATH" in config.env:
-      config.env.AppendUnique(LIBPATH=[config.env["GSL_LIBRARY_PATH"]])
-
-    if not config.CheckCXXHeader("gsl/gsl_version.h"):
-      Helper.printErrorAndExit("gsl/gsl_version.h not found, but required for GSL")
-    if not config.CheckLib(["gsl", "gslcblas"], language="c++", autoadd=0):
-      Helper.printErrorAndExit("libsgl/libgslcblas not found, but required for GSL")
-
-    config.env["CPPDEFINES"]["USE_GSL"] = "1"
 
 def checkBoostTests(config):
   # Check the availability of the boost unit test dependencies
@@ -463,9 +452,33 @@ def configureGNUCompiler(config):
   config.env.Append(CPPFLAGS=allWarnings + [
       "-fno-strict-aliasing",
       "-funroll-loops", "-mfpmath=sse"])
-#   if not config.env["USE_HPX"]:
-  config.env.Append(CPPFLAGS=["-fopenmp"])
-  config.env.Append(LINKFLAGS=["-fopenmp"])
+
+  # Mitigation for old Ubuntu (should probably be also applied to Debian?):
+  # Package 'libomp-dev' installs a symlink 'libgomp.so' to 'libomp.so' in /usr/lib/x86_64-linux.
+  # If this path is manually added (-L...), then ld uses this symlink and, thus, links against
+  # the wrong openmp library.
+  # The mitigation is to ask gcc for its LIBRARY_PATH in combination with -fopenmp and manually
+  # add this as the very first LIBPATH.
+  # Note, that this code also disables openmp if the mitigation command did not produce an
+  # adequate path.
+  import platform
+  linux_dist = platform.dist()
+  if linux_dist[0] == "Ubuntu" and linux_dist[1] in ["16.04", "16.10", "17.04", "17.10", "18.04", "18.10"]:
+    p = subprocess.Popen(config.env["CXX"] + " -v  -fopenmp -xc /dev/null 2>&1 | awk -F'[=:]' '/LIBRARY_PATH/{print $2}'", shell=True, stdout=subprocess.PIPE)
+    first_libpath, _ = p.communicate()
+    first_libpath = first_libpath.rstrip() # remove trailing newline
+    if not os.path.exists(first_libpath):
+      Helper.printWarning("Mitigation for old Ubuntu failed. Did not get libpath. Continuing WITHOUT openmp.")
+    else:
+      Helper.printInfo("Mitigation for old Ubuntu: Manually adding {} as first libpath.".format(first_libpath))
+      config.env.Append(LIBPATH=[first_libpath])
+      # Safety first: Manually specity libgomp.so.1 as additional library before -fopenmp
+      config.env.Append(LINKFLAGS=["-l:libgomp.so.1", "-fopenmp"])
+      config.env.Append(CPPFLAGS=["-fopenmp"])
+  else:
+    config.env.Append(CPPFLAGS=["-fopenmp"])
+    config.env.Append(LINKFLAGS=["-fopenmp"])
+
 
   #   # limit the number of errors display to something reasonable (useful for templated code)
   #   config.env.Append(CPPFLAGS=["-fmax-errors=5"])
@@ -641,3 +654,57 @@ def detectZlib(config):
       Helper.printErrorAndExit("USE_ZLIB is set but either libz or zlib.h is missing!")
   else:
     Helper.printInfo("ZLIB support could not be enabled.")
+
+def detectScaLAPACK(config):
+  if "SCALAPACK_LIBRARY_PATH" in config.env:
+    config.env.AppendUnique(LIBPATH=[config.env["SCALAPACK_LIBRARY_PATH"]])
+
+  # check if USE_SCALAPACK was given as parameter and is disabled
+  if "USE_SCALAPACK" in config.env and not config.env["USE_SCALAPACK"]:
+    Helper.printInfo("ScaLAPACK disabled.")
+    return
+
+  if config.env["COMPILER"] not in ("openmpi", "mpich", "intel.mpi"):
+    if "USE_SCALAPACK" in config.env and config.env["USE_SCALAPACK"]:
+      Helper.printErrorAndExit("USE_SCALAPACK was set, but no mpi compiler was used (openmpi, mpich or intel.mpi)")
+    config.env["USE_SCALAPACK"] = False
+    Helper.printInfo("ScaLAPACK was disabled as no mpi compiler was used (openmpi, mpich or intel.mpi)")
+    return
+
+
+  # check if there is a ScaLAPACK version installed
+  if "SCALAPACK_LIBRARY_NAME" in config.env and config.CheckLib(config.env["SCALAPACK_LIBRARY_NAME"], language="c++", autoadd=0):
+    config.env["SCALAPACK_VERSION"] = "custom"
+    config.env["USE_SCALAPACK"] = True
+    config.env["CPPDEFINES"]["USE_SCALAPACK"] = "1"
+    Helper.printInfo("Using scalapack version from SCALAPACK_LIBRARY_NAME: " + str(config.env["SCALAPACK_LIBRARY_NAME"]))
+  elif config.CheckMKL():
+    config.env["SCALAPACK_VERSION"] = "mkl"
+    config.env["USE_SCALAPACK"] = True
+    config.env["CPPDEFINES"]["USE_SCALAPACK"] = "1"
+    Helper.printInfo("Using mkl ScaLAPACK")
+  elif config.CheckLib("scalapack", language="c++", autoadd=0):
+    config.env["SCALAPACK_VERSION"] = "netlib"
+    config.env["USE_SCALAPACK"] = True
+    config.env["CPPDEFINES"]["USE_SCALAPACK"] = "1"
+    Helper.printInfo("Using netlib ScaLAPACK")
+  elif config.env["COMPILER"] == "openmpi" and config.CheckLib("scalapack-openmpi", language="c++", autoadd=0):
+    config.env["SCALAPACK_VERSION"] = "openmpi"
+    config.env["USE_SCALAPACK"] = True
+    config.env["CPPDEFINES"]["USE_SCALAPACK"] = "1"
+    Helper.printInfo("Using openmpi ScaLAPACK")
+  elif config.env["COMPILER"] == "mpich" and config.CheckLib("scalapack-mpich", language="c++", autoadd=0):
+    config.env["SCALAPACK_VERSION"] = "mpich"
+    config.env["USE_SCALAPACK"] = True
+    config.env["CPPDEFINES"]["USE_SCALAPACK"] = "1"
+    Helper.printInfo("Using mpich ScaLAPACK")
+  elif "USE_SCALAPACK" in config.env and config.env["USE_SCALAPACK"]:
+    Helper.printErrorAndExit("No supported version of ScaLAPACK was found.")
+  else:
+    config.env["USE_SCALAPACK"] = False
+    Helper.printInfo("No ScaLAPACK version found, ScaLAPACK support disabled.")
+
+
+def detectPythonAPI(config):
+  if config.env["USE_PYTHON_EMBEDDING"]:
+    config.env["CPPDEFINES"]["USE_PYTHON_EMBEDDING"] = "1"
