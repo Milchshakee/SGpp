@@ -56,7 +56,8 @@ AsInfo AsMcReducer::evaluate(AsMcInput& input) {
   AsInfo i;
   i.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
   i.eigenValues = sgpp::base::DataVector(dimensions);
-  EigenHelper::svd(EigenHelper::toEigen(matrix), i.eigenVectors, i.eigenValues);
+  i.permutation = sgpp::base::DataMatrix(dimensions, dimensions);
+  EigenHelper::svd(EigenHelper::toEigen(matrix), i.eigenVectors, i.eigenValues, i.permutation);
   return i;
 }
 
@@ -81,7 +82,8 @@ AsMcResult AsMcIntervalCutter::cut(const AsMcInput& input, const AsInfo& info) {
 
     sgpp::base::DataMatrix bootstrapEigenVectorMatrix(dimensions, dimensions);
     sgpp::base::DataVector bootstrapEigenValues(dimensions);
-    EigenHelper::svd(EigenHelper::toEigen(bootstrapMatrix), bootstrapEigenVectorMatrix, bootstrapEigenValues);
+    sgpp::base::DataMatrix bootstrapPermutations(dimensions, dimensions);
+    EigenHelper::svd(EigenHelper::toEigen(bootstrapMatrix), bootstrapEigenVectorMatrix, bootstrapEigenValues, bootstrapPermutations);
     for (size_t d = 0; d < dimensions; ++d) {
       double e = bootstrapEigenValues[d];
       if (e < eigenValueIntervals[d].first) {

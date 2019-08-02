@@ -76,7 +76,7 @@ class Result {
   }
 
   virtual optimization::ScalarFunction& getReducedFunction() = 0;
-  virtual TransformationFunction& getTransformationFunction() = 0;
+  virtual optimization::VectorFunction& getTransformationFunction() = 0;
   virtual T& getReducedOutput() = 0;
 };
 

@@ -70,7 +70,8 @@ sgpp::base::PcaInfo sgpp::base::PcaCovarianceSolver::solve(DataMatrix& matrix) {
   PcaInfo i;
   i.basis = sgpp::base::DataMatrix(matrix.getNcols(), matrix.getNcols());
   i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
-  EigenHelper::svd(c, i.basis, i.eigenValues);
+  DataMatrix permutations = sgpp::base::DataMatrix(matrix.getNcols(), matrix.getNcols());
+  EigenHelper::svd(c, i.basis, i.eigenValues, permutations);
   return i;
 }
 

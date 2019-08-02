@@ -28,14 +28,14 @@ Eigen::VectorXd EigenHelper::toEigen(const sgpp::base::DataVector& vector) {
   return std::move(v);
 }
 
-sgpp::base::DataMatrix EigenHelper::mult(sgpp::base::DataMatrix& m1, sgpp::base::DataMatrix& m2) {
+sgpp::base::DataMatrix EigenHelper::mult(const sgpp::base::DataMatrix& m1, const sgpp::base::DataMatrix& m2) {
   Eigen::MatrixXd e1 = toEigen(m1);
   Eigen::MatrixXd e2 = toEigen(m2);
   Eigen::MatrixXd e3 = e1 * e2;
   return fromEigen(e3);
 }
 
-sgpp::base::DataVector EigenHelper::mult(sgpp::base::DataMatrix& m,
+sgpp::base::DataVector EigenHelper::mult(const sgpp::base::DataMatrix& m,
                                          const sgpp::base::DataVector& v) {
   Eigen::MatrixXd em = toEigen(m);
   Eigen::VectorXd ev = toEigen(v);
@@ -44,7 +44,7 @@ sgpp::base::DataVector EigenHelper::mult(sgpp::base::DataMatrix& m,
 }
 
 void EigenHelper::svd(const Eigen::MatrixXd& input, sgpp::base::DataMatrix& eigenVectorMatrix,
-                      sgpp::base::DataVector& eigenValues) {
+                      sgpp::base::DataVector& eigenValues, sgpp::base::DataMatrix& permutation) {
   Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(input);
   if (eigensolver.info() != Eigen::Success) abort();
   const Eigen::MatrixXd& m = eigensolver.eigenvectors();
@@ -62,6 +62,7 @@ void EigenHelper::svd(const Eigen::MatrixXd& input, sgpp::base::DataMatrix& eige
         maxValue = eigenValues[j];
       }
     }
+    permutation.set(c, max - c, 1);
     sgpp::base::DataVector temp1(dimensions);
     eigenVectorMatrix.getColumn(c, temp1);
     sgpp::base::DataVector temp2(dimensions);

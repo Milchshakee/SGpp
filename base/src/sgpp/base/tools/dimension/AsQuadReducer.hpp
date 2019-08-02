@@ -31,6 +31,7 @@ namespace base {
     SGridSample& getReducedOutput() override;
   private:
     SGridSample reduced;
+   EvalFunction evalFunc;
   };
 
     class AsQuadFixedCutter : public Cutter<AsQuadInput, AsInfo, AsQuadResult>
