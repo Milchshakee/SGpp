@@ -24,7 +24,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
-    <RemoteRootDir>~/vsprojects</RemoteRootDir>
+    <RemoteRootDir>~/vsprojects2</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -54,7 +54,7 @@
     <RemoteCleanCommandLine>scons -c</RemoteCleanCommandLine>
     <RemoteReBuildCommandLine>scons --clean
 scons --no-cache</RemoteReBuildCommandLine>
-    <RemoteBuildOutputs>/home/milchshakee/vsprojects/sgpp/base/examples/pcaReduction</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/milchshakee/vsprojects2/sgpp/base/examples/testrun</RemoteBuildOutputs>
     <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);@(DataFilesToCopyRemotely)</SourcesToCopyRemotelyOverride>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -81,6 +81,12 @@ scons --no-cache</RemoteReBuildCommandLine>
     <None Include="base\**" Exclude="base\doc\**" />
     <None Include="datadriven\**" Exclude="datadriven\doc\**" />
     <None Include="optimization\**" Exclude="optimization\doc\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="base\src\sgpp\base\operation\hash\OperationQuadratureAnovaBoundary.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="base\src\sgpp\base\operation\hash\OperationQuadratureAnovaBoundary.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
