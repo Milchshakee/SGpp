@@ -7,7 +7,7 @@
 #define ASQUADREDUCER_HPP
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
-#include <sgpp/optimization/function/vector/VectorFunction.hpp>
+#include <sgpp/base/function/vector/VectorFunction.hpp>
 #include "DimReduction.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 #include "AsReducer.hpp"
@@ -27,7 +27,7 @@ namespace base {
   public:
     AsQuadResult(const SGridSample& input, const DataMatrix& m, size_t n);
 
-    optimization::ScalarFunction& getReducedFunction() override;
+    ScalarFunction& getReducedFunction() override;
     SGridSample& getReducedOutput() override;
   private:
     SGridSample reduced;

@@ -4,8 +4,8 @@
 #include "sgpp/base/operation/BaseOpFactory.hpp"
 #include "sgpp/base/tools/dimension/AsMcReducer.hpp"
 #include "sgpp/base/tools/dimension/AsQuadReducer.hpp"
-#include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
-#include "sgpp/optimization/function/vector/WrapperVectorFunction.hpp"
+#include <sgpp/base/function/scalar/WrapperScalarFunction.hpp>
+#include <sgpp/base/function/vector/WrapperVectorFunction.hpp>
 
 double f(const sgpp::base::DataVector& v) { return v[0]; }
 
@@ -16,8 +16,8 @@ void f_gradient(const sgpp::base::DataVector& x, sgpp::base::DataVector& out) {
 
 
 int main(int argc, char* argv[]) {
-  auto func = sgpp::optimization::WrapperScalarFunction(2, f);
-  auto funcGradient = sgpp::optimization::WrapperVectorFunction(2, 2, f_gradient);
+  auto func = sgpp::base::WrapperScalarFunction(2, f);
+  auto funcGradient = sgpp::base::WrapperVectorFunction(2, 2, f_gradient);
   size_t dim = 2;
 
   //Create the grid object.

@@ -11,8 +11,8 @@
 #include "VectorDistribution.hpp"
 #include "sgpp/base/grid/Grid.hpp"
 #include "sgpp/base/operation/BaseOpFactory.hpp"
-#include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
-#include "sgpp/optimization/function/vector/VectorFunction.hpp"
+#include "sgpp/base/function/scalar/ScalarFunction.hpp"
+#include "sgpp/base/function/vector/VectorFunction.hpp"
 
 namespace sgpp {
 namespace base {
@@ -121,7 +121,7 @@ class SGridSample : public GridSample<double> {
   SGridSample(std::shared_ptr<Grid>& grid, std::function<double(const DataVector&)>& func)
       : GridSample<double>(grid, func), valuesView(values.data(), values.size()) {}
 
-  SGridSample(std::shared_ptr<Grid>& grid, optimization::ScalarFunction& func) {
+  SGridSample(std::shared_ptr<Grid>& grid, ScalarFunction& func) {
     GridSample<double>::grid = grid;
     keys = std::vector<DataVector>(grid->getSize());
     values = std::vector<double>(grid->getSize());
@@ -167,7 +167,7 @@ class SGridSample : public GridSample<double> {
     return opMC.doQuadratureL2Error(f, clientdata, valuesView);
   }
 
-  double mcL2Error(optimization::ScalarFunction& f, size_t paths) {
+  double mcL2Error(ScalarFunction& f, size_t paths) {
     sgpp::base::OperationQuadratureMC opMC(*grid, paths);
     return opMC.doQuadratureL2Error(f, valuesView);
   }
@@ -194,7 +194,7 @@ PointSample<T> sampleDistribution(VectorDistribution& dist,
 }
 
 inline PointSample<double> sampleScalarFunction(VectorDistribution& dist,
-                                                optimization::ScalarFunction& func) {
+                                                ScalarFunction& func) {
   std::vector<double> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     values[i] = func.eval(dist.getVectors()[i]);
@@ -203,7 +203,7 @@ inline PointSample<double> sampleScalarFunction(VectorDistribution& dist,
 }
 
 inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
-                                                    optimization::VectorFunction& func) {
+                                                    VectorFunction& func) {
   std::vector<DataVector> values(dist.getSize(), DataVector(dist.getDimensions()));
   for (size_t i = 0; i < dist.getSize(); i++) {
     func.eval(dist.getVectors()[i], values[i]);
@@ -212,7 +212,7 @@ inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
 }
 
 inline GridSample<DataVector> sampleGrid(std::shared_ptr<Grid>& grid,
-                                         optimization::VectorFunction& func) {
+                                         VectorFunction& func) {
   GridDistribution d(*grid);
   PointSample<DataVector> s = sampleVectorFunction(d, func);
   return std::move(GridSample<DataVector>(grid, s.getValues()));

@@ -7,13 +7,13 @@ namespace base {
 
 
 AsMcResult::AsMcResult(const AsMcInput& input, const DataMatrix& m, size_t n)
-    : AsResult<sgpp::optimization::ScalarFunction>(m, n) {
+    : AsResult<ScalarFunction>(m, n) {
   input.function.clone(function);
 }
 
-optimization::ScalarFunction& AsMcResult::getReducedFunction() { return *function; }
+ScalarFunction& AsMcResult::getReducedFunction() { return *function; }
 
-optimization::ScalarFunction& AsMcResult::getReducedOutput() { return *function; }
+ScalarFunction& AsMcResult::getReducedOutput() { return *function; }
 
 PointSample<DataMatrix> AsMcReducer::fromGradientSample(const PointSample<DataVector>& gradients) {
   std::vector<DataMatrix> out(gradients.getSize(),
@@ -30,7 +30,7 @@ PointSample<DataMatrix> AsMcReducer::fromGradientSample(const PointSample<DataVe
 }
 
 
-PointSample<DataMatrix> AsMcReducer::fromFiniteDifferences(optimization::ScalarFunction& func,
+PointSample<DataMatrix> AsMcReducer::fromFiniteDifferences(ScalarFunction& func,
   VectorDistribution& v) {
 }
 

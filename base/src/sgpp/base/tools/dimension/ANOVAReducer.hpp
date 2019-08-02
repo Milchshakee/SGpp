@@ -29,7 +29,7 @@ public:
 
   TransformationFunction& getTransformationFunction();
   SGridSample& getReducedOutput();
-  optimization::ScalarFunction& getReducedFunction() override;
+  ScalarFunction& getReducedFunction() override;
 
  private:
   EvalFunction eval;

@@ -13,6 +13,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
 
 namespace sgpp {
 namespace base {
@@ -118,7 +119,7 @@ double OperationQuadratureMC::doQuadratureL2Error(FUNC func, void* clientdata, D
 }
 
 
-double OperationQuadratureMC::doQuadratureFunc(optimization::ScalarFunction& func) {
+double OperationQuadratureMC::doQuadratureFunc(ScalarFunction& func) {
   size_t dim = grid->getDimension();
   BoundingBox& boundingBox = grid->getBoundingBox();
   sgpp::base::DataVector point(dim);
@@ -146,7 +147,7 @@ double OperationQuadratureMC::doQuadratureFunc(optimization::ScalarFunction& fun
   return res / static_cast<double>(mcPaths) * determinant;
 }
 
-double OperationQuadratureMC::doQuadratureL2Error(optimization::ScalarFunction& func,
+double OperationQuadratureMC::doQuadratureL2Error(ScalarFunction& func,
   sgpp::base::DataVector& alpha) {
   size_t dim = grid->getDimension();
   BoundingBox& boundingBox = grid->getBoundingBox();

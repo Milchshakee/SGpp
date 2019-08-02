@@ -4,9 +4,9 @@
 #include "sgpp/base/operation/hash/OperationEvalAnovaBoundary.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 #include "sgpp/base/tools/dimension/AnovaReducer.hpp"
-#include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
+#include "sgpp/base/function/scalar/WrapperScalarFunction.hpp"
 #include "sgpp/base/tools/dimension/AsMcReducer.hpp"
-#include "sgpp/optimization/function/vector/WrapperVectorFunction.hpp"
+#include "sgpp/base/function/vector/WrapperVectorFunction.hpp"
 #include "sgpp/base/operation/hash/OperationHierarchisationAnovaBoundary.hpp"
 #include "sgpp/base/tools/dimension/AsQuadReducer.hpp"
 
@@ -58,7 +58,7 @@ size_t paths = 10000;
 //}
 
 int main(int argc, char* argv[]) {
-  auto func = sgpp::optimization::WrapperScalarFunction(2, f);
+  auto func = sgpp::base::WrapperScalarFunction(2, f);
   auto reducer = sgpp::base::AsQuadReducer();
 
   sgpp::base::DataMatrix m1(2, maxLevel);
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
     sgpp::base::EvalFunction fe(sample);
 
     auto dist = sgpp::base::RandomUniformDistribution(paths, std::mt19937_64::default_seed, 2);
-      auto funcGradient = sgpp::optimization::WrapperVectorFunction(2, 2, f_gradient);
+      auto funcGradient = sgpp::base::WrapperVectorFunction(2, 2, f_gradient);
       sgpp::base::GridSample<sgpp::base::DataVector> gradientSamples = sgpp::base::SampleHelper::sampleGrid(grid, funcGradient);
 
     sgpp::base::AsQuadInput i{sample, gradientSamples};

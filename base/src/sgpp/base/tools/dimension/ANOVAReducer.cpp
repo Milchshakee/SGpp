@@ -61,7 +61,7 @@ sgpp::base::TransformationFunction& sgpp::base::AnovaResult::getTransformationFu
   return f;
 }
 
-sgpp::optimization::ScalarFunction& sgpp::base::AnovaResult::getReducedFunction() { return eval; }
+sgpp::base::ScalarFunction& sgpp::base::AnovaResult::getReducedFunction() { return eval; }
 
 sgpp::base::SGridSample& sgpp::base::AnovaResult::getReducedOutput() { return reducedSample; }
 

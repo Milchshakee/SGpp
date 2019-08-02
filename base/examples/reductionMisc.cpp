@@ -3,8 +3,6 @@
 #include "sgpp/base/datatypes/DataMatrix.hpp"
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
 #include "sgpp/base/tools/dimension/AsMcReducer.hpp"
-#include "sgpp/optimization/function/vector/WrapperVectorFunction.hpp"
-#include "sgpp/optimization/function/scalar/WrapperScalarFunction.hpp"
 #include "sgpp/base/operation/hash/OperationQuadrature.hpp"
 #include "sgpp/base/tools/dimension/AsQuadReducer.hpp"
 #include "sgpp/base/operation/BaseOpFactory.hpp"

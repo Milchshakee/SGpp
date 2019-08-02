@@ -6,8 +6,6 @@
 #ifndef ASREDUCER_HPP
 #define ASREDUCER_HPP
 
-#include <sgpp/base/datatypes/DataMatrix.hpp>
-#include <sgpp/optimization/function/vector/VectorFunction.hpp>
 #include "DimReduction.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 #include "EigenHelper.hpp"

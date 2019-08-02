@@ -7,7 +7,7 @@
 #define ASMCREDUCER_HPP
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
-#include <sgpp/optimization/function/vector/VectorFunction.hpp>
+#include <sgpp/base/function/vector/VectorFunction.hpp>
 #include "DimReduction.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 #include "AsReducer.hpp"
@@ -17,34 +17,34 @@ namespace base {
 
   struct AsMcInput
   {
-  optimization::ScalarFunction& function;
+  ScalarFunction& function;
   PointSample<DataMatrix> samples;
   };
 
-  class AsMcResult : public AsResult<optimization::ScalarFunction>
+  class AsMcResult : public AsResult<ScalarFunction>
   {
   public:
     AsMcResult(const AsMcInput& input, const DataMatrix& m, size_t n);
 
 
     AsMcResult(const AsMcResult& other)
-      : AsResult<optimization::ScalarFunction>(other) {
+      : AsResult<ScalarFunction>(other) {
       other.function->clone(function);
     }
 
     AsMcResult& operator=(const AsMcResult& other) {
       if (this == &other)
         return *this;
-      AsResult<optimization::ScalarFunction>::operator=(other);
+      AsResult<ScalarFunction>::operator=(other);
       other.function->clone(function);
       return *this;
     }
 
-    optimization::ScalarFunction& getReducedFunction() override;
-    optimization::ScalarFunction& getReducedOutput() override;
+    ScalarFunction& getReducedFunction() override;
+    ScalarFunction& getReducedOutput() override;
 
   private:
-    std::unique_ptr<optimization::ScalarFunction> function;
+    std::unique_ptr<ScalarFunction> function;
   };
 
   class AsMcFixedCutter : public Cutter<AsMcInput, AsInfo, AsMcResult> {
@@ -72,7 +72,7 @@ class AsMcReducer : public sgpp::base::AsReducer<AsMcInput> {
 
   static PointSample<DataMatrix> fromGradientSample(const PointSample<DataVector>& gradients);
   
-  static PointSample<DataMatrix> fromFiniteDifferences(optimization::ScalarFunction& func,
+  static PointSample<DataMatrix> fromFiniteDifferences(ScalarFunction& func,
                                                        VectorDistribution& v);
 
   AsInfo evaluate(AsMcInput& input) override;

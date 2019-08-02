@@ -28,7 +28,7 @@ sgpp::base::AsQuadResult::AsQuadResult(const SGridSample& input, const DataMatri
   evalFunc = EvalFunction(reduced);
 }
 
-sgpp::optimization::ScalarFunction& sgpp::base::AsQuadResult::getReducedFunction() {
+sgpp::base::ScalarFunction& sgpp::base::AsQuadResult::getReducedFunction() {
   return evalFunc;
 }
 

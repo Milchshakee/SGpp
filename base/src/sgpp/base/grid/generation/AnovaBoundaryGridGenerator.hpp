@@ -8,7 +8,6 @@
 
 #include <sgpp/base/grid/GridStorage.hpp>
 #include <sgpp/base/grid/generation/GridGenerator.hpp>
-#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
 
 #include <sgpp/globaldef.hpp>
 

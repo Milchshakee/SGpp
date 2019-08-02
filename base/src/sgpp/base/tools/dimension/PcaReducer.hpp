@@ -7,8 +7,8 @@
 #define PCAREDUCER_HPP
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
-#include <sgpp/optimization/function/vector/VectorFunction.hpp>
-#include "AsMcReducer.hpp"
+#include <sgpp/base/tools/VectorDistribution.hpp>
+#include "DimReduction.hpp"
 
 namespace sgpp {
 namespace base {

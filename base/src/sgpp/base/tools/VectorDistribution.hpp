@@ -9,7 +9,7 @@
 #include <random>
 #include <vector>
 #include "sgpp/base/datatypes/DataMatrix.hpp"
-#include "sgpp/optimization/function/scalar/ScalarFunction.hpp"
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
 #include "sgpp/base/grid/Grid.hpp"
 
 namespace sgpp {
