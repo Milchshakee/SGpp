@@ -43,8 +43,8 @@ sgpp::base::FixedDistribution sgpp::base::PcaResult::apply(const VectorDistribut
   return FixedDistribution(input.getSize(), transformation.getNrows(), newDist);
 }
 
-sgpp::base::DataMatrix centerMean(sgpp::base::VectorDistribution& input) {
-  std::vector<double> means(input.getDimensions());
+sgpp::base::DataMatrix centerMean(
+    sgpp::base::DataVector& means, sgpp::base::VectorDistribution& input) {
   for (size_t d = 0; d < input.getDimensions(); ++d) {
     double mean = 0;
     for (size_t c = 0; c < input.getSize(); c++) {
@@ -117,8 +117,10 @@ sgpp::base::PcaReducer::PcaReducer(std::shared_ptr<PcaSolver> solver) : solver(s
 const double MIN_EIGEN_VALUE = std::pow(10.0, -5.0);
 
 sgpp::base::PcaInfo sgpp::base::PcaReducer::evaluate(VectorDistribution& input) {
-  DataMatrix dist = centerMean(input);
+  sgpp::base::DataVector mean(input.getDimensions());
+  DataMatrix dist = centerMean(mean, input);
   PcaInfo i = solver->solve(dist);
+  i.mean = mean;
 
   size_t dimension = input.getDimensions();
   double sum = 0;

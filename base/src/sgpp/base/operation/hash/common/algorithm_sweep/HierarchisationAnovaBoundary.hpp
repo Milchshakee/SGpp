@@ -8,7 +8,7 @@
 
 #include <sgpp/base/datatypes/DataVector.hpp>
 #include <sgpp/base/grid/GridStorage.hpp>
-#include <sgpp/base/tools/dimension/AnovaHelper.hpp>
+#include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
 
 #include <sgpp/globaldef.hpp>
 #include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
@@ -22,7 +22,7 @@ namespace base {
  */
 class HierarchisationAnovaBoundary {
  protected:
-  typedef AnovaHelper::AnovaGridIterator grid_iterator;
+  typedef AnovaGridIterator grid_iterator;
 
  public:
   /**

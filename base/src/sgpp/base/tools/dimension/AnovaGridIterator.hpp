@@ -1,14 +1,11 @@
 #ifndef ANOVAHELPER
 #define ANOVAHELPER
 
-#include <vector>
 #include "sgpp/base/grid/storage/hashmap/HashGridPoint.hpp"
-#include "sgpp/base/tools/Sample.hpp"
 #include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
 
 namespace sgpp {
 namespace base {
-namespace AnovaHelper {
 
 class AnovaGridIterator {
  public:
@@ -117,12 +114,7 @@ class AnovaGridIterator {
    * @param l the ansatz function's level
    * @param i the ansatz function's index
    */
-  inline void get(size_t d, AnovaBoundaryGrid::level_t& l, index_t& i) const {
-    HashGridPoint::level_type lRaw;
-    HashGridPoint::index_type iRaw;
-    index.get(d, lRaw, iRaw);
-    AnovaBoundaryGrid::fromNormalGridPointLevelIndex(lRaw, iRaw, l, i);
-  }
+  void get(size_t d, AnovaBoundaryGrid::level_t& l, index_t& i) const;
 
   /**
    * returns the current sequence number
@@ -140,7 +132,6 @@ class AnovaGridIterator {
   size_t seq_;
 };
 
-}  // namespace AnovaHelper
 }  // namespace base
 }  // namespace sgpp
 

@@ -21,6 +21,7 @@ namespace base {
     sgpp::base::DataVector eigenValues;
     sgpp::base::DataVector singularValues;
   DataVector varianceShares;
+    DataVector mean;
   };
 
   struct PcaResult

@@ -111,6 +111,7 @@ class GridSample : public PointSample<T> {
   const Grid& getGrid() const { return *grid; }
 
  protected:
+  bool hierarchised;
   std::shared_ptr<Grid> grid;
 };
 

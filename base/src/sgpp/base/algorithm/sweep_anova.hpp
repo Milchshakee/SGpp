@@ -8,7 +8,7 @@
 
 #include <sgpp/base/datatypes/DataVector.hpp>
 #include <sgpp/base/grid/GridStorage.hpp>
-#include <sgpp/base/tools/dimension/AnovaHelper.hpp>
+#include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
 
 #include <sgpp/globaldef.hpp>
 
@@ -28,7 +28,7 @@ namespace base {
 template <class FUNC>
 class sweep_anova {
  protected:
-  typedef AnovaHelper::AnovaGridIterator grid_iterator;
+  typedef AnovaGridIterator grid_iterator;
 
   /// Object of FUNC, this is executed by sweep
   FUNC functor;
@@ -106,7 +106,7 @@ class sweep_anova {
    * @param dim_sweep static dimension, in this dimension the functor is executed
    */
   void sweep_AnovaBoundary_rec(DataVector& source, DataVector& result,
-                               AnovaHelper::AnovaGridIterator& index, std::vector<size_t>& dim_list,
+                               AnovaGridIterator& index, std::vector<size_t>& dim_list,
                                size_t dim_rem, size_t dim_sweep) {
     if (dim_rem == 0) {
       functor(source, result, index, dim_sweep);

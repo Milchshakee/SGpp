@@ -12,6 +12,7 @@
 #include "sgpp/base/tools/Sample.hpp"
 #include "AsReducer.hpp"
 #include "sgpp/base/operation/hash/OperationQuadrature.hpp"
+#include <sgpp/base/function/scalar/EvalFunction.hpp>
 
 namespace sgpp {
 namespace base {

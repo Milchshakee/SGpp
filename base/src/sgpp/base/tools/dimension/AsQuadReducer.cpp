@@ -1,5 +1,6 @@
 #include "AsQuadReducer.hpp"
 #include "EigenHelper.hpp"
+#include <sgpp/base/function/scalar/EvalFunction.hpp>
 
 const double MIN_SCALING_VALUE = std::pow(10.0, -5.0);
 
@@ -10,15 +11,18 @@ sgpp::base::AsQuadResult::AsQuadResult(const SGridSample& input, const DataMatri
 
   EvalFunction e(input);
   size_t dim = input.getDimensions();
-  std::function<double(const DataVector&)> func = [m, &e, dim, n](const DataVector& v) {
-    DataVector extendedV(v);
-    extendedV.resizeZero(dim);
-    std::cout << "e: " + extendedV.toString() << std::endl;
-    DataVector newV = EigenHelper::mult(m, extendedV);
-    if (newV.max() > MIN_SCALING_VALUE) {
-      newV.mult(1.0 / newV.max());
-    }
-    std::cout << "dimension: " + newV.toString() << std::endl;
+  std::function<double(const DataVector&)> func = [this, &e, dim, n](const DataVector& v) {
+    DataVector newV;
+    
+    transformFrom(v, newV);
+    //DataVector extendedV(v);
+    //extendedV.resizeZero(dim);
+    std::cout << "e: " + newV.toString() << std::endl;
+    //DataVector newV = EigenHelper::mult(m, extendedV);
+    //if (newV.max() > MIN_SCALING_VALUE) {
+    //  newV.mult(1.0 / newV.max());
+    //}
+    //std::cout << "dimension: " + newV.toString() << std::endl;
     return e.eval(newV);
   };
 

@@ -3,11 +3,8 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef RANDOMPDFDISTRIBUTION_HPP
-#define RANDOMPDFDISTRIBUTION_HPP
+#pragma once
 
-#include <random>
-#include "sgpp/base/datatypes/DataMatrix.hpp"
 #include "sgpp/base/tools/VectorDistribution.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 
@@ -16,22 +13,19 @@ namespace base {
 
 class RandomPdfDistribution : public RandomDistribution {
  public:
-  RandomPdfDistribution(size_t size, uint64_t seed, size_t dimensions, GridSample<double> pdf);
+  RandomPdfDistribution(size_t size, size_t dimensions, uint64_t seed, ScalarFunction& pdf,
+                        size_t iterations, double stepSize);
 
   void generate();
 
- private:
-  struct Block
-  {
-    
-  };
+private:
+  size_t iterations;
+  ScalarFunction& pdf;
+  double stepSize;
 
-  size_t dimensions;
-  std::vector<double> probs;
-  std::vector<Block> blocks;
+  double getProbability(DataVector& v);
+  void generateVector(size_t index);
 };
 
 }  // namespace base
 }  // namespace sgpp
-
-#endif

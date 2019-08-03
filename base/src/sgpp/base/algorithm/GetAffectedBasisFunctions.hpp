@@ -20,7 +20,8 @@
 
 #include <utility>
 #include <vector>
-#include "sgpp/base/tools/dimension/AnovaHelper.hpp"
+#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
+#include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
 
 namespace sgpp {
 namespace base {
@@ -440,7 +441,7 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
       useBB = true;
     }
 
-    AnovaHelper::AnovaGridIterator working(storage);
+    AnovaGridIterator working(storage);
 
     working.resetToLevelMinusOne();
     result.clear();
@@ -457,7 +458,7 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
   BoundingBox* BB;
 
   void rec(SLinearBoundaryBase& basis, const DataVector& point, size_t current_dim, double value,
-           AnovaHelper::AnovaGridIterator& working,
+           AnovaGridIterator& working,
            std::vector<std::pair<size_t, double> >& result) {
     while (true) {
       index_t work_index;

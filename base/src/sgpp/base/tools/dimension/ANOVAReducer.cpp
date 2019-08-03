@@ -1,7 +1,7 @@
 #include "AnovaReducer.hpp"
 #include "DimReduction.hpp"
 #include "OperationAnova.hpp"
-#include "sgpp/base/grid/Grid.hpp"
+#include <sgpp/base/grid/Grid.hpp>
 
 sgpp::base::AnovaComponentVarianceCutter::AnovaComponentVarianceCutter(double minVariance)
     : minVariance(minVariance) {}
@@ -33,7 +33,7 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad,
       mat.appendRow(v);
     }
   }
-  f = TransformationFunction(mat);
+  f = MatrixFunction(mat);
 
   // create reduced sample
   std::shared_ptr<Grid> newGrid(
@@ -57,7 +57,7 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad,
   eval = EvalFunction(reducedSample);
 }
 
-sgpp::base::TransformationFunction& sgpp::base::AnovaResult::getTransformationFunction() {
+sgpp::base::VectorFunction& sgpp::base::AnovaResult::getTransformationFunction() {
   return f;
 }
 

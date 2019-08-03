@@ -8,6 +8,8 @@
 #include <sgpp/globaldef.hpp>
 #include "common/algorithm_sweep/HierarchisationAnovaBoundary.hpp"
 #include "sgpp/base/algorithm/sweep_anova.hpp"
+#include "OperationQuadrature.hpp"
+#include <sgpp/base/operation/BaseOpFactory.hpp>
 
 namespace sgpp {
 namespace base {
@@ -49,8 +51,8 @@ void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_v
     s.sweep1D_AnovaBoundary(node_values, node_values, i);
   }
   if (integral) {
-    std::unique_ptr<sgpp::base::OperationQuadrature> opQ(
-        sgpp::op_factory::createOperationQuadrature(grid));
+    std::unique_ptr<OperationQuadrature> opQ(
+        op_factory::createOperationQuadrature(grid));
     double q = opQ->doQuadrature(node_values);
     node_values[0] = q;
 

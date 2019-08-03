@@ -9,6 +9,8 @@
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
 #include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
 #include "sgpp/base/tools/Sample.hpp"
+#include <sgpp/base/function/scalar/EvalFunction.hpp>
+#include <sgpp/base/function/vector/MatrixFunction.hpp>
 
 namespace sgpp {
 namespace base {
@@ -27,13 +29,13 @@ public:
   AnovaResult(std::vector<bool>& activeDimensions, double coveredVariance,
              size_t dimensions, SGridSample sample);
 
-  TransformationFunction& getTransformationFunction();
+  VectorFunction& getTransformationFunction();
   SGridSample& getReducedOutput();
   ScalarFunction& getReducedFunction() override;
 
  private:
   EvalFunction eval;
-  TransformationFunction f;
+  MatrixFunction f;
   SGridSample reducedSample;
 };
 

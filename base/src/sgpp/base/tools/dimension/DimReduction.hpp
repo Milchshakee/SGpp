@@ -14,34 +14,6 @@
 namespace sgpp {
 namespace base {
 
-class TransformationFunction : public VectorFunction {
- public:
-  TransformationFunction() : VectorFunction(0, 0) {};
-  TransformationFunction(DataMatrix transformation);
-  ~TransformationFunction() override = default;
-
-  void eval(const base::DataVector& x, DataVector& out) override;
-  void clone(std::unique_ptr<VectorFunction>& clone) const override;
-  size_t getOldDimensions();
-  size_t getNewDimensions();
-
- private:
-  DataMatrix transformation;
-};
-
-  class EvalFunction : public ScalarFunction {
- public:
-    EvalFunction() : ScalarFunction(0) {}
-    EvalFunction(const SGridSample& sample);
-  ~EvalFunction() override = default;
-
-  double eval(const base::DataVector& x) override;
-  void clone(std::unique_ptr<ScalarFunction>& clone) const override;
-
- private:
-  const SGridSample* sample;
-  };
-
 template <class INPUT, class INFO, class OUTPUT>
 class Cutter {
  public:

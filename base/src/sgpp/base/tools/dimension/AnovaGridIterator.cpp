@@ -1,13 +1,12 @@
-#include "AnovaHelper.hpp"
+#include "AnovaGridIterator.hpp"
 
 namespace sgpp {
 namespace base {
-namespace AnovaHelper {
 
 AnovaGridIterator::AnovaGridIterator(HashGridStorage& storage)
     : storage(storage), index(storage.getDimension()) {
   resetToLevelMinusOne();
-  }
+}
 
 void AnovaGridIterator::resetToLevelMinusOne() {
   for (size_t i = 0; i < storage.getDimension(); i++) {
@@ -111,9 +110,14 @@ bool AnovaGridIterator::hintRight(size_t d) {
   return hasIndex;
 }
 
+void AnovaGridIterator::get(size_t d, AnovaBoundaryGrid::level_t& l, index_t& i) const {
+  HashGridPoint::level_type lRaw;
+  HashGridPoint::index_type iRaw;
+  index.get(d, lRaw, iRaw);
+  AnovaBoundaryGrid::fromNormalGridPointLevelIndex(lRaw, iRaw, l, i);
+}
+
 size_t AnovaGridIterator::seq() const { return seq_; }
 
-
-}  // namespace AnovaHelper
 }  // namespace base
 }  // namespace sgpp
