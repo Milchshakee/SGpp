@@ -32,16 +32,7 @@ public:
 private:
   SGridSample reduced;
  EvalFunction evalFunc;
-  DataMatrix basis;
-  size_t oldDimensions;
- size_t newDimensions;
-  DataMatrix mInv;
- DataVector mean;
-  DataVector posRange;
- DataVector negRange;
-
-  void transformFrom(const DataVector& in, DataVector& out);
- void calculateRanges();
+  InputProjection projection;
 };
 
 class PcaFuncCutter : public Cutter<SGridSample, PcaFuncInfo, PcaFuncResult> {};

@@ -72,9 +72,12 @@ class Reducer {
   public:
     InputProjection(const DataMatrix& basis, size_t n, const DataVector& mean);
 
-    void inverse(DataVector& in, DataVector& out);
+    void inverse(const DataVector& in, DataVector& out);
+    VectorFunction& getFunction();
+
   private:
     DataMatrix basis;
+    DataMatrix cutBasis;
     size_t oldDimensions;
     size_t newDimensions;
     DataVector mean;

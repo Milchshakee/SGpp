@@ -1,11 +1,13 @@
 #include "DimReduction.hpp"
-#include <random>
 #include "EigenHelper.hpp"
 
 namespace sgpp {
 namespace base {
 
-InputProjection::InputProjection(const DataMatrix& basis, size_t n, const DataVector& mean) : basis(basis), oldDimensions(basis.getNrows()), newDimensions(n), mean(mean) {
+InputProjection::InputProjection(const DataMatrix& basis, size_t n, const DataVector& mean) : basis(basis), oldDimensions(basis.getNrows()), newDimensions(n), mean(mean), func(*this) {
+  cutBasis = basis;
+  cutBasis.resizeRowsCols(oldDimensions, newDimensions);
+  cutBasis.transpose();
   calculateRanges();
 }
 
@@ -43,7 +45,7 @@ InputProjection::InputProjection(const DataMatrix& basis, size_t n, const DataVe
   }
 
 
-void InputProjection::inverse(DataVector& in, DataVector& out) {
+void InputProjection::inverse(const DataVector& in, DataVector& out) {
     out = start;
   for (size_t d = 0; d < newDimensions; ++d) {
     double scale = posRange[d] - negRange[d];
@@ -58,9 +60,27 @@ InputProjection::ProjectionFunction::ProjectionFunction(InputProjection& p) : Ve
 }
 
 void InputProjection::ProjectionFunction::eval(const DataVector& in, DataVector& out) {
+  out = in;
+  out.sub(p.mean);
+  out = EigenHelper::mult(p.cutBasis, out);
+  DataVector ranges(p.newDimensions);
+  for (size_t d = 0; d < p.newDimensions; ++d) {
+    double scale = p.posRange[d] - p.negRange[d];
+    if (out[d] > p.posRange[d]) {
+      out[d] = p.posRange[d];
+      }
+    else if (out[d] < p.negRange[d]) {
+      out[d] = p.negRange[d];
+    }
+
+    out[d] = (out[d] - p.negRange[d]) / scale;
+  }
 }
 
 void InputProjection::ProjectionFunction::clone(std::unique_ptr<VectorFunction>& clone) const {
 }
+
+
+VectorFunction& InputProjection::getFunction() { return func; }
 }  // namespace base
 }  // namespace sgpp
