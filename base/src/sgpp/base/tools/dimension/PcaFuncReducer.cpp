@@ -3,32 +3,30 @@
 #include <sgpp/base/tools/dist/RandomPdfDistribution.hpp>
 #include "EigenHelper.hpp"
 
-
-sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(size_t n) : n(n) {
-}
+sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(size_t n) : n(n) {}
 
 sgpp::base::PcaFuncResult sgpp::base::PcaFuncFixedCutter::cut(const SGridSample& input,
                                                               const PcaFuncInfo& info) {
   return PcaFuncResult(input, info.basis, n, info.mean);
 }
 
-
-sgpp::base::PcaFuncVarianceCutter::PcaFuncVarianceCutter(double minVarianceShare) {
-}
+sgpp::base::PcaFuncVarianceCutter::PcaFuncVarianceCutter(double minVarianceShare) {}
 
 sgpp::base::PcaFuncResult sgpp::base::PcaFuncVarianceCutter::cut(const SGridSample& input,
-  const PcaFuncInfo& info) {
-}
+                                                                 const PcaFuncInfo& info) {}
 
-sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMatrix& m, size_t n, const DataVector& mean) : mean(mean) {
+sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMatrix& m, size_t n,
+                                         const DataVector& mean)
+    : mean(mean), newDimensions(n), oldDimensions(m.getNrows()) {
+  basis = m;
   this->mInv = m;
   this->mInv.resizeRowsCols(m.getNrows(), n);
   DataMatrix copy = m;
   copy.transpose();
-  this->m = copy;
 
+  calculateRanges();
 
-    std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
+  std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
   newGrid->getGenerator().regular(const_cast<Grid&>(input.getGrid()).getStorage().getMaxLevel());
 
   EvalFunction e(input);
@@ -46,26 +44,59 @@ sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMat
   evalFunc = EvalFunction(reduced);
 }
 
-sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction() {
+void sgpp::base::PcaFuncResult::calculateRanges() {
+  size_t dim = newDimensions;
+  posRange = DataVector(dim, 2);
+  negRange = DataVector(dim, -2);
+  for (size_t d = 0; d < dim; ++d) {
+    double m = mean[d];
+    for (size_t i = 0; i < oldDimensions; ++i) {
+      DataVector col(oldDimensions);
+      basis.getColumn(i, col);
+      double v = col[d];
+      double posX = (1 - m) / v;
+      double negX = (0 - m) / v;
+      if (posX < 0) {
+        std::swap(posX, negX);
+      }
+      if (posX < posRange[d]) {
+        posRange[d] = posX;
+      }
+      if (negX > negRange[d]) {
+        negRange[d] = negX;
+      }
+    }
+  }
 }
 
-sgpp::base::VectorFunction& sgpp::base::PcaFuncResult::getTransformationFunction() {
-}
+sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction() {}
 
-sgpp::base::SGridSample& sgpp::base::PcaFuncResult::getReducedOutput() {
-}
+sgpp::base::VectorFunction& sgpp::base::PcaFuncResult::getTransformationFunction() {}
+
+sgpp::base::SGridSample& sgpp::base::PcaFuncResult::getReducedOutput() {}
 
 void sgpp::base::PcaFuncResult::transformFrom(const DataVector& in, DataVector& out) {
-  out = in;
-  out.resizeZero(m.getNcols());
-  out.sub(mean);
-  out = EigenHelper::mult(m, out);
-  out.add(mean);
+  DataVector start = mean;
+  for (size_t d = 0; d < newDimensions; ++d) {
+    DataVector add(oldDimensions);
+    basis.getColumn(d, add);
+    add.mult(negRange[d]);
+    start.add(add);
+  }
+
+  for (size_t d = 0; d < newDimensions; ++d) {
+    double scale = posRange[d] - negRange[d];
+    DataVector add(oldDimensions);
+    basis.getColumn(d, add);
+    add.mult(scale * in[d]);
+    start.add(add);
+  }
+
+  out = start;
 }
 
 sgpp::base::PcaFuncReducer::PcaFuncReducer(std::shared_ptr<PcaSolver> solver, uint64_t seed,
-                                           size_t samples,
-                                           double stepSize, size_t iterations)
+                                           size_t samples, double stepSize, size_t iterations)
     : solver(solver), seed(seed), samples(samples), stepSize(stepSize), iterations(iterations) {}
 
 sgpp::base::PcaFuncInfo sgpp::base::PcaFuncReducer::evaluate(SGridSample& input) {
@@ -84,25 +115,23 @@ sgpp::base::PcaFuncInfo sgpp::base::PcaFuncReducer::evaluate(SGridSample& input)
   toReturn.basis = DataMatrix(dim, dim);
   toReturn.eigenValues = DataVector(dim);
 
-    for (size_t d = 0; d < dim; ++d) {
-    toReturn.varianceShares[d] = d >= a ? 0 : info.varianceShares[a - d];
+  for (size_t d = 0; d < dim; ++d) {
+    toReturn.varianceShares[d] = d >= a ? 0 : info.varianceShares[a - d - 1];
     sgpp::base::DataVector pa(input.getDimensions());
     info.basis.getColumn(d, pa);
-    toReturn.basis.setColumn(dim - d, pa);
-    toReturn.eigenValues.set(dim - d, info.eigenValues.get(d));
+    toReturn.basis.setColumn(dim - d - 1, pa);
+    toReturn.eigenValues.set(dim - d - 1, info.eigenValues.get(d));
   }
-    return toReturn;
+  return toReturn;
 }
 
-
-void sgpp::base::PcaFuncReducer::toDensity(SGridSample& input)
-{
+void sgpp::base::PcaFuncReducer::toDensity(SGridSample& input) {
   double min = 0;
   for (size_t i = 0; i < input.getSize(); ++i) {
     double val = input.getValues()[i];
     if (val < min) {
       val = min;
-     }
+    }
   }
 
   SGridSample copy = input;

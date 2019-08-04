@@ -66,6 +66,37 @@ class Reducer {
 
   virtual INFO evaluate(INPUT& input) = 0;
 };
+
+  class InputProjection
+  {
+  public:
+    InputProjection(const DataMatrix& basis, size_t n, const DataVector& mean);
+
+    void inverse(DataVector& in, DataVector& out);
+  private:
+    DataMatrix basis;
+    size_t oldDimensions;
+    size_t newDimensions;
+    DataVector mean;
+    DataVector posRange;
+    DataVector negRange;
+    DataVector start;
+
+    void calculateRanges();
+
+    class ProjectionFunction : public VectorFunction {
+     public:
+      ProjectionFunction(InputProjection& p);
+      ~ProjectionFunction() = default;
+      void eval(const DataVector& in, DataVector& out) override;
+      void clone(std::unique_ptr<VectorFunction>& clone) const override;
+
+     private:
+      InputProjection& p;
+    };
+
+    ProjectionFunction func;
+  };
 }  // namespace base
 }  // namespace sgpp
 
