@@ -3,33 +3,38 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef SAMPLE_HPP
-#define SAMPLE_HPP
+#pragma once
 
-#include <vector>
-#include "OperationQuadratureMC.hpp"
-#include "VectorDistribution.hpp"
-#include "sgpp/base/grid/Grid.hpp"
-#include "sgpp/base/operation/BaseOpFactory.hpp"
-#include "sgpp/base/function/scalar/ScalarFunction.hpp"
-#include "sgpp/base/function/vector/VectorFunction.hpp"
+#include <sgpp/base/operation/BaseOpFactory.hpp>
+#include <sgpp/base/tools/OperationQuadratureMC.hpp>
+#include <sgpp/base/tools/dist/GridDistribution.hpp>
+#include <sgpp/base/function/vector/VectorFunction.hpp>
+#include <sgpp/base/exception/tool_exception.hpp>
 
 namespace sgpp {
 namespace base {
 
 template <class K, class T>
 class Sample {
- public:
+public:
   Sample() = default;
 
   Sample(const std::vector<K>& keys, std::function<T(const K&)>& func)
-      : keys(keys), values(keys.size()) {
+    : keys(keys),
+      values(keys.size()) {
+    if (keys.size() != values.size()) {
+      throw tool_exception("Key size and value size do not match");
+      }
     for (size_t i = 0; i < keys.size(); i++) {
       values[i] = func(keys[i]);
     }
   }
 
-  Sample(const std::map<K, T> map) : keys(map.size()), values(map.size()) {
+  Sample(const std::map<K, T> map)
+    : keys(map.size()), values(map.size()) {
+    if (keys.size() != values.size()) {
+      throw tool_exception("Key size and value size do not match");
+    }
     size_t counter = 0;
     for (auto i = map.begin(); i != map.end(); ++i) {
       keys[counter] = i->first;
@@ -39,7 +44,11 @@ class Sample {
   }
 
   Sample(const std::vector<K>& vectors, const std::vector<T>& values)
-      : keys(vectors), values(values) {}
+    : keys(vectors), values(values) {
+    if (keys.size() != values.size()) {
+      throw tool_exception("Key size and value size do not match");
+    }
+  }
 
   T& getValue(const K& key) {
     for (size_t i = 0; i < getSize(); i++) {
@@ -50,7 +59,7 @@ class Sample {
     throw std::invalid_argument("Value not found");
   }
 
-    const T& getValue(const K& key) const {
+  const T& getValue(const K& key) const {
     for (size_t i = 0; i < getSize(); i++) {
       if (key == keys[i]) {
         return values[i];
@@ -65,21 +74,23 @@ class Sample {
   const std::vector<K>& getKeys() const { return keys; }
   const std::vector<T>& getValues() const { return values; }
 
- protected:
+protected:
   std::vector<K> keys;
   std::vector<T> values;
 };
 
 template <class T>
 class PointSample : public Sample<DataVector, T> {
- public:
+public:
   PointSample() = default;
 
   PointSample(const std::vector<DataVector>& keys, std::function<T(const DataVector&)>& func)
-      : Sample<DataVector, T>(keys, func) {}
+    : Sample<DataVector, T>(keys, func) {
+  }
 
   PointSample(const std::vector<DataVector>& keys, const std::vector<T>& values)
-      : Sample<DataVector, T>(keys, values) {}
+    : Sample<DataVector, T>(keys, values) {
+  }
 
   size_t getDimensions() const {
     return Sample<DataVector, T>::keys.empty() ? 0 : Sample<DataVector, T>::keys[0].getSize();
@@ -88,10 +99,11 @@ class PointSample : public Sample<DataVector, T> {
 
 template <class T>
 class GridSample : public PointSample<T> {
- public:
+public:
   GridSample() = default;
 
-  GridSample(std::shared_ptr<Grid>& grid, std::function<T(const DataVector&)>& func) : grid(grid) {
+  GridSample(std::shared_ptr<Grid>& grid, std::function<T(const DataVector&)>& func)
+    : grid(grid) {
     PointSample<T>::keys = std::vector<DataVector>(grid->getSize());
     PointSample<T>::values = std::vector<T>(grid->getSize());
     GridDistribution d(*grid);
@@ -101,7 +113,8 @@ class GridSample : public PointSample<T> {
     }
   }
 
-  GridSample(std::shared_ptr<Grid>& grid, const std::vector<T>& values) : grid(grid) {
+  GridSample(std::shared_ptr<Grid>& grid, const std::vector<T>& values)
+    : grid(grid) {
     PointSample<T>::keys = std::vector<DataVector>(grid->getSize());
     PointSample<T>::values = std::vector<T>(values);
     GridDistribution d(*grid);
@@ -110,19 +123,20 @@ class GridSample : public PointSample<T> {
 
   const Grid& getGrid() const { return *grid; }
 
- protected:
-  bool hierarchised;
+protected:
   std::shared_ptr<Grid> grid;
 };
 
 class SGridSample : public GridSample<double> {
- public:
+public:
   SGridSample() = default;
 
   SGridSample(std::shared_ptr<Grid>& grid, std::function<double(const DataVector&)>& func)
-      : GridSample<double>(grid, func), valuesView(values.data(), values.size()) {}
+    : GridSample<double>(grid, func),
+      valuesView(values.data(), values.size()), hierarchised(false) {
+  }
 
-  SGridSample(std::shared_ptr<Grid>& grid, ScalarFunction& func) {
+  SGridSample(std::shared_ptr<Grid>& grid, ScalarFunction& func) : hierarchised(false) {
     GridSample<double>::grid = grid;
     keys = std::vector<DataVector>(grid->getSize());
     values = std::vector<double>(grid->getSize());
@@ -136,66 +150,97 @@ class SGridSample : public GridSample<double> {
   }
 
   SGridSample(std::shared_ptr<Grid>& grid, const std::vector<double>& values)
-      : GridSample<double>(grid, values),
-        valuesView(GridSample<double>::values.data(), GridSample<double>::values.size()) {}
+    : GridSample<double>(grid, values),
+        valuesView(GridSample<double>::values.data(), GridSample<double>::values.size()),
+        hierarchised(false) {
+  }
 
   void hierarchise() {
-    std::unique_ptr<sgpp::base::OperationHierarchisation>(
-        sgpp::op_factory::createOperationHierarchisation(*grid))
+    if (hierarchised) {
+      throw tool_exception("Data is already hierarchised");
+      }
+
+    std::unique_ptr<OperationHierarchisation>(
+          op_factory::createOperationHierarchisation(*grid))
         ->doHierarchisation(valuesView);
     sync();
+    hierarchised = true;
+  }
+
+    void dehierarchise() {
+    if (!hierarchised) {
+      throw tool_exception("Data is not hierarchised");
+    }
+
+    std::unique_ptr<OperationHierarchisation>(op_factory::createOperationHierarchisation(*grid))
+        ->doDehierarchisation(valuesView);
+    sync();
+    hierarchised = false;
   }
 
   double eval(const DataVector& point) const {
-    std::unique_ptr<sgpp::base::OperationEval> op(sgpp::op_factory::createOperationEval(*grid));
+    if (!hierarchised) {
+      throw tool_exception("Data is not hierarchised");
+    }
+
+    std::unique_ptr<OperationEval> op(op_factory::createOperationEval(*grid));
     return op->eval(valuesView, point);
   }
 
   double quadrature() const {
-    std::unique_ptr<sgpp::base::OperationQuadrature> opQ(
-        sgpp::op_factory::createOperationQuadrature(*grid));
+    if (!hierarchised) {
+      throw tool_exception("Data is not hierarchised");
+    }
+
+    std::unique_ptr<OperationQuadrature> opQ(
+      op_factory::createOperationQuadrature(*grid));
     double res = opQ->doQuadrature(const_cast<DataVector&>(valuesView));
     return res;
   }
 
   double mcQuadrature(size_t paths) {
-    sgpp::base::OperationQuadratureMC opMC(*grid, paths);
+    if (!hierarchised) {
+      throw tool_exception("Data is not hierarchised");
+    }
+
+    OperationQuadratureMC opMC(*grid, paths);
     return opMC.doQuadrature(valuesView);
   }
 
   double mcL2Error(FUNC f, void* clientdata, size_t paths) {
-    sgpp::base::OperationQuadratureMC opMC(*grid, paths);
+    if (!hierarchised) {
+      throw tool_exception("Data is not hierarchised");
+    }
+
+    OperationQuadratureMC opMC(*grid, paths);
     return opMC.doQuadratureL2Error(f, clientdata, valuesView);
   }
 
   double mcL2Error(ScalarFunction& f, size_t paths) {
-    sgpp::base::OperationQuadratureMC opMC(*grid, paths);
+    if (!hierarchised) {
+      throw tool_exception("Data is not hierarchised");
+    }
+
+    OperationQuadratureMC opMC(*grid, paths);
     return opMC.doQuadratureL2Error(f, valuesView);
   }
+
+  bool isHierarchised() const { return hierarchised; }
 
   const DataVector& getValuesView() const { return valuesView; }
 
   DataVector& getValuesView() { return valuesView; }
 
- private:
+private:
   void sync() { values = std::vector<double>(valuesView.begin(), valuesView.end()); }
 
   DataVector valuesView;
+  bool hierarchised;
 };
 
 namespace SampleHelper {
-template <class T>
-PointSample<T> sampleDistribution(VectorDistribution& dist,
-                                  std::function<T(const DataVector&)>& func) {
-  std::vector<double> values(dist.getSize());
-  for (size_t i = 0; i < dist.getSize(); i++) {
-    values[i] = func(dist.getVectors()[i]);
-  }
-  return PointSample<T>(dist.getVectors(), values);
-}
 
-inline PointSample<double> sampleScalarFunction(VectorDistribution& dist,
-                                                ScalarFunction& func) {
+inline PointSample<double> sampleScalarFunction(VectorDistribution& dist, ScalarFunction& func) {
   std::vector<double> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     values[i] = func.eval(dist.getVectors()[i]);
@@ -212,15 +257,12 @@ inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
   return PointSample<DataVector>(dist.getVectors(), values);
 }
 
-inline GridSample<DataVector> sampleGrid(std::shared_ptr<Grid>& grid,
-                                         VectorFunction& func) {
+inline GridSample<DataVector> sampleGrid(std::shared_ptr<Grid>& grid, VectorFunction& func) {
   GridDistribution d(*grid);
   PointSample<DataVector> s = sampleVectorFunction(d, func);
   return std::move(GridSample<DataVector>(grid, s.getValues()));
 }
 
-}  // namespace SampleHelper
-}  // namespace base
-}  // namespace sgpp
-
-#endif
+} // namespace SampleHelper
+} // namespace base
+} // namespace sgpp

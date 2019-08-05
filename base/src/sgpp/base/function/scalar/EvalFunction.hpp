@@ -5,18 +5,18 @@
 
 #pragma once 
 
-#include "sgpp/base/datatypes/DataMatrix.hpp"
-#include "sgpp/base/function/scalar/ScalarFunction.hpp"
-#include "sgpp/base/function/vector/VectorFunction.hpp"
-#include "sgpp/base/grid/Grid.hpp"
-#include "sgpp/base/tools/Sample.hpp"
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
+#include <sgpp/base/tools/Sample.hpp>
 
 namespace sgpp {
 namespace base {
 
+/**
+ * Evaluates a hierachised grid sample at a given position.
+ */
 class EvalFunction : public ScalarFunction {
  public:
-  EvalFunction() : ScalarFunction(0) {}
+  EvalFunction();
   EvalFunction(const SGridSample& sample);
   ~EvalFunction() override = default;
 

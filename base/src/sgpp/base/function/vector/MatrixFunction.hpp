@@ -5,25 +5,24 @@
 
 #pragma once
 
-#include "sgpp/base/datatypes/DataMatrix.hpp"
-#include "sgpp/base/function/scalar/ScalarFunction.hpp"
-#include "sgpp/base/function/vector/VectorFunction.hpp"
-#include "sgpp/base/grid/Grid.hpp"
-#include "sgpp/base/tools/Sample.hpp"
+#include <sgpp/base/datatypes/DataMatrix.hpp>
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
+#include <sgpp/base/function/vector/VectorFunction.hpp>
 
 namespace sgpp {
 namespace base {
 
+  /**
+   * Multiplies a given matrix with the input vector and returns the result.
+   */
 class MatrixFunction : public VectorFunction {
  public:
-  MatrixFunction() : VectorFunction(0, 0){};
+  MatrixFunction();
   MatrixFunction(DataMatrix transformation);
   ~MatrixFunction() override = default;
 
   void eval(const base::DataVector& x, DataVector& out) override;
   void clone(std::unique_ptr<VectorFunction>& clone) const override;
-  size_t getOldDimensions();
-  size_t getNewDimensions();
 
  private:
   DataMatrix transformation;

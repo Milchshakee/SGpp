@@ -441,6 +441,7 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
       useBB = true;
     }
 
+    // Custom iterator
     AnovaGridIterator working(storage);
 
     working.resetToLevelMinusOne();
@@ -449,6 +450,7 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
     if (useBB == false) {
       rec(basis, point, 0, 1.0, working, result);
     } else {
+      //Not supported (yet)!
       // recBB(basis, point, 0, 1.0, working, result);
     }
   }
@@ -499,10 +501,7 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
         }
       }
 
-      // this decides in which direction we should descend by evaluating //
-      // the corresponding bit
-      // the bits are coded from left to right starting with level 1
-      // being in position max_level
+
       if (work_level == -1) {
         if (point[current_dim] == 0.0) break;
         working.resetToLevelZeroInDim(current_dim);

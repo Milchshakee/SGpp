@@ -17,7 +17,7 @@ namespace sgpp {
 namespace base {
 
 /**
- * Linear basis on Noboundary grids.
+ * Linear basis on ANOVA boundary grids.
  */
 template <class LT, class IT>
 class AnovaBoundaryBasis : public Basis<LT, IT> {
@@ -33,7 +33,8 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
   ~AnovaBoundaryBasis() override {}
 
   /**
-   * Do not call this function for level -1
+   * Evaluate a basis function.
+   * Do not call this function for level -1, since it is constant at level -1.
    *
    * @param l     level of basis function
    * @param i     index of basis function

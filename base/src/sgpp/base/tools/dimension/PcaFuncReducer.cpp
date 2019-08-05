@@ -93,9 +93,15 @@ void sgpp::base::PcaFuncReducer::toDensity(SGridSample& input) {
 
   copy.hierarchise();
   double quad = copy.quadrature();
-  double scale = 1.0 / quad;
-  for (size_t i = 0; i < input.getSize(); ++i) {
-    input.getValues()[i] *= scale;
-  }
+  if (quad == 0.0) {
+    for (size_t i = 0; i < input.getSize(); ++i) {
+      input.getValues()[i] = 1;
+    }
+    } else {
+    double scale = 1.0 / quad;
+    for (size_t i = 0; i < input.getSize(); ++i) {
+      input.getValues()[i] *= scale;
+    }
+      }
   input.hierarchise();
 }

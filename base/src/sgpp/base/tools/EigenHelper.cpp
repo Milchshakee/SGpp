@@ -13,14 +13,12 @@ DataVector EigenHelper::fromEigen(const Eigen::VectorXd& e) {
 }
 
 DataMatrix EigenHelper::fromEigen(const Eigen::MatrixXd& e) {
-  //Eigen uses column-major order, so we have to transpose
   DataMatrix m(e.data(), e.cols(), e.rows());
   m.transpose();
   return std::move(m);
 }
 
 Eigen::MatrixXd EigenHelper::toEigen(const DataMatrix& matrix) {
-  // Eigen uses column-major order, so we have to transpose
   DataMatrix copy = matrix;
   Eigen::Map<Eigen::MatrixXd> m(copy.getPointer(), matrix.getNcols(), matrix.getNrows());
   Eigen::MatrixXd mat = m.matrix();

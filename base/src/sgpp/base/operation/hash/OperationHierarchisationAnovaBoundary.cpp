@@ -66,17 +66,7 @@ void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_v
 }
 
 void OperationHierarchisationAnovaBoundary::doDehierarchisation(DataVector& alpha) {
-  // DehierarchisationAnovaBoundary func(storage);
-  // sweep<DehierarchisationAnovaBoundary> s(func, storage);
-
-  //// N D case
-  // if (this->storage.getDimension() > 1) {
-  //  for (size_t i = 0; i < this->storage.getDimension(); i++) {
-  //    s.sweep1D_Boundary(alpha, alpha, i);
-  //  }
-  //} else {  // 1 D case
-  //  s.sweep1D(alpha, alpha, 0);
-  //}
+  throw not_implemented_exception();
 }
 
 }  // namespace base

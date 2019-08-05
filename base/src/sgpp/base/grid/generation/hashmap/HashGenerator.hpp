@@ -164,7 +164,7 @@ class HashGenerator {
    * Generates a regular sparse grid of level levels with boundaries
    *
    * @param storage Hashmap, that stores the grid points
-   * @param level maximum level of the sparse grid (non-negative value)
+   * @param level maximum level of the ANOVA sparse grid (uses the compatibility level)
    */
   void regularWithAnovaBoundaries(GridStorage& storage, level_t level) {
     if (storage.getSize() > 0) {
@@ -282,6 +282,12 @@ class HashGenerator {
   }
 
  protected:
+  /**
+   * Generate an ANOVA sparse grid iteratively (much faster than recursively).
+   *
+   * @param storage pointer to storage object into which the grid points should be stored
+   * @param n level maximum level of the ANOVA sparse grid (uses the compatibility level)
+   */
   void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n) {
     const size_t dim = storage.getDimension();
 
@@ -293,6 +299,7 @@ class HashGenerator {
       storage.insert(idx);
     } else {
       GridStorage copy(storage);
+      //Use points from a regular boundary grid
       regular_boundary_truncated_iter(copy, n - 1, 1);
 
       const size_t gridSize = copy.getSize();

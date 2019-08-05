@@ -3,26 +3,36 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef ANOVABOUNDARYGRID_HPP
-#define ANOVABOUNDARYGRID_HPP
+#pragma once
 
 #include <sgpp/base/grid/Grid.hpp>
-#include "sgpp/base/grid/generation/AnovaBoundaryGridGenerator.hpp"
+#include <sgpp/base/grid/generation/AnovaBoundaryGridGenerator.hpp>
 
 namespace sgpp {
 namespace base {
 
 /**
- * grid with linear base functions with boundaries, pentagon cut
+ * ANOVA grid with linear base functions with boundaries.
  */
 class AnovaBoundaryGrid : public Grid {
  public:
+  /**
+   * A false entry for a certain dimension indicates that the basis function is constant in that dimension.
+   * 
+   * A true entry for a certain dimension indicates that the basis function is active in that dimension.
+   */
   typedef std::vector<bool> AnovaComponent;
+
+  /**
+   * A vector of ANOVA components.
+   */
   typedef std::vector<AnovaComponent> AnovaComponentVector;
 
   
-
-static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
+    /**
+   * Gets the ANOVA component for a grid point.
+   */
+  static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
 {
     AnovaComponent currentComp(point.getDimension(), false);
     for (size_t d = 0; d < point.getDimension(); d++) {
@@ -31,8 +41,14 @@ static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
     return currentComp;
   }
 
+  /**
+   * Level type for ANOVA grids (uses -1 level)
+   */
   typedef int32_t level_t;
 
+  /**
+   * Level-Index pair for ANOVA grids (uses -1 level)
+   */
   struct LevelIndexPair {
     /**
      * Level of the grid point in the hierarchy.
@@ -44,6 +60,9 @@ static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
     sgpp::base::HashGridPoint::index_type index;
   };
 
+  /**
+   * Converts a compatibility level to the true ANOVA grid level
+   */
   static level_t fromNormalLevel(base::level_t l) {
     if (l == 0) {
       return -1;
@@ -52,6 +71,9 @@ static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
     }
   }
 
+    /**
+   * Converts an ANOVA grid level to the compatibility level
+   */
   static base::level_t toNormalLevel(level_t l) {
     if (l == -1) {
       return 0;
@@ -60,6 +82,9 @@ static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
     }
   }
 
+  /**
+   * Converts the level and index ofa true ANOVA grid point to the level and index of a compatibility grid point
+   */
   static void toNormalGridPointLevelIndex(level_t l, HashGridPoint::index_type i,
                                                    HashGridPoint::level_type& lOut,
                                                    HashGridPoint::index_type& iOut) {
@@ -75,6 +100,10 @@ static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
     }
   }
 
+  /**
+   * Converts the level and index of a compatibility grid point to the level and index of a true
+   * ANOVA grid point
+   */
   static void fromNormalGridPointLevelIndex(HashGridPoint::level_type l,
                                             HashGridPoint::index_type i, level_t& lOut,
                                             HashGridPoint::index_type& iOut) {
@@ -91,7 +120,7 @@ static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
   }
 
   /**
-   * Constructor Linear Truncated Boundary Grid
+   * Constructor Anova Boundary Grid
    *
    * @param dim           the dimension of the grid
    */
@@ -119,5 +148,3 @@ static AnovaComponent getAnovaComponentOfPoint(const GridPoint& point)
 
 }  // namespace base
 }  // namespace sgpp
-
-#endif

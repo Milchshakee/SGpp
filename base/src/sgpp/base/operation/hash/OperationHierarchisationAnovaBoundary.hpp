@@ -17,7 +17,7 @@ namespace sgpp {
 namespace base {
 
 /**
- * Hierarchisation on sparse grid, Anova case with boundaries
+ * Hierarchisation on ANOVA boundary grids
  *
  */
 class OperationHierarchisationAnovaBoundary : public OperationHierarchisation {
@@ -25,7 +25,7 @@ class OperationHierarchisationAnovaBoundary : public OperationHierarchisation {
   /**
    * Constructor
    *
-   * @param storage the grid's GridStorage object
+   * @param grid the grid object
    */
   explicit OperationHierarchisationAnovaBoundary(Grid& grid) : grid(grid) {}
 
@@ -41,20 +41,32 @@ class OperationHierarchisationAnovaBoundary : public OperationHierarchisation {
   Grid& grid;
 
  public:
+  /**
+   * Creates an anchor for the point at level -1 in all dimensions.
+   */
   static std::vector<AnovaBoundaryGrid::LevelIndexPair> defaultAnchor(size_t dims) {
     return std::vector<AnovaBoundaryGrid::LevelIndexPair>(dims, {-1, 0});
   }
 
+  /**
+   * Make all hierarchisation operations use the point at level -1 in all dimensions as an anchor.
+   */
   static void setDefaultPolicy() {
     integral = false;
     anchor.clear();
   }
 
+  /**
+   * Make all hierarchisation operations set the value of the constant function to the expected value of the function (the integral of the function).
+   */
   static void setIntegralPolicy() {
     integral = true;
     anchor.clear();
   }
 
+    /**
+   * Make all hierarchisation operations use a custom anchor point.
+   */
   static void setAnchorPolicy(std::vector<AnovaBoundaryGrid::LevelIndexPair>& anchor) {
     OperationHierarchisationAnovaBoundary::anchor = anchor;
   }

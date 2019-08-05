@@ -18,7 +18,7 @@ namespace base {
 
 /**
  * This class provides the interface for the grid generation
- * for grids with boundaries, pentagon cut through sub space scheme
+ * for ANOVA grids with boundaries.
  */
 class AnovaBoundaryGridGenerator : public GridGenerator {
  public:

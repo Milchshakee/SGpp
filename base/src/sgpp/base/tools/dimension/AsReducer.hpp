@@ -6,10 +6,11 @@
 #ifndef ASREDUCER_HPP
 #define ASREDUCER_HPP
 
-#include "DimReduction.hpp"
-#include "sgpp/base/tools/Sample.hpp"
-#include "EigenHelper.hpp"
-#include "sgpp/base/function/vector/WrapperVectorFunction.hpp"
+#include <sgpp/base/datatypes/DataMatrix.hpp>
+#include <sgpp/base/function/vector/VectorFunction.hpp>
+#include <sgpp/base/tools/EigenHelper.hpp>
+#include <sgpp/base/tools/dimension/DimReduction.hpp>
+
 
 namespace sgpp {
 namespace base {

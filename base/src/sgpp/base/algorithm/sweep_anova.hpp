@@ -10,24 +10,19 @@
 #include <sgpp/base/grid/GridStorage.hpp>
 #include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
 
-#include <sgpp/globaldef.hpp>
-
-#include <iostream>
-#include <utility>
 #include <vector>
 
 namespace sgpp {
 namespace base {
 
 /**
- * Standard sweep operation
- * FUNC should be a class with overwritten operator(). For an example see laplace_up_functor in
- * laplace.hpp. It must be default constructable or copyable. STORAGE must provide a grid_iterator
- * supporting left_child, step_right, up, hint and seq.
+ * Standard sweep operation for ANOVA grids.
+ * FUNC should be a class with overwritten operator().
  */
 template <class FUNC>
 class sweep_anova {
  protected:
+  /// Special ANOVA grid iterator in use here
   typedef AnovaGridIterator grid_iterator;
 
   /// Object of FUNC, this is executed by sweep
@@ -165,4 +160,4 @@ class sweep_anova {
 }  // namespace base
 }  // namespace sgpp
 
-#endif /* SWEEP_HPP */
+#endif

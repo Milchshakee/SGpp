@@ -1,18 +1,17 @@
 #include <sgpp/base/tools/dimension/PcaReducer.hpp>
+#include <sgpp/base/tools/dist/VectorDistribution.hpp>
 #include "EigenHelper.hpp"
 
-
-sgpp::base::PcaResult::PcaResult(const DataMatrix& m, size_t n, double coveredVariance) : coveredVariance(coveredVariance) {
+sgpp::base::PcaResult::PcaResult(const DataMatrix& m, size_t n, double coveredVariance)
+    : coveredVariance(coveredVariance) {
   transformation = m;
   transformation.resizeRowsCols(n, m.getNcols());
 }
 
-
-sgpp::base::PcaFixedCutter::PcaFixedCutter(size_t n) : n(n) {
-}
+sgpp::base::PcaFixedCutter::PcaFixedCutter(size_t n) : n(n) {}
 
 sgpp::base::PcaResult sgpp::base::PcaFixedCutter::cut(const VectorDistribution& input,
-                                                      const PcaInfo& info){
+                                                      const PcaInfo& info) {
   double sum = 0;
   for (size_t d = 0; d < n; ++d) {
     sum += info.varianceShares[d];
@@ -20,8 +19,8 @@ sgpp::base::PcaResult sgpp::base::PcaFixedCutter::cut(const VectorDistribution& 
   return PcaResult(info.basis, n, sum);
 }
 
-sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double varianceShare) : minVarianceShare(varianceShare) {
-}
+sgpp::base::PcaVarianceCutter::PcaVarianceCutter(double varianceShare)
+    : minVarianceShare(varianceShare) {}
 
 sgpp::base::PcaResult sgpp::base::PcaVarianceCutter::cut(const VectorDistribution& input,
                                                          const PcaInfo& info) {
@@ -43,8 +42,8 @@ sgpp::base::FixedDistribution sgpp::base::PcaResult::apply(const VectorDistribut
   return FixedDistribution(input.getSize(), transformation.getNrows(), newDist);
 }
 
-sgpp::base::DataMatrix centerMean(
-    sgpp::base::DataVector& means, sgpp::base::VectorDistribution& input) {
+sgpp::base::DataMatrix centerMean(sgpp::base::DataVector& means,
+                                  sgpp::base::VectorDistribution& input) {
   for (size_t d = 0; d < input.getDimensions(); ++d) {
     double mean = 0;
     for (size_t c = 0; c < input.getSize(); c++) {
@@ -63,7 +62,6 @@ sgpp::base::DataMatrix centerMean(
   return std::move(newVectors);
 }
 
-
 sgpp::base::PcaInfo sgpp::base::PcaCovarianceSolver::solve(DataMatrix& matrix) {
   Eigen::MatrixXd b = EigenHelper::toEigen(matrix);
   Eigen::MatrixXd c = (b.transpose() * b) * (1.0 / static_cast<double>(matrix.getNrows() - 1));
@@ -75,44 +73,7 @@ sgpp::base::PcaInfo sgpp::base::PcaCovarianceSolver::solve(DataMatrix& matrix) {
   return i;
 }
 
-
-sgpp::base::PcaIterativeSolver::PcaIterativeSolver(size_t iterations, uint64_t seed) : iterations(iterations), seed(seed) {
-}
-
-sgpp::base::PcaInfo sgpp::base::PcaIterativeSolver::solve(DataMatrix& matrix) {
-  size_t dimension = matrix.getNcols();
-  sgpp::base::DataMatrix random(dimension, dimension);
-  RandomOrientationDistribution orientations(dimension, seed, dimension, 1);
-  for (size_t d = 0; d < dimension; ++d) {
-    random.setColumn(d, orientations.getVectors()[d]);
-  }
-
-  Eigen::MatrixXd x = EigenHelper::toEigen(matrix);
-  Eigen::MatrixXd r = EigenHelper::toEigen(random);
-  Eigen::MatrixXd s(dimension, dimension);
-  Eigen::MatrixXd e(dimension, dimension);
-  for (size_t it = 0; it < iterations; ++it) {
-    s = x.transpose() * (x * r);
-    e = r.transpose() * s;
-    r = s;
-    for (size_t c = 0; c < dimension; c++) {
-      r.col(c).normalize();
-    }
-  }
-
-  
-  PcaInfo i;
-  i.basis = EigenHelper::fromEigen(r);
-  i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
-  for (size_t c = 0; c < dimension; c++) {
-    i.eigenValues.set(c, e(c, c));
-  }
-
-  return i;
-}
-
-sgpp::base::PcaReducer::PcaReducer(std::shared_ptr<PcaSolver> solver) : solver(solver) {
-}
+sgpp::base::PcaReducer::PcaReducer(std::shared_ptr<PcaSolver> solver) : solver(solver) {}
 
 const double MIN_EIGEN_VALUE = std::pow(10.0, -5.0);
 
@@ -129,7 +90,7 @@ sgpp::base::PcaInfo sgpp::base::PcaReducer::evaluate(VectorDistribution& input) 
     if (std::abs(i.eigenValues[d]) < MIN_EIGEN_VALUE) {
       i.activeComponentsCount = d;
       break;
-      }
+    }
     sum += i.eigenValues[d];
   }
 

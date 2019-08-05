@@ -3,12 +3,12 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef PCAREDUCER_HPP
-#define PCAREDUCER_HPP
+#pragma once
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
-#include <sgpp/base/tools/VectorDistribution.hpp>
-#include "DimReduction.hpp"
+#include <sgpp/base/tools/dist/VectorDistribution.hpp>
+#include <sgpp/base/tools/dist/FixedDistribution.hpp>
+#include <sgpp/base/tools/dimension/DimReduction.hpp>
 
 namespace sgpp {
 namespace base {
@@ -70,16 +70,6 @@ namespace base {
     PcaInfo solve(DataMatrix& matrix) override;
   };
 
-  class PcaIterativeSolver : public PcaSolver {
-   public:
-    PcaIterativeSolver(size_t iterations, uint64_t seed);
-
-    PcaInfo solve(DataMatrix& matrix) override;
-
-  private:
-    size_t iterations;
-   uint64_t seed;
-  };
 
 class PcaReducer : public Reducer<VectorDistribution, PcaInfo, PcaResult> {
  public:
@@ -94,4 +84,3 @@ class PcaReducer : public Reducer<VectorDistribution, PcaInfo, PcaResult> {
 }  // namespace base
 }  // namespace sgpp
 
-#endif

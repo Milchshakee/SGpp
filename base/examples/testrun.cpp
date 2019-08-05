@@ -9,9 +9,12 @@
 #include "sgpp/base/function/vector/WrapperVectorFunction.hpp"
 #include "sgpp/base/operation/hash/OperationHierarchisationAnovaBoundary.hpp"
 #include "sgpp/base/tools/dimension/AsQuadReducer.hpp"
+#include <sgpp/base/tools/dimension/PcaFuncReducer.hpp>
+#include <sgpp/globaldef.hpp>
 
 double f(const sgpp::base::DataVector& v) {
-  return 2.0 + v[0] + v[1];
+
+  return std::sin(v[0] * M_PI);
   //return 2.0 + std::pow(v[0], 5) * std::exp(-v[1]);
 }
 
@@ -57,46 +60,46 @@ size_t paths = 10000;
 //  m2.toFile("results2.txt");
 //}
 
-int main(int argc, char* argv[]) {
-  auto func = sgpp::base::WrapperScalarFunction(2, f);
-  auto reducer = sgpp::base::AsQuadReducer();
-
-  sgpp::base::DataMatrix m1(2, maxLevel);
-  sgpp::base::DataMatrix m2(2, maxLevel);
-  for (size_t l = 0; l < maxLevel; ++l) {
-    std::shared_ptr<sgpp::base::Grid> grid(sgpp::base::Grid::createLinearBoundaryGrid(dim));
-    grid->getGenerator().regular(l);
-    m1.set(0, l, grid->getStorage().getSize());
-    sgpp::base::SGridSample sample(grid, func);
-    sample.hierarchise();
-    double normalL2Error = sample.mcL2Error(func, paths);
-    m1.set(1, l, normalL2Error);
-    sgpp::base::EvalFunction fe(sample);
-
-    auto dist = sgpp::base::RandomUniformDistribution(paths, std::mt19937_64::default_seed, 2);
-      auto funcGradient = sgpp::base::WrapperVectorFunction(2, 2, f_gradient);
-      sgpp::base::GridSample<sgpp::base::DataVector> gradientSamples = sgpp::base::SampleHelper::sampleGrid(grid, funcGradient);
-
-    sgpp::base::AsQuadInput i{sample, gradientSamples};
-    sgpp::base::AsInfo info = reducer.evaluate(i);
-      sgpp::base::AsQuadFixedCutter cutter(1);
-    sgpp::base::AsQuadResult result = cutter.cut(i, info);
-    auto& reducedSample = result.getReducedOutput();
-    // double test = reducedSample.eval(sgpp::base::DataVector(1, 0.4));
-    double reducedL2Error = result.calcMcL2Error(func, paths);
-
-    
-    std::shared_ptr<sgpp::base::Grid> grid2(sgpp::base::Grid::createLinearBoundaryGrid(dim - 1));
-    grid2->getGenerator().regular(l);
-    m2.set(0, l, grid2->getStorage().getSize());
-
-    m2.set(1, l, reducedL2Error);
-  }
-  m1.transpose();
-  m2.transpose();
-  m1.toFile("results1.txt");
-  m2.toFile("results2.txt");
-}
+//int main(int argc, char* argv[]) {
+//  auto func = sgpp::base::WrapperScalarFunction(2, f);
+//  auto reducer = sgpp::base::AsQuadReducer();
+//
+//  sgpp::base::DataMatrix m1(2, maxLevel);
+//  sgpp::base::DataMatrix m2(2, maxLevel);
+//  for (size_t l = 0; l < maxLevel; ++l) {
+//    std::shared_ptr<sgpp::base::Grid> grid(sgpp::base::Grid::createLinearBoundaryGrid(dim));
+//    grid->getGenerator().regular(l);
+//    m1.set(0, l, grid->getStorage().getSize());
+//    sgpp::base::SGridSample sample(grid, func);
+//    sample.hierarchise();
+//    double normalL2Error = sample.mcL2Error(func, paths);
+//    m1.set(1, l, normalL2Error);
+//    sgpp::base::EvalFunction fe(sample);
+//
+//    auto dist = sgpp::base::RandomUniformDistribution(paths, std::mt19937_64::default_seed, 2);
+//      auto funcGradient = sgpp::base::WrapperVectorFunction(2, 2, f_gradient);
+//      sgpp::base::GridSample<sgpp::base::DataVector> gradientSamples = sgpp::base::SampleHelper::sampleGrid(grid, funcGradient);
+//
+//    sgpp::base::AsQuadInput i{sample, gradientSamples};
+//    sgpp::base::AsInfo info = reducer.evaluate(i);
+//      sgpp::base::AsQuadFixedCutter cutter(1);
+//    sgpp::base::AsQuadResult result = cutter.cut(i, info);
+//    auto& reducedSample = result.getReducedOutput();
+//    // double test = reducedSample.eval(sgpp::base::DataVector(1, 0.4));
+//    double reducedL2Error = result.calcMcL2Error(func, paths);
+//
+//    
+//    std::shared_ptr<sgpp::base::Grid> grid2(sgpp::base::Grid::createLinearBoundaryGrid(dim - 1));
+//    grid2->getGenerator().regular(l);
+//    m2.set(0, l, grid2->getStorage().getSize());
+//
+//    m2.set(1, l, reducedL2Error);
+//  }
+//  m1.transpose();
+//  m2.transpose();
+//  m1.toFile("results1.txt");
+//  m2.toFile("results2.txt");
+//}
 
 //int main(int argc, char* argv[]) {
 //  auto func = sgpp::optimization::WrapperScalarFunction(2, f);
@@ -140,3 +143,38 @@ int main(int argc, char* argv[]) {
 //  m1.toFile("results1.txt");
 //  m2.toFile("results2.txt");
 //}
+
+int main(int argc, char* argv[]) {
+  auto func = sgpp::base::WrapperScalarFunction(2, f);
+  auto solver = std::make_shared<sgpp::base::PcaCovarianceSolver>();
+  auto reducer = sgpp::base::PcaFuncReducer(solver, 1, 100, 0.3, 100);
+
+  sgpp::base::DataMatrix m1(2, maxLevel);
+  sgpp::base::DataMatrix m2(2, maxLevel);
+  for (size_t l = 1; l < maxLevel; ++l) {
+    std::shared_ptr<sgpp::base::Grid> grid(sgpp::base::Grid::createLinearBoundaryGrid(dim));
+    grid->getGenerator().regular(l);
+    m1.set(0, l, grid->getStorage().getSize());
+    sgpp::base::SGridSample sample(grid, func);
+    sample.hierarchise();
+    double normalL2Error = sample.mcL2Error(func, paths);
+    m1.set(1, l, normalL2Error);
+    sgpp::base::EvalFunction fe(sample);
+
+    sgpp::base::PcaFuncInfo info = reducer.evaluate(sample);
+    sgpp::base::PcaFuncFixedCutter cutter(1);
+    sgpp::base::PcaFuncResult result = cutter.cut(sample, info);
+    auto& reducedSample = result.getReducedOutput();
+    double reducedL2Error = result.calcMcL2Error(func, paths);
+
+    std::shared_ptr<sgpp::base::Grid> grid2(sgpp::base::Grid::createLinearBoundaryGrid(dim - 1));
+    grid2->getGenerator().regular(l);
+    m2.set(0, l, grid2->getStorage().getSize());
+
+    m2.set(1, l, reducedL2Error);
+  }
+  m1.transpose();
+  m2.transpose();
+  m1.toFile("results1.txt");
+  m2.toFile("results2.txt");
+}

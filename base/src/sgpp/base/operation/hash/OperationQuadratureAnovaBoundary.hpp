@@ -14,7 +14,7 @@ namespace sgpp {
 namespace base {
 
 /**
- * Quadrature on sparse grid, linear grid without boundaries
+ * Quadrature on ANOVA boundary grids
  */
 class OperationQuadratureAnovaBoundary : public OperationQuadrature {
  public:
@@ -28,8 +28,7 @@ class OperationQuadratureAnovaBoundary : public OperationQuadrature {
   ~OperationQuadratureAnovaBoundary() override {}
 
   /**
-   * Quadrature for piecewise linear hat basis functions. Computes
-   * @f[ \sum_{\vec{l}} 2^{-|\vec{l}|}\alpha_{\vec{l}}. @f]
+   * Quadrature for piecewise linear hat basis functions.
    *
    * @param alpha Coefficient vector for current grid
    */
