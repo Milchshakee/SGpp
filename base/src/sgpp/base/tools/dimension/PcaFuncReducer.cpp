@@ -1,7 +1,6 @@
-#include "PcaFuncReducer.hpp"
 #include <sgpp/base/function/scalar/EvalFunction.hpp>
 #include <sgpp/base/tools/dist/RandomPdfDistribution.hpp>
-#include "EigenHelper.hpp"
+#include <sgpp/base/tools/dimension/PcaFuncReducer.hpp>
 
 sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(size_t n) : n(n) {}
 
@@ -21,7 +20,9 @@ sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMat
   std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
   newGrid->getGenerator().regular(const_cast<Grid&>(input.getGrid()).getStorage().getMaxLevel());
 
-  EvalFunction e(input);
+  SGridSample copy = input;
+  copy.hierarchise();
+  EvalFunction e(copy);
   size_t dim = input.getDimensions();
   std::function<double(const DataVector&)> func = [this, &e, dim, n](const DataVector& v) {
     DataVector newV;
@@ -34,7 +35,13 @@ sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMat
   newSample.hierarchise();
   reduced = newSample;
   evalFunc = EvalFunction(reduced);
+  double l2Error = calcMcL2Error(e, 10000);
+  double c = l2Error / copy.l2Norm();
+  coveredVariance = 1 - c;
 }
+
+
+double sgpp::base::PcaFuncResult::getCoveredVariance() { return coveredVariance; }
 
 sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction()
 { return evalFunc; }
@@ -52,6 +59,10 @@ sgpp::base::PcaFuncReducer::PcaFuncReducer(std::shared_ptr<PcaSolver> solver, ui
     : solver(solver), seed(seed), samples(samples), stepSize(stepSize), iterations(iterations) {}
 
 sgpp::base::PcaFuncInfo sgpp::base::PcaFuncReducer::evaluate(SGridSample& input) {
+  if (input.isHierarchised()) {
+    throw std::invalid_argument("Input is hierarchised");
+    }
+
   SGridSample density = input;
   toDensity(density);
   EvalFunction f(density);

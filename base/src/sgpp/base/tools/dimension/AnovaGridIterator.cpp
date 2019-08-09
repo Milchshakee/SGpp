@@ -1,4 +1,5 @@
-#include "AnovaGridIterator.hpp"
+
+#include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
 
 namespace sgpp {
 namespace base {

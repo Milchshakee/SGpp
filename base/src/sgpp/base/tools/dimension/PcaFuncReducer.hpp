@@ -6,10 +6,9 @@
 #pragma once
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
-#include <sgpp/base/tools/VectorDistribution.hpp>
-#include "DimReduction.hpp"
-#include "PcaReducer.hpp"
 #include <sgpp/base/function/scalar/EvalFunction.hpp>
+#include <sgpp/base/tools/dimension/DimReduction.hpp>
+#include <sgpp/base/tools/dimension/PcaReducer.hpp>
 
 namespace sgpp {
 namespace base {
@@ -28,8 +27,10 @@ public:
   ScalarFunction& getReducedFunction() override;
   VectorFunction& getTransformationFunction() override;
   SGridSample& getReducedOutput() override;
+  double getCoveredVariance();
 
 private:
+  double coveredVariance;
   SGridSample reduced;
  EvalFunction evalFunc;
   InputProjection projection;
@@ -57,7 +58,7 @@ class PcaFuncFixedCutter : public PcaFuncCutter {
   size_t n;
 };
 
-class PcaFuncReducer : public Reducer<SGridSample, PcaFuncInfo, PcaResult> {
+class PcaFuncReducer : public Reducer<SGridSample, PcaFuncInfo, PcaFuncResult> {
  public:
   PcaFuncReducer(std::shared_ptr<PcaSolver> solver, uint64_t seed, size_t samples, double stepSize,
                  size_t iterations);

@@ -13,6 +13,10 @@ namespace sgpp {
 namespace base {
 
 
+AnovaBoundaryGrid::AnovaBoundaryGrid(std::istream& istr)
+    : Grid(istr), generator(storage) 
+  {}
+
 AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim)
     : Grid(dim), generator(storage) {}
 
@@ -23,7 +27,10 @@ SBasis& AnovaBoundaryGrid::getBasis() {
   return basis;
 }
 
-Grid* AnovaBoundaryGrid::unserialize(std::istream& istr) { return nullptr; }
+Grid* AnovaBoundaryGrid::unserialize(std::istream& istr)
+{
+  return new AnovaBoundaryGrid(istr);
+}
 
 void AnovaBoundaryGrid::serialize(std::ostream& ostr, int version) {
   this->Grid::serialize(ostr, version);

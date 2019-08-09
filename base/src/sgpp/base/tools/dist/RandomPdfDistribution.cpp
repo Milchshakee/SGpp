@@ -1,4 +1,4 @@
-#include "RandomPdfDistribution.hpp"
+#include <sgpp/base/tools/dist/RandomPdfDistribution.hpp>
 
 sgpp::base::RandomPdfDistribution::RandomPdfDistribution(size_t size, size_t dimensions,
                                                          uint64_t seed, ScalarFunction& pdf,

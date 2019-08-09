@@ -15,6 +15,9 @@ namespace base {
  * ANOVA grid with linear base functions with boundaries.
  */
 class AnovaBoundaryGrid : public Grid {
+ protected:
+  explicit AnovaBoundaryGrid(std::istream& istr);
+
  public:
   /**
    * A false entry for a certain dimension indicates that the basis function is constant in that dimension.

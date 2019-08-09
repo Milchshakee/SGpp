@@ -5,12 +5,7 @@
 
 #pragma once
 
-#include <random>
-#include <sgpp/base/function/scalar/ScalarFunction.hpp>
-#include <vector>
-#include "sgpp/base/datatypes/DataMatrix.hpp"
-#include "sgpp/base/grid/Grid.hpp"
-#include "VectorDistribution.hpp"
+#include <sgpp/base/tools/dist/VectorDistribution.hpp>
 
 namespace sgpp {
 namespace base {

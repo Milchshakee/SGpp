@@ -1,6 +1,6 @@
-#include "AsQuadReducer.hpp"
-#include "EigenHelper.hpp"
+
 #include <sgpp/base/function/scalar/EvalFunction.hpp>
+#include <sgpp/base/tools/dimension/AsQuadReducer.hpp>
 
 const double MIN_SCALING_VALUE = std::pow(10.0, -5.0);
 
@@ -76,8 +76,6 @@ sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(AsQuadInput& input) {
   i.eigenVectors = sgpp::base::DataMatrix(input.gradientSample.getDimensions(),
                                           input.gradientSample.getDimensions());
   i.eigenValues = sgpp::base::DataVector(input.gradientSample.getDimensions());
-  i.permutation = sgpp::base::DataMatrix(input.gradientSample.getDimensions(),
-                                         input.gradientSample.getDimensions());
-  EigenHelper::svd(EigenHelper::toEigen(m), i.eigenVectors, i.eigenValues, i.permutation);
+  EigenHelper::svd(EigenHelper::toEigen(m), i.eigenVectors, i.eigenValues);
   return i;
 }

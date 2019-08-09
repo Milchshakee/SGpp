@@ -1,12 +1,11 @@
 #pragma once
 
 #include <random>
-#include "VectorDistribution.hpp"
 
 namespace sgpp {
 namespace base {
 
-class RandomUniformDistribution : public sgpp::base::RandomDistribution {
+class RandomUniformDistribution : public RandomDistribution {
  public:
   RandomUniformDistribution(size_t size, uint64_t seed, size_t dimensions);
 

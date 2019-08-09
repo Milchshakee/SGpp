@@ -1,5 +1,4 @@
-#include "VectorDistribution.hpp"
-#include "GridDistribution.hpp"
+#include <sgpp/base/tools/dist/GridDistribution.hpp>
 
 namespace sgpp {
 namespace base {

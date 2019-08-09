@@ -1,6 +1,6 @@
 #include <sgpp/base/tools/dimension/PcaReducer.hpp>
 #include <sgpp/base/tools/dist/VectorDistribution.hpp>
-#include "EigenHelper.hpp"
+#include <sgpp/base/tools/dimension/AsQuadReducer.hpp>
 
 sgpp::base::PcaResult::PcaResult(const DataMatrix& m, size_t n, double coveredVariance)
     : coveredVariance(coveredVariance) {
@@ -68,8 +68,7 @@ sgpp::base::PcaInfo sgpp::base::PcaCovarianceSolver::solve(DataMatrix& matrix) {
   PcaInfo i;
   i.basis = sgpp::base::DataMatrix(matrix.getNcols(), matrix.getNcols());
   i.eigenValues = sgpp::base::DataVector(matrix.getNcols());
-  DataMatrix permutations = sgpp::base::DataMatrix(matrix.getNcols(), matrix.getNcols());
-  EigenHelper::svd(c, i.basis, i.eigenValues, permutations);
+  EigenHelper::svd(c, i.basis, i.eigenValues);
   return i;
 }
 

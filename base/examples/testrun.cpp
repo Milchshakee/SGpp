@@ -156,22 +156,32 @@ int main(int argc, char* argv[]) {
     grid->getGenerator().regular(l);
     m1.set(0, l, grid->getStorage().getSize());
     sgpp::base::SGridSample sample(grid, func);
+
+    sgpp::base::PcaFuncInfo info = reducer.evaluate(sample);
+    sgpp::base::PcaFuncFixedCutter cutter(2);
+    sgpp::base::PcaFuncResult result = cutter.cut(sample, info);
+    auto& reducedSample = result.getReducedOutput();
+
+    
     sample.hierarchise();
     double normalL2Error = sample.mcL2Error(func, paths);
     m1.set(1, l, normalL2Error);
-    sgpp::base::EvalFunction fe(sample);
 
-    sgpp::base::PcaFuncInfo info = reducer.evaluate(sample);
-    sgpp::base::PcaFuncFixedCutter cutter(1);
-    sgpp::base::PcaFuncResult result = cutter.cut(sample, info);
-    auto& reducedSample = result.getReducedOutput();
     double reducedL2Error = result.calcMcL2Error(func, paths);
 
     std::shared_ptr<sgpp::base::Grid> grid2(sgpp::base::Grid::createLinearBoundaryGrid(dim - 1));
     grid2->getGenerator().regular(l);
     m2.set(0, l, grid2->getStorage().getSize());
 
-    m2.set(1, l, reducedL2Error);
+    m2.set(1, l, result.getCoveredVariance());
+    sgpp::base::WrapperScalarFunction::FunctionEvalType f = [](const sgpp::base::DataVector& x) { return 0; };
+    auto fu = sgpp::base::WrapperScalarFunction(2, f);
+    double v = sgpp::base::OperationQuadratureMC(*grid, 10000)
+                   .doQuadratureL2Error(fu,
+                                        sample.getValuesDataVector());
+    double w =
+        sgpp::base::OperationL2(grid->getStorage()).calculateL2Norm(sample.getValuesDataVector());
+    double x = 0;
   }
   m1.transpose();
   m2.transpose();

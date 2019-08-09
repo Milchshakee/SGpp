@@ -1,10 +1,7 @@
-#include "AnovaReducer.hpp"
-#include "DimReduction.hpp"
-#include "OperationAnova.hpp"
-#include <sgpp/base/grid/Grid.hpp>
 
-sgpp::base::AnovaComponentVarianceCutter::AnovaComponentVarianceCutter(double minVariance)
-    : minVariance(minVariance) {}
+#include <sgpp/base/grid/Grid.hpp>
+#include <sgpp/base/tools/dimension/AnovaReducer.hpp>
+#include <sgpp/base/tools/dimension/OperationAnova.hpp>
 
 sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad,
                                      double cv, size_t d, SGridSample sample)
@@ -57,6 +54,9 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad,
   eval = EvalFunction(reducedSample);
 }
 
+
+double sgpp::base::AnovaResult::getCoveredVariance() { return coveredVariance; }
+
 sgpp::base::VectorFunction& sgpp::base::AnovaResult::getTransformationFunction() {
   return f;
 }
@@ -65,44 +65,7 @@ sgpp::base::ScalarFunction& sgpp::base::AnovaResult::getReducedFunction() { retu
 
 sgpp::base::SGridSample& sgpp::base::AnovaResult::getReducedOutput() { return reducedSample; }
 
-sgpp::base::AnovaResult sgpp::base::AnovaComponentVarianceCutter::cut(const SGridSample& input,
-                                                                      const AnovaInfo& info) {
-  AnovaBoundaryGrid::AnovaComponentVector comps(info.variances.getKeys());
-  std::vector<bool> activeDimensions(input.getDimensions(), false);
-  size_t removed = 0;
-  for (size_t i = 0; i < info.variances.getSize(); i++) {
-    if (info.variances.getValues()[i] < minVariance) {
-      comps.erase(comps.begin() + i - removed);
-      removed++;
-    } else {
-      for (size_t d = 0; d < input.getGrid().getDimension(); d++) {
-        if (info.variances.getKeys()[i][d]) {
-          activeDimensions[d] = true;
-        }
-      }
-    }
-  }
-
-  size_t dim = 0;
-  for (size_t d = 0; d < input.getGrid().getDimension(); d++) {
-    if (!activeDimensions[d]) {
-      for (size_t i = 0; i < info.variances.getSize(); i++) {
-        comps[i].erase(comps[i].begin() + d);
-      }
-    } else {
-      dim++;
-    }
-  }
-
-  double coveredVar = 0;
-  for (AnovaBoundaryGrid::AnovaComponent c : comps) {
-    coveredVar += info.variances.getValue(c);
-  }
-
-  return AnovaResult(activeDimensions, coveredVar, dim, input);
-}
-
-sgpp::base::AnovaDimensionVarianceShareCutter::AnovaDimensionVarianceShareCutter(
+sgpp::base::AnovaVarianceShareCutter::AnovaVarianceShareCutter(
     double minCoveredVariance)
     : minCoveredVariance(minCoveredVariance) {}
 
@@ -178,7 +141,7 @@ sgpp::base::AnovaResult sgpp::base::AnovaFixedCutter::cut(const SGridSample& inp
       dim, input);
 }
 
-sgpp::base::AnovaResult sgpp::base::AnovaDimensionVarianceShareCutter::cut(const SGridSample& input,
+sgpp::base::AnovaResult sgpp::base::AnovaVarianceShareCutter::cut(const SGridSample& input,
                                                                            const AnovaInfo& info) {
   double var = info.totalVariance;
   size_t dim = input.getDimensions();

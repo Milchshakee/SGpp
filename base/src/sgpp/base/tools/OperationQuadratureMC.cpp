@@ -7,13 +7,13 @@
 #include <sgpp/base/datatypes/DataVector.hpp>
 #include <sgpp/base/operation/BaseOpFactory.hpp>
 #include <sgpp/base/tools/OperationQuadratureMC.hpp>
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
 
 #include <sgpp/globaldef.hpp>
 
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
-#include <sgpp/base/function/scalar/ScalarFunction.hpp>
 
 namespace sgpp {
 namespace base {

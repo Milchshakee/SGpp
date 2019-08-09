@@ -1,5 +1,5 @@
 #include <iostream>
-#include <sgpp/base/tools/VectorDistribution.hpp>
+#include <sgpp/base/tools/dist/VectorDistribution.hpp>
 #include <sgpp/base/tools/dimension/PcaReducer.hpp>
 
 int main(int argc, char* argv[]) {
@@ -11,7 +11,6 @@ int main(int argc, char* argv[]) {
 
   // Create the solver used to calculate the principal axes and their eigen values
   auto solver = std::make_shared<sgpp::base::PcaCovarianceSolver>();
-  // auto solver = std::make_shared<sgpp::base::PcaIterativeSolver>(1000, std::mt19937_64::default_seed);
 
   // Create the reducer.
   auto reducer = sgpp::base::PcaReducer(solver);

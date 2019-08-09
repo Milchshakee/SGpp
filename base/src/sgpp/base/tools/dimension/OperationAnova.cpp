@@ -1,5 +1,7 @@
 #include <sgpp/base/tools/dimension//OperationAnova.hpp>
 
+namespace {
+
 double getL2NormOfBasis(const sgpp::base::GridPoint& gp) {
   size_t levelSum = 0;
   size_t level0Count = 0;
@@ -16,6 +18,7 @@ double getL2NormOfBasis(const sgpp::base::GridPoint& gp) {
 
   return val;
 }
+}  // namespace
 
 sgpp::base::Sample<sgpp::base::AnovaBoundaryGrid::AnovaComponent, double>
 sgpp::base::OperationAnova::calculateAnovaComponentVariances(const DataVector& alpha) {

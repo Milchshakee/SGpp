@@ -392,6 +392,7 @@ GridType Grid::getZeroBoundaryType() {
     case GridType::Periodic:
     case GridType::LinearStencil:
     case GridType::ModLinearStencil:
+    case GridType::AnovaBoundary:
       return GridType::Linear;
     case GridType::LinearStretched:
     case GridType::LinearStretchedBoundary:
@@ -484,6 +485,8 @@ std::map<std::string, Grid::Factory>& Grid::typeMap() {
                                                        ModLinearGridStencil::unserialize));
     tMap->insert(
         std::pair<std::string, Grid::Factory>("linearBoundary", LinearBoundaryGrid::unserialize));
+    tMap->insert(
+        std::pair<std::string, Grid::Factory>("anovaBoundary", AnovaBoundaryGrid::unserialize));
     tMap->insert(std::pair<std::string, Grid::Factory>("linearStretchedBoundary",
                                                        LinearStretchedBoundaryGrid::unserialize));
     tMap->insert(std::pair<std::string, Grid::Factory>("linearClenshawCurtis",
@@ -531,6 +534,7 @@ std::map<std::string, Grid::Factory>& Grid::typeMap() {
     tMap->insert(std::make_pair("linearstencil", LinearGridStencil::unserialize));
     tMap->insert(std::make_pair("modlinearstencil", ModLinearGridStencil::unserialize));
     tMap->insert(std::make_pair("linearBoundary", LinearBoundaryGrid::unserialize));
+    tMap->insert(std::make_pair("anovaBoundary", LinearBoundaryGrid::unserialize));
     tMap->insert(
         std::make_pair("linearStretchedBoundary", LinearStretchedBoundaryGrid::unserialize));
     tMap->insert(std::make_pair("linearClenshawCurtis", LinearClenshawCurtisGrid::unserialize));
@@ -586,6 +590,8 @@ std::map<sgpp::base::GridType, std::string>& Grid::typeVerboseMap() {
                                                                     "modlinearstencil"));
     verboseMap->insert(
         std::pair<sgpp::base::GridType, std::string>(GridType::LinearBoundary, "linearBoundary"));
+    verboseMap->insert(
+        std::pair<sgpp::base::GridType, std::string>(GridType::AnovaBoundary, "anovaBoundary"));
     verboseMap->insert(std::pair<sgpp::base::GridType, std::string>(
         GridType::LinearStretchedBoundary, "linearStretchedBoundary"));
     verboseMap->insert(std::pair<sgpp::base::GridType, std::string>(GridType::LinearClenshawCurtis,
@@ -637,6 +643,7 @@ std::map<sgpp::base::GridType, std::string>& Grid::typeVerboseMap() {
     verboseMap->insert(std::make_pair(GridType::LinearStencil, "linearstencil"));
     verboseMap->insert(std::make_pair(GridType::ModLinearStencil, "modlinearstencil"));
     verboseMap->insert(std::make_pair(GridType::LinearBoundary, "linearBoundary"));
+    verboseMap->insert(std::make_pair(GridType::AnovaBoundary, "anovaBoundary"));
     verboseMap->insert(
         std::make_pair(GridType::LinearStretchedBoundary, "linearStretchedBoundary"));
     verboseMap->insert(std::make_pair(GridType::LinearClenshawCurtis, "linearClenshawCurtis"));
@@ -769,6 +776,8 @@ GridType Grid::stringToGridType(const std::string& gridType) {
     return sgpp::base::GridType::LinearL0Boundary;
   } else if (gridType.compare("linearBoundary") == 0) {
     return sgpp::base::GridType::LinearBoundary;
+  } else if (gridType.compare("anovaBoundary") == 0) {
+    return sgpp::base::GridType::AnovaBoundary;
   } else if (gridType.compare("linearStretchedBoundary") == 0) {
     return sgpp::base::GridType::LinearStretchedBoundary;
   } else if (gridType.compare("linearTruncatedBoundary") == 0) {

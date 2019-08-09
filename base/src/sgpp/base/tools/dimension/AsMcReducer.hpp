@@ -8,9 +8,9 @@
 
 #include <sgpp/base/datatypes/DataMatrix.hpp>
 #include <sgpp/base/function/vector/VectorFunction.hpp>
-#include "DimReduction.hpp"
-#include "sgpp/base/tools/Sample.hpp"
-#include "AsReducer.hpp"
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
+#include <sgpp/base/tools/Sample.hpp>
+#include <sgpp/base/tools/dimension/AsReducer.hpp>
 
 namespace sgpp {
 namespace base {

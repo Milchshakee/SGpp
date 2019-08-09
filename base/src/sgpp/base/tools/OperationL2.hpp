@@ -3,12 +3,12 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef OPERATIONANOVA_HPP
-#define OPERATIONANOVA_HPP
+#pragma once
 
 #include <sgpp/base/datatypes/DataVector.hpp>
-#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
-#include <sgpp/base/tools/Sample.hpp>
+#include <sgpp/base/grid/Grid.hpp>
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
+#include <sgpp/base/function/vector/VectorFunction.hpp>
 
 namespace sgpp {
 namespace base {
@@ -17,30 +17,26 @@ namespace base {
  * Operation that cpnverts a given basis into the normal, linear hat basis and vice versa
  *
  */
-class OperationAnova {
+class OperationL2 {
  public:
-
   /**
    * Constructor
    */
-  OperationAnova(GridStorage& gridStorage) : gridStorage(gridStorage) {}
+  OperationL2(uint64_t seed, size_t samples) : seed(seed), samples(samples) {}
 
   /**
    * Destructor
    */
-  ~OperationAnova() = default;
+  ~OperationL2() = default;
 
-  Sample<AnovaBoundaryGrid::AnovaComponent, double> calculateAnovaComponentVariances(
-      const DataVector& alpha);
+  double calculateL2Norm(ScalarFunction& func);
 
+    double calculateMcL2Error(ScalarFunction& func, VectorFunction& transformation, ScalarFunction& reduced);
 
  private:
-  /// reference to the grid's GridStorage object
-  GridStorage& gridStorage;
-
+  uint64_t seed;
+  size_t samples;
 };
 
 }  // namespace base
 }  // namespace sgpp
-
-#endif

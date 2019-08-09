@@ -10,6 +10,7 @@
 #include <sgpp/base/tools/dist/GridDistribution.hpp>
 #include <sgpp/base/function/vector/VectorFunction.hpp>
 #include <sgpp/base/exception/tool_exception.hpp>
+#include <sgpp/base/tools/OperationL2.hpp>
 
 namespace sgpp {
 namespace base {
@@ -133,7 +134,7 @@ public:
 
   SGridSample(std::shared_ptr<Grid>& grid, std::function<double(const DataVector&)>& func)
     : GridSample<double>(grid, func),
-      valuesView(values.data(), values.size()), hierarchised(false) {
+      valuesDataVector(values.data(), values.size()), hierarchised(false) {
   }
 
   SGridSample(std::shared_ptr<Grid>& grid, ScalarFunction& func) : hierarchised(false) {
@@ -146,12 +147,12 @@ public:
       keys[i] = d.getVectors()[i];
       values[i] = func.eval(d.getVectors()[i]);
     }
-    valuesView = DataVector(values.data(), values.size());
+    valuesDataVector = DataVector(values.data(), values.size());
   }
 
   SGridSample(std::shared_ptr<Grid>& grid, const std::vector<double>& values)
     : GridSample<double>(grid, values),
-        valuesView(GridSample<double>::values.data(), GridSample<double>::values.size()),
+        valuesDataVector(GridSample<double>::values.data(), GridSample<double>::values.size()),
         hierarchised(false) {
   }
 
@@ -162,7 +163,7 @@ public:
 
     std::unique_ptr<OperationHierarchisation>(
           op_factory::createOperationHierarchisation(*grid))
-        ->doHierarchisation(valuesView);
+        ->doHierarchisation(valuesDataVector);
     sync();
     hierarchised = true;
   }
@@ -173,7 +174,7 @@ public:
     }
 
     std::unique_ptr<OperationHierarchisation>(op_factory::createOperationHierarchisation(*grid))
-        ->doDehierarchisation(valuesView);
+        ->doDehierarchisation(valuesDataVector);
     sync();
     hierarchised = false;
   }
@@ -184,7 +185,7 @@ public:
     }
 
     std::unique_ptr<OperationEval> op(op_factory::createOperationEval(*grid));
-    return op->eval(valuesView, point);
+    return op->eval(valuesDataVector, point);
   }
 
   double quadrature() const {
@@ -194,7 +195,7 @@ public:
 
     std::unique_ptr<OperationQuadrature> opQ(
       op_factory::createOperationQuadrature(*grid));
-    double res = opQ->doQuadrature(const_cast<DataVector&>(valuesView));
+    double res = opQ->doQuadrature(const_cast<DataVector&>(valuesDataVector));
     return res;
   }
 
@@ -204,7 +205,7 @@ public:
     }
 
     OperationQuadratureMC opMC(*grid, paths);
-    return opMC.doQuadrature(valuesView);
+    return opMC.doQuadrature(valuesDataVector);
   }
 
   double mcL2Error(FUNC f, void* clientdata, size_t paths) {
@@ -213,7 +214,7 @@ public:
     }
 
     OperationQuadratureMC opMC(*grid, paths);
-    return opMC.doQuadratureL2Error(f, clientdata, valuesView);
+    return opMC.doQuadratureL2Error(f, clientdata, valuesDataVector);
   }
 
   double mcL2Error(ScalarFunction& f, size_t paths) {
@@ -222,19 +223,33 @@ public:
     }
 
     OperationQuadratureMC opMC(*grid, paths);
-    return opMC.doQuadratureL2Error(f, valuesView);
+    return opMC.doQuadratureL2Error(f, valuesDataVector);
+  }
+
+    double l2Norm() const {
+    if (!hierarchised) {
+      throw tool_exception("Data is not hierarchised");
+    }
+
+      DataVector v(values.size());
+    double res = 0;
+    for (size_t i = 0; i < getSize(); i++) {
+      v[i] = values[i] * values[i];
+    }
+    OperationL2 op(grid->getStorage());
+    return op.calculateL2Norm(valuesDataVector);
   }
 
   bool isHierarchised() const { return hierarchised; }
 
-  const DataVector& getValuesView() const { return valuesView; }
+  const DataVector& getValuesDataVector() const { return valuesDataVector; }
 
-  DataVector& getValuesView() { return valuesView; }
+  DataVector& getValuesDataVector() { return valuesDataVector; }
 
 private:
-  void sync() { values = std::vector<double>(valuesView.begin(), valuesView.end()); }
+  void sync() { values = std::vector<double>(valuesDataVector.begin(), valuesDataVector.end()); }
 
-  DataVector valuesView;
+  DataVector valuesDataVector;
   bool hierarchised;
 };
 

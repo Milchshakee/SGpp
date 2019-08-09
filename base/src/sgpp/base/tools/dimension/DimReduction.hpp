@@ -5,11 +5,11 @@
 
 #ifndef DIMREDUCTION_HPP
 #define DIMREDUCTION_HPP
-#include "sgpp/base/datatypes/DataMatrix.hpp"
-#include "sgpp/base/function/scalar/ScalarFunction.hpp"
-#include "sgpp/base/function/vector/VectorFunction.hpp"
-#include "sgpp/base/grid/Grid.hpp"
-#include "sgpp/base/tools/Sample.hpp"
+#include <sgpp/base/datatypes/DataMatrix.hpp>
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
+#include <sgpp/base/function/vector/VectorFunction.hpp>
+#include <sgpp/base/grid/Grid.hpp>
+#include <sgpp/base/tools/Sample.hpp>
 
 namespace sgpp {
 namespace base {
@@ -18,6 +18,11 @@ template <class INPUT, class INFO, class OUTPUT>
 class Cutter {
  public:
   virtual OUTPUT cut(const INPUT& input, const INFO& info) = 0;
+};
+
+class Coverage {
+public:
+  virtual double calculateError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) = 0;
 };
 
 template <class T>
@@ -47,6 +52,14 @@ class Result {
     return sqrt(res / static_cast<double>(paths));
   }
 
+  double getError(Coverage& c)
+  {
+    return c.calculateError(getOriginalFunction(), getTransformationFunction(),
+                            getReducedFunction());
+  }
+
+  virtual double getCoveredVariance() = 0;
+  virtual ScalarFunction& getOriginalFunction() = 0;
   virtual ScalarFunction& getReducedFunction() = 0;
   virtual VectorFunction& getTransformationFunction() = 0;
   virtual T& getReducedOutput() = 0;

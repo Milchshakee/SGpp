@@ -1,8 +1,8 @@
 #ifndef ANOVAHELPER
 #define ANOVAHELPER
 
-#include "sgpp/base/grid/storage/hashmap/HashGridPoint.hpp"
-#include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
+#include <sgpp/base/grid/storage/hashmap/HashGridPoint.hpp>
+#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
 
 namespace sgpp {
 namespace base {

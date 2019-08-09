@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "sgpp/base/tools/VectorDistribution.hpp"
-#include "sgpp/base/tools/Sample.hpp"
+#include <sgpp/base/tools/dist/VectorDistribution.hpp>
+#include <sgpp/base/tools/Sample.hpp>
 
 namespace sgpp {
 namespace base {
@@ -19,8 +19,8 @@ class RandomPdfDistribution : public RandomDistribution {
   void generate();
 
 private:
-  size_t iterations;
   ScalarFunction& pdf;
+  size_t iterations;
   double stepSize;
 
   double getProbability(DataVector& v);

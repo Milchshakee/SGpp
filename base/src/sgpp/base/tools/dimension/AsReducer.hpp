@@ -18,7 +18,7 @@ namespace base {
 struct AsInfo {
   sgpp::base::DataMatrix eigenVectors;
   sgpp::base::DataVector eigenValues;
-  DataMatrix permutation;
+  DataVector varianceShares;
 };
 
 class TransfromFunction : public VectorFunction {
@@ -56,8 +56,10 @@ struct AsResult : Result<T>{
   }
 
   VectorFunction& getTransformationFunction() override
-  { return f;
-  };
+  { return f; };
+  double getCoveredVariance()
+  { return 0;
+  }
 
  protected:
 

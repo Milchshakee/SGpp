@@ -1,5 +1,5 @@
-#include "DimReduction.hpp"
-#include "EigenHelper.hpp"
+#include <sgpp/base/tools/dimension/DimReduction.hpp>
+#include <sgpp/base/tools/dimension/AsQuadReducer.hpp>
 
 namespace sgpp {
 namespace base {
