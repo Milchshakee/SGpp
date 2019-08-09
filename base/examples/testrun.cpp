@@ -167,21 +167,14 @@ int main(int argc, char* argv[]) {
     double normalL2Error = sample.mcL2Error(func, paths);
     m1.set(1, l, normalL2Error);
 
-    double reducedL2Error = result.calcMcL2Error(func, paths);
+    sgpp::base::VarianceMcL2Rule r(std::mt19937_64::default_seed, paths);
+    double reducedL2Error = result.calculateRelativeError(r);
 
     std::shared_ptr<sgpp::base::Grid> grid2(sgpp::base::Grid::createLinearBoundaryGrid(dim - 1));
     grid2->getGenerator().regular(l);
     m2.set(0, l, grid2->getStorage().getSize());
 
-    m2.set(1, l, result.getCoveredVariance());
-    sgpp::base::WrapperScalarFunction::FunctionEvalType f = [](const sgpp::base::DataVector& x) { return 0; };
-    auto fu = sgpp::base::WrapperScalarFunction(2, f);
-    double v = sgpp::base::OperationQuadratureMC(*grid, 10000)
-                   .doQuadratureL2Error(fu,
-                                        sample.getValuesDataVector());
-    double w =
-        sgpp::base::OperationL2(grid->getStorage()).calculateL2Norm(sample.getValuesDataVector());
-    double x = 0;
+    m2.set(1, l, reducedL2Error);
   }
   m1.transpose();
   m2.transpose();

@@ -2,17 +2,26 @@
 #include <sgpp/base/tools/dist/RandomPdfDistribution.hpp>
 #include <sgpp/base/tools/dimension/PcaFuncReducer.hpp>
 
-sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(size_t n) : n(n) {}
+sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(ErrorRule& r, size_t n) : FixedCutter<sgpp::base::SGridSample, sgpp::base::PcaFuncInfo, sgpp::base::PcaFuncResult>(r, n) {}
 
 sgpp::base::PcaFuncResult sgpp::base::PcaFuncFixedCutter::cut(const SGridSample& input,
                                                               const PcaFuncInfo& info) {
   return PcaFuncResult(input, info.basis, n, info.mean);
 }
 
-sgpp::base::PcaFuncVarianceCutter::PcaFuncVarianceCutter(double minVarianceShare) {}
-
-sgpp::base::PcaFuncResult sgpp::base::PcaFuncVarianceCutter::cut(const SGridSample& input,
-                                                                 const PcaFuncInfo& info) {}
+sgpp::base::PcaFuncResult sgpp::base::PcaFuncErrorRuleCutter::cut(const SGridSample& input,
+                                                                 const PcaFuncInfo& info) {
+  PcaFuncResult last(input, info.basis, input.getDimensions(), info.mean);
+  for (size_t d = 1; d < input.getDimensions(); ++d) {
+    PcaFuncResult result(input, info.basis, input.getDimensions() - d, info.mean);
+    if (result.calculateRelativeError(r) > maxError) {
+      return last;
+    } else {
+      last = result;
+      }
+  }
+  return last;
+}
 
 sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMatrix& m, size_t n,
                                          const DataVector& mean)
@@ -35,13 +44,8 @@ sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMat
   newSample.hierarchise();
   reduced = newSample;
   evalFunc = EvalFunction(reduced);
-  double l2Error = calcMcL2Error(e, 10000);
-  double c = l2Error / copy.l2Norm();
-  coveredVariance = 1 - c;
+  originalFunction = EvalFunction(input);
 }
-
-
-double sgpp::base::PcaFuncResult::getCoveredVariance() { return coveredVariance; }
 
 sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction()
 { return evalFunc; }
@@ -49,6 +53,11 @@ sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction()
 sgpp::base::VectorFunction& sgpp::base::PcaFuncResult::getTransformationFunction()
 {
   return projection.getFunction();
+}
+
+
+sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getOriginalFunction() {
+  return originalFunction;
 }
 
 sgpp::base::SGridSample& sgpp::base::PcaFuncResult::getReducedOutput()

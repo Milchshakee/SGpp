@@ -56,24 +56,24 @@ void InputProjection::inverse(const DataVector& in, DataVector& out) {
   }
 }
 
-InputProjection::ProjectionFunction::ProjectionFunction(InputProjection& p) : VectorFunction(p.oldDimensions, p.newDimensions), p(p) {
+InputProjection::ProjectionFunction::ProjectionFunction(InputProjection& p) : VectorFunction(p.oldDimensions, p.newDimensions), p(&p) {
 }
 
 void InputProjection::ProjectionFunction::eval(const DataVector& in, DataVector& out) {
   out = in;
-  out.sub(p.mean);
-  out = EigenHelper::mult(p.cutBasis, out);
-  DataVector ranges(p.newDimensions);
-  for (size_t d = 0; d < p.newDimensions; ++d) {
-    double scale = p.posRange[d] - p.negRange[d];
-    if (out[d] > p.posRange[d]) {
-      out[d] = p.posRange[d];
+  out.sub(p->mean);
+  out = EigenHelper::mult(p->cutBasis, out);
+  DataVector ranges(p->newDimensions);
+  for (size_t d = 0; d < p->newDimensions; ++d) {
+    double scale = p->posRange[d] - p->negRange[d];
+    if (out[d] > p->posRange[d]) {
+      out[d] = p->posRange[d];
       }
-    else if (out[d] < p.negRange[d]) {
-      out[d] = p.negRange[d];
+    else if (out[d] < p->negRange[d]) {
+      out[d] = p->negRange[d];
     }
 
-    out[d] = (out[d] - p.negRange[d]) / scale;
+    out[d] = (out[d] - p->negRange[d]) / scale;
   }
 }
 
@@ -82,5 +82,24 @@ void InputProjection::ProjectionFunction::clone(std::unique_ptr<VectorFunction>&
 
 
 VectorFunction& InputProjection::getFunction() { return func; }
+
+
+VarianceMcL2Rule::VarianceMcL2Rule(uint64_t seed, size_t samples) : seed(seed), samples(samples) {
+}
+
+double VarianceMcL2Rule::calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) {
+  OperationL2 o(seed, samples);
+  double e = o.calculateMcL2Error(f, t, r);
+  double l2 = o.calculateMcL2Norm(f);
+  return std::pow(e / l2, 2);
+}
+
+
+double VarianceMcL2Rule::calculateAbsoluteError(ScalarFunction& f, VectorFunction& t,
+  ScalarFunction& r) {
+  OperationL2 o(seed, samples);
+  double e = o.calculateMcL2Error(f, t, r);
+  return std::pow(e, 2);
+}
 }  // namespace base
 }  // namespace sgpp

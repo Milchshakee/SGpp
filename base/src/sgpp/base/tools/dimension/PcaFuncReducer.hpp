@@ -24,38 +24,33 @@ class PcaFuncResult : public Result<SGridSample> {
 public:
   PcaFuncResult(const SGridSample& input, const DataMatrix& m, size_t n, const DataVector& mean);
 
+  ScalarFunction& getOriginalFunction() override;
   ScalarFunction& getReducedFunction() override;
   VectorFunction& getTransformationFunction() override;
   SGridSample& getReducedOutput() override;
-  double getCoveredVariance();
 
 private:
-  double coveredVariance;
   SGridSample reduced;
+  EvalFunction originalFunction;
  EvalFunction evalFunc;
   InputProjection projection;
 };
 
-class PcaFuncCutter : public Cutter<SGridSample, PcaFuncInfo, PcaFuncResult> {};
-
-class PcaFuncVarianceCutter : public PcaFuncCutter {
+class PcaFuncErrorRuleCutter : public ErrorRuleCutter<SGridSample, PcaFuncInfo, PcaFuncResult> {
  public:
-  PcaFuncVarianceCutter(double minVarianceShare);
+  PcaFuncErrorRuleCutter(ErrorRule& r, double maxError)
+    : ErrorRuleCutter<SGridSample, PcaFuncInfo, PcaFuncResult>(r, maxError) {
+  }
 
   PcaFuncResult cut(const SGridSample& input, const PcaFuncInfo& info) override;
 
- private:
-  double minVarianceShare;
 };
 
-class PcaFuncFixedCutter : public PcaFuncCutter {
+class PcaFuncFixedCutter : public FixedCutter<SGridSample, PcaFuncInfo, PcaFuncResult> {
  public:
-  PcaFuncFixedCutter(size_t n);
+  PcaFuncFixedCutter(ErrorRule& r, size_t n);
 
   PcaFuncResult cut(const SGridSample& input, const PcaFuncInfo& info) override;
-
- private:
-  size_t n;
 };
 
 class PcaFuncReducer : public Reducer<SGridSample, PcaFuncInfo, PcaFuncResult> {

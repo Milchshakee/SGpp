@@ -29,7 +29,7 @@ class OperationL2 {
    */
   ~OperationL2() = default;
 
-  double calculateL2Norm(ScalarFunction& func);
+  double calculateMcL2Norm(ScalarFunction& func);
 
     double calculateMcL2Error(ScalarFunction& func, VectorFunction& transformation, ScalarFunction& reduced);
 

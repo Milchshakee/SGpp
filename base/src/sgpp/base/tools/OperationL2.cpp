@@ -2,7 +2,7 @@
 #include <sgpp/base/function/scalar/EvalFunction.hpp>
 
 
-double sgpp::base::OperationL2::calculateL2Norm(ScalarFunction& func) {
+double sgpp::base::OperationL2::calculateMcL2Norm(ScalarFunction& func) {
   std::mt19937_64 rand(seed);
   std::uniform_real_distribution<double> dist(0, 1);
   size_t funcDimensions = func.getNumberOfParameters();

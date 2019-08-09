@@ -226,20 +226,6 @@ public:
     return opMC.doQuadratureL2Error(f, valuesDataVector);
   }
 
-    double l2Norm() const {
-    if (!hierarchised) {
-      throw tool_exception("Data is not hierarchised");
-    }
-
-      DataVector v(values.size());
-    double res = 0;
-    for (size_t i = 0; i < getSize(); i++) {
-      v[i] = values[i] * values[i];
-    }
-    OperationL2 op(grid->getStorage());
-    return op.calculateL2Norm(valuesDataVector);
-  }
-
   bool isHierarchised() const { return hierarchised; }
 
   const DataVector& getValuesDataVector() const { return valuesDataVector; }

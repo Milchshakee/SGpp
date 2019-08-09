@@ -19,30 +19,32 @@ namespace base {
   GridSample<DataVector> gradientSample;
   };
 
-  class AsQuadResult : public AsResult<SGridSample>
+  class AsQuadResult : public Result<SGridSample>
   {
   public:
     AsQuadResult(const SGridSample& input, const DataMatrix& m, size_t n);
 
+
+    ScalarFunction& getOriginalFunction() override;
+    VectorFunction& getTransformationFunction() override;
     ScalarFunction& getReducedFunction() override;
     SGridSample& getReducedOutput() override;
   private:
+    InputProjection projection;
     SGridSample reduced;
    EvalFunction evalFunc;
+    EvalFunction originalFunc;
   };
 
-    class AsQuadFixedCutter : public Cutter<AsQuadInput, AsInfo, AsQuadResult>
+    class AsQuadFixedCutter : public FixedCutter<AsQuadInput, AsInfo, AsQuadResult>
     {
     public:
-  AsQuadFixedCutter(size_t n);
+  AsQuadFixedCutter(ErrorRule& r, size_t n);
 
       AsQuadResult cut(const AsQuadInput& input, const AsInfo& info) override;
-
-    private:
-      size_t n;
     };
 
-class AsQuadReducer : public AsReducer<AsQuadInput> {
+class AsQuadReducer : public Reducer<AsQuadInput, AsInfo, AsQuadResult> {
  public:
   AsInfo evaluate(AsQuadInput& input) override;
 

@@ -2,27 +2,17 @@
 #include <sgpp/base/function/scalar/EvalFunction.hpp>
 #include <sgpp/base/tools/dimension/AsQuadReducer.hpp>
 
-const double MIN_SCALING_VALUE = std::pow(10.0, -5.0);
-
 sgpp::base::AsQuadResult::AsQuadResult(const SGridSample& input, const DataMatrix& m, size_t n)
-    : AsResult<sgpp::base::SGridSample>(m, n) {
+    : projection(m, n, DataVector(m.getNrows(), 0.5)) {
   std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
   newGrid->getGenerator().regular(const_cast<Grid&>(input.getGrid()).getStorage().getMaxLevel());
 
-  EvalFunction e(input);
-  size_t dim = input.getDimensions();
-  std::function<double(const DataVector&)> func = [this, &e, dim, n](const DataVector& v) {
+  SGridSample copy = input;
+  copy.hierarchise();
+  EvalFunction e(copy);
+  std::function<double(const DataVector&)> func = [this, &e](const DataVector& v) {
     DataVector newV;
-    
-    transformFrom(v, newV);
-    //DataVector extendedV(v);
-    //extendedV.resizeZero(dim);
-    std::cout << "e: " + newV.toString() << std::endl;
-    //DataVector newV = EigenHelper::mult(m, extendedV);
-    //if (newV.max() > MIN_SCALING_VALUE) {
-    //  newV.mult(1.0 / newV.max());
-    //}
-    //std::cout << "dimension: " + newV.toString() << std::endl;
+    projection.inverse(v, newV);
     return e.eval(newV);
   };
 
@@ -30,6 +20,7 @@ sgpp::base::AsQuadResult::AsQuadResult(const SGridSample& input, const DataMatri
   newSample.hierarchise();
   reduced = newSample;
   evalFunc = EvalFunction(reduced);
+  originalFunc = EvalFunction(input);
 }
 
 sgpp::base::ScalarFunction& sgpp::base::AsQuadResult::getReducedFunction() {
@@ -38,7 +29,14 @@ sgpp::base::ScalarFunction& sgpp::base::AsQuadResult::getReducedFunction() {
 
 sgpp::base::SGridSample& sgpp::base::AsQuadResult::getReducedOutput() { return reduced; }
 
-sgpp::base::AsQuadFixedCutter::AsQuadFixedCutter(size_t n) : n(n) {}
+
+sgpp::base::ScalarFunction& sgpp::base::AsQuadResult::getOriginalFunction() { return originalFunc; }
+
+sgpp::base::VectorFunction& sgpp::base::AsQuadResult::getTransformationFunction() {
+  return projection.getFunction();
+}
+
+sgpp::base::AsQuadFixedCutter::AsQuadFixedCutter(ErrorRule& r, size_t n) : FixedCutter<sgpp::base::AsQuadInput, sgpp::base::AsInfo, sgpp::base::AsQuadResult>(r, n) {}
 
 sgpp::base::AsQuadResult sgpp::base::AsQuadFixedCutter::cut(const AsQuadInput& input,
                                                             const AsInfo& info) {

@@ -1,7 +1,7 @@
 #ifdef USE_EIGEN
 
-#include <sgpp/base/tools/EigenHelper.hpp>
 #include <eigen3/Eigen/Eigenvalues>
+#include <sgpp/base/tools/EigenHelper.hpp>
 
 namespace sgpp {
 namespace base {
@@ -13,12 +13,14 @@ DataVector EigenHelper::fromEigen(const Eigen::VectorXd& e) {
 }
 
 DataMatrix EigenHelper::fromEigen(const Eigen::MatrixXd& e) {
+  // Eigen uses column-major order, so we have to transpose
   DataMatrix m(e.data(), e.cols(), e.rows());
   m.transpose();
   return std::move(m);
 }
 
 Eigen::MatrixXd EigenHelper::toEigen(const DataMatrix& matrix) {
+  // Eigen uses column-major order, so we have to transpose
   DataMatrix copy = matrix;
   Eigen::Map<Eigen::MatrixXd> m(copy.getPointer(), matrix.getNcols(), matrix.getNrows());
   Eigen::MatrixXd mat = m.matrix();
@@ -32,16 +34,14 @@ Eigen::VectorXd EigenHelper::toEigen(const DataVector& vector) {
   return std::move(v);
 }
 
-DataMatrix EigenHelper::mult(const DataMatrix& m1,
-                             const DataMatrix& m2) {
+DataMatrix EigenHelper::mult(const DataMatrix& m1, const DataMatrix& m2) {
   Eigen::MatrixXd e1 = toEigen(m1);
   Eigen::MatrixXd e2 = toEigen(m2);
   Eigen::MatrixXd e3 = e1 * e2;
   return fromEigen(e3);
 }
 
-DataVector EigenHelper::mult(const DataMatrix& m,
-                             const DataVector& v) {
+DataVector EigenHelper::mult(const DataMatrix& m, const DataVector& v) {
   Eigen::MatrixXd em = toEigen(m);
   Eigen::VectorXd ev = toEigen(v);
   Eigen::VectorXd r = em * ev;
@@ -78,7 +78,7 @@ void EigenHelper::svd(const Eigen::MatrixXd& input, DataMatrix& eigenVectorMatri
     eigenValues[max] = temp3;
   }
 }
-} // namespace base
-} // namespace sgpp
+}  // namespace base
+}  // namespace sgpp
 
 #endif

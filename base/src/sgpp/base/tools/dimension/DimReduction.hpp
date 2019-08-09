@@ -8,7 +8,6 @@
 #include <sgpp/base/datatypes/DataMatrix.hpp>
 #include <sgpp/base/function/scalar/ScalarFunction.hpp>
 #include <sgpp/base/function/vector/VectorFunction.hpp>
-#include <sgpp/base/grid/Grid.hpp>
 #include <sgpp/base/tools/Sample.hpp>
 
 namespace sgpp {
@@ -20,49 +19,66 @@ class Cutter {
   virtual OUTPUT cut(const INPUT& input, const INFO& info) = 0;
 };
 
-class Coverage {
+class ErrorRule {
 public:
-  virtual double calculateError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) = 0;
+  virtual double calculateRelativeError(ScalarFunction& f, VectorFunction& t,
+                                        ScalarFunction& r) = 0;
+  virtual double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t,
+                                        ScalarFunction& r) = 0;
 };
+
+  class VarianceMcL2Rule : public ErrorRule {
+ public:
+    VarianceMcL2Rule(uint64_t seed, size_t samples);
+  double calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
+    double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
+
+  private:
+  uint64_t seed;
+   size_t samples;
+  };
+
+    template <class INPUT, class INFO, class OUTPUT>
+  class FixedCutter : public Cutter<INPUT, INFO, OUTPUT> {
+   public:
+    FixedCutter(ErrorRule& r, size_t n)
+      : r(r),
+        n(n) {
+    }
+
+   protected:
+    ErrorRule& r;
+    size_t n;
+  };
 
 template <class T>
 class Result {
  public:
-  double calcMcL2Error(ScalarFunction& func, size_t paths,
-                       uint64_t seed = std::mt19937_64::default_seed)
+  double calculateRelativeError(ErrorRule& c)
   {
-    std::mt19937_64 rand(seed);
-    std::uniform_real_distribution<double> dist(0, 1);
-    size_t funcDimensions = func.getNumberOfParameters();
-    size_t newDimensions = getReducedFunction().getNumberOfParameters();
-
-    sgpp::base::DataVector point(funcDimensions);
-    double res = 0;
-
-    for (size_t i = 0; i < paths; i++) {
-      for (size_t d = 0; d < funcDimensions; d++) {
-        point[d] = dist(rand);
-      }
-      double val = func.eval(point);
-      DataVector out(newDimensions);
-      getTransformationFunction().eval(point, out);
-      res += pow(val - getReducedFunction().eval(out), 2);
-    }
-
-    return sqrt(res / static_cast<double>(paths));
-  }
-
-  double getError(Coverage& c)
-  {
-    return c.calculateError(getOriginalFunction(), getTransformationFunction(),
+    return c.calculateRelativeError(getOriginalFunction(), getTransformationFunction(),
                             getReducedFunction());
   }
 
-  virtual double getCoveredVariance() = 0;
+    double calculateAbsoluteError(ErrorRule& c) {
+    return c.calculateRelativeError(getOriginalFunction(), getTransformationFunction(),
+                            getReducedFunction());
+  }
+
   virtual ScalarFunction& getOriginalFunction() = 0;
   virtual ScalarFunction& getReducedFunction() = 0;
   virtual VectorFunction& getTransformationFunction() = 0;
   virtual T& getReducedOutput() = 0;
+};
+
+  template <class INPUT, class INFO, class OUTPUT>
+  class ErrorRuleCutter : public Cutter<INPUT, INFO, OUTPUT> {
+ public:
+  ErrorRuleCutter(ErrorRule& r, double maxError) : r(r), maxError(maxError) {};
+
+ protected:
+  ErrorRule& r;
+  double maxError;
 };
 
 template <class INPUT, class INFO, class OUTPUT>
@@ -102,13 +118,14 @@ class Reducer {
 
     class ProjectionFunction : public VectorFunction {
      public:
+      ProjectionFunction() = default;
       ProjectionFunction(InputProjection& p);
       ~ProjectionFunction() = default;
       void eval(const DataVector& in, DataVector& out) override;
       void clone(std::unique_ptr<VectorFunction>& clone) const override;
 
      private:
-      InputProjection& p;
+      InputProjection* p;
     };
 
     ProjectionFunction func;

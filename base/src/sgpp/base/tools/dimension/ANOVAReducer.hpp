@@ -16,8 +16,6 @@ namespace sgpp {
 namespace base {
 
 struct AnovaInfo {
-  sgpp::base::Sample<AnovaBoundaryGrid::AnovaComponent, double> variances;
-  double totalVariance;
 };
 
 class AnovaResult : public Result<SGridSample> {
@@ -25,41 +23,35 @@ public:
   std::vector<bool> activeDimensions;
  size_t dimensions;
 
-  AnovaResult(std::vector<bool>& activeDimensions, double coveredVariance,
-             size_t dimensions, SGridSample sample);
+  AnovaResult() = default;
+  AnovaResult(std::vector<bool>& activeDimensions,
+             size_t dimensions, const SGridSample& sample);
 
+
+  ScalarFunction& getOriginalFunction() override;
   VectorFunction& getTransformationFunction();
   SGridSample& getReducedOutput();
   ScalarFunction& getReducedFunction() override;
-  double getCoveredVariance();
 
  private:
-  double coveredVariance;
+  EvalFunction originalFunction;
   EvalFunction eval;
   MatrixFunction f;
   SGridSample reducedSample;
 };
 
-class AnovaCutter : public sgpp::base::Cutter<SGridSample, AnovaInfo, AnovaResult> {};
-
-class AnovaFixedCutter : public AnovaCutter {
+class AnovaFixedCutter : public FixedCutter<SGridSample, AnovaInfo, AnovaResult> {
  public:
-  AnovaFixedCutter(size_t n);
+  AnovaFixedCutter(ErrorRule& r, size_t n);
 
   AnovaResult cut(const SGridSample& input, const AnovaInfo& info) override;
-
- private:
-  size_t n;
 };
 
-  class AnovaVarianceShareCutter : public AnovaCutter {
+  class AnovaErrorRuleCutter : public ErrorRuleCutter<SGridSample, AnovaInfo, AnovaResult> {
  public:
-    AnovaVarianceShareCutter(double minCoveredVariance);
+    AnovaErrorRuleCutter(ErrorRule& r, double maxError);
 
   AnovaResult cut(const SGridSample& input, const AnovaInfo& info) override;
-
- private:
-  double minCoveredVariance;
   };
 
 class AnovaReducer : public sgpp::base::Reducer<SGridSample, AnovaInfo, AnovaResult> {

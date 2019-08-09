@@ -19,13 +19,14 @@ int main(int argc, char* argv[]) {
   auto reducer = sgpp::base::AnovaReducer();
   sgpp::base::AnovaInfo info = reducer.evaluate(sample);
 
-  sgpp::base::AnovaVarianceShareCutter cutter(0.95);
-  //sgpp::base::AnovaFixedCutter cutter(1);
+  sgpp::base::VarianceMcL2Rule rule(std::mt19937_64::default_seed, 10000);
+  sgpp::base::AnovaErrorRuleCutter cutter(rule, 0.05);
+  //sgpp::base::AnovaFixedCutter cutter(rule, 1);
 
   sgpp::base::AnovaResult result = cutter.cut(sample, info);
 
   
-    std::cout << "covered variance: " + std::to_string(result.getCoveredVariance()) << std::endl;
+    std::cout << "measured relative error: " + std::to_string(result.calculateRelativeError(rule)) << std::endl;
 
   // Loop over all dimensions and check if they are removed from the reduced grid
   for (size_t d = 0; d < result.dimensions; ++d) {
@@ -33,18 +34,10 @@ int main(int argc, char* argv[]) {
     std::cout << "active: " + std::to_string(result.activeDimensions[d]) << std::endl;
     }
 
-  // Loop over all ANOVA components of the grid
-    for (size_t i = 0; i < info.variances.getSize(); ++i) {
-      sgpp::base::AnovaBoundaryGrid::AnovaComponent& component = info.variances.getKeys()[i];
-      std::string str(component.begin(), component.end());
-      std::cout << "component: " + str << std::endl;
-      std::cout << "component variance: " + std::to_string(info.variances.getValues()[i]) << std::endl;
-  }
-
   sgpp::base::SGridSample& reducedSample = result.getReducedOutput();
 
   std::cout << "reduced dimensions: " << reducedSample.getDimensions() << std::endl;
 
-  double l2Error = result.calcMcL2Error(func, 10000);
+  double l2Error = std::sqrt(result.calculateAbsoluteError(rule));
   std::cout << "L2 error: " << l2Error << std::endl;
 }

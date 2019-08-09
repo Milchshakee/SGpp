@@ -6,14 +6,34 @@ namespace sgpp {
 namespace base {
 
 
-AsMcResult::AsMcResult(const AsMcInput& input, const DataMatrix& m, size_t n)
-    : AsResult<ScalarFunction>(m, n) {
-  input.function.clone(function);
+ScalarFunction& AsMcResult::getOriginalFunction() { return *originalFunc; }
+
+VectorFunction& AsMcResult::getTransformationFunction() { return projection.getFunction(); }
+
+AsMcFixedCutter::AsMcFixedCutter(ErrorRule& r, size_t n, GridType type, level_t level)
+    : FixedCutter<sgpp::base::AsMcInput, sgpp::base::AsInfo, sgpp::base::AsMcResult>(r, n), AsMcCutter(type, level) {}
+
+AsMcErrorRuleCutter::AsMcErrorRuleCutter(ErrorRule& r, double maxError, GridType type,
+                                         level_t level)
+    : ErrorRuleCutter<sgpp::base::AsMcInput, sgpp::base::AsInfo, sgpp::base::AsMcResult>(
+          r, maxError), AsMcCutter(type, level) {}
+
+AsMcResult AsMcErrorRuleCutter::cut(const AsMcInput& input, const AsInfo& info) {
+  AsMcResult last(input, info.eigenVectors, input.function.getNumberOfParameters(), type, level);
+  for (size_t d = 1; d < input.function.getNumberOfParameters(); ++d) {
+    AsMcResult result(input, info.eigenVectors, input.function.getNumberOfParameters() - d, type, level);
+    if (result.calculateRelativeError(r) > maxError) {
+      return last;
+    } else {
+      last = result;
+    }
+  }
+  return last;
 }
 
-ScalarFunction& AsMcResult::getReducedFunction() { return *function; }
+ScalarFunction& AsMcResult::getReducedFunction() { return evalFunc; }
 
-ScalarFunction& AsMcResult::getReducedOutput() { return *function; }
+SGridSample& AsMcResult::getReducedOutput() { return reduced; }
 
 PointSample<DataMatrix> AsMcReducer::fromGradientSample(const PointSample<DataVector>& gradients) {
   std::vector<DataMatrix> out(gradients.getSize(),
@@ -34,15 +54,36 @@ PointSample<DataMatrix> AsMcReducer::fromFiniteDifferences(ScalarFunction& func,
   VectorDistribution& v) {
 }
 
-AsMcFixedCutter::AsMcFixedCutter(size_t n) : n(n) {
+
+AsMcResult::AsMcResult(const AsMcInput& input, const DataMatrix& m, size_t n, GridType type,
+                       level_t l)
+    : projection(m, n, DataVector(m.getNrows(), 0.5)) {
+  RegularGridConfiguration g;
+  g.dim_ = n;
+  g.level_ = l;
+  g.type_ = type;
+  std::shared_ptr<Grid> newGrid(Grid::createGrid(g));
+  newGrid->getGenerator().regular(l);
+
+  std::function<double(const DataVector&)> func = [this, &input](const DataVector& v) {
+    DataVector newV;
+    projection.inverse(v, newV);
+    return input.function.eval(newV);
+  };
+
+  SGridSample newSample(newGrid, func);
+  newSample.hierarchise();
+  reduced = newSample;
+  evalFunc = EvalFunction(reduced);
+  originalFunc = &input.function;
 }
 
 AsMcResult AsMcFixedCutter::cut(const AsMcInput& input, const AsInfo& info) {
-  return AsMcResult(input, info.eigenVectors, n);
+  return AsMcResult(input, info.eigenVectors, n, type, level);
 }
 
-AsMcIntervalCutter::AsMcIntervalCutter(size_t bootstrapSamples) : bootstrapSamples(bootstrapSamples) {
-}
+AsMcIntervalCutter::AsMcIntervalCutter(size_t bootstrapSamples, GridType type, level_t level)
+    : AsMcCutter(type, level), bootstrapSamples(bootstrapSamples) {}
 
   
 AsInfo AsMcReducer::evaluate(AsMcInput& input) {
@@ -102,8 +143,11 @@ AsMcResult AsMcIntervalCutter::cut(const AsMcInput& input, const AsInfo& info) {
       cutoff = d + 1;
     }
   }
-  return AsMcResult(input, info.eigenVectors, cutoff);
+  return AsMcResult(input, info.eigenVectors, cutoff, type, level);
 }
 
+
+AsMcCutter::AsMcCutter(GridType type, level_t level) : type(type), level(level) {
+}
 }  // namespace base
 }  // namespace sgpp
