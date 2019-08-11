@@ -6,12 +6,9 @@
 #ifndef OPERATIONHIERARCHISATIONANOVABOUNDARY_HPP
 #define OPERATIONHIERARCHISATIONANOVABOUNDARY_HPP
 
-#include <sgpp/base/grid/GridStorage.hpp>
 #include <sgpp/base/operation/hash/OperationHierarchisation.hpp>
-
-#include <sgpp/globaldef.hpp>
-#include "sgpp/base/grid/Grid.hpp"
-#include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
+#include <sgpp/base/grid/Grid.hpp>
+#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
 
 namespace sgpp {
 namespace base {

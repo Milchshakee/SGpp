@@ -21,6 +21,7 @@ class Cutter {
 
 class ErrorRule {
 public:
+  virtual double calculateBasisFunction(double alpha, const HashGridPoint& point) = 0;
   virtual double calculateRelativeError(ScalarFunction& f, VectorFunction& t,
                                         ScalarFunction& r) = 0;
   virtual double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t,

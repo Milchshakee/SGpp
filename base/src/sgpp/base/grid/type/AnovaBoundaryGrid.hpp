@@ -39,7 +39,7 @@ class AnovaBoundaryGrid : public Grid {
 {
     AnovaComponent currentComp(point.getDimension(), false);
     for (size_t d = 0; d < point.getDimension(); d++) {
-      currentComp[d] = point.getLevel(d) > 0;
+      currentComp[d] = !(point.getLevel(d) == 0 && point.getIndex(d) == 0);
     }
     return currentComp;
   }
@@ -127,26 +127,21 @@ class AnovaBoundaryGrid : public Grid {
    *
    * @param dim           the dimension of the grid
    */
-  AnovaBoundaryGrid(size_t dim);
+  AnovaBoundaryGrid(size_t dim, AnovaComponentVector& comps);
 
   /**
    * Destructor
    */
   ~AnovaBoundaryGrid() override = default;
 
-  sgpp::base::GridType getType() override;
-
-  SBasis& getBasis() override;
-
   GridGenerator& getGenerator() override;
-
-  static Grid* unserialize(std::istream& istr);
 
   void serialize(std::ostream& ostr, int version = SERIALIZATION_VERSION) override;
 
  protected:
   /// grid generator
   AnovaBoundaryGridGenerator generator;
+  AnovaComponentVector comps;
 };
 
 }  // namespace base

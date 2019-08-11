@@ -17,6 +17,7 @@
 #include <iterator>
 #include <unordered_set>
 #include <vector>
+#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
 
 namespace sgpp {
 namespace base {
@@ -166,12 +167,13 @@ class HashGenerator {
    * @param storage Hashmap, that stores the grid points
    * @param level maximum level of the ANOVA sparse grid (uses the compatibility level)
    */
-  void regularWithAnovaBoundaries(GridStorage& storage, level_t level) {
+  void regularWithAnovaBoundaries(GridStorage& storage, level_t level,
+                                  AnovaBoundaryGrid::AnovaComponentVector& comps) {
     if (storage.getSize() > 0) {
       throw generation_exception("storage not empty");
     }
 
-    this->regular_anova_boundary_truncated_iter(storage, level);
+    this->regular_anova_boundary_truncated_iter(storage, level, comps);
   }
 
   /**
@@ -288,7 +290,7 @@ class HashGenerator {
    * @param storage pointer to storage object into which the grid points should be stored
    * @param n level maximum level of the ANOVA sparse grid (uses the compatibility level)
    */
-  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n) {
+  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n, AnovaBoundaryGrid::AnovaComponentVector & comps) {
     const size_t dim = storage.getDimension();
 
     if (n == 0) {
@@ -335,7 +337,10 @@ class HashGenerator {
 
         idx.setLeaf(!hasZeroLevel && actualIdx.getLevelSum() == n);
 
-        storage.insert(idx);
+        AnovaBoundaryGrid::AnovaComponent c = AnovaBoundaryGrid::getAnovaComponentOfPoint(idx);
+        if (comps.empty() || std::find(comps.begin(), comps.end(), c) != comps.end()) {
+          storage.insert(idx);
+          }
       }
     }
   }

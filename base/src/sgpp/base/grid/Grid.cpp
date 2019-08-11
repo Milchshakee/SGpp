@@ -36,7 +36,8 @@
 #include <sgpp/base/grid/type/SquareRootGrid.hpp>
 #include <sgpp/base/grid/type/WaveletBoundaryGrid.hpp>
 #include <sgpp/base/grid/type/WaveletGrid.hpp>
-#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
+#include <sgpp/base/grid/type/AnovaLinearBoundaryGrid.hpp>
+#include <sgpp/base/grid/type/AnovaPrewaveletBoundaryGrid.hpp>
 
 #include <sgpp/base/grid/generation/functors/SurplusRefinementFunctor.hpp>
 
@@ -65,8 +66,23 @@ Grid* Grid::createLinearGrid(size_t dim) { return new LinearGrid(dim); }
 
 Grid* Grid::createLinearStretchedGrid(size_t dim) { return new LinearStretchedGrid(dim); }
 
-Grid* Grid::createAnovaBoundaryGrid(size_t dim) {
-  return new AnovaBoundaryGrid(dim);
+Grid* Grid::createAnovaLinearBoundaryGrid(size_t dim) {
+  std::vector<std::vector<bool>> b;
+  return new AnovaLinearBoundaryGrid(dim, b);
+}
+
+Grid* Grid::createAnovaLinearBoundaryGrid(size_t dim, std::vector<std::vector<bool>>& comps) {
+  std::vector<std::vector<bool>> b;
+  return new AnovaLinearBoundaryGrid(dim, comps);
+}
+
+  Grid* Grid::createAnovaPrewaveletBoundaryGrid(size_t dim) {
+  std::vector<std::vector<bool>> b;
+  return new AnovaPrewaveletBoundaryGrid(dim, b);
+}
+
+Grid* Grid::createAnovaPrewaveletBoundaryGrid(size_t dim, std::vector<std::vector<bool>>& comps) {
+  return new AnovaPrewaveletBoundaryGrid(dim, comps);
 }
 
 Grid* Grid::createLinearBoundaryGrid(size_t dim, level_t boundaryLevel) {
@@ -166,8 +182,10 @@ Grid* Grid::createGrid(RegularGridConfiguration gridConfig) {
     return base::Grid::unserialize(content);
   } else {
     switch (gridConfig.type_) {
-      case GridType::AnovaBoundary:
-        return Grid::createAnovaBoundaryGrid(gridConfig.dim_);
+      case GridType::AnovaLinearBoundary:
+        return Grid::createAnovaLinearBoundaryGrid(gridConfig.dim_);
+      case GridType::AnovaPrewaveletBoundary:
+        return Grid::createAnovaPrewaveletBoundaryGrid(gridConfig.dim_);
       case GridType::Linear:
         return Grid::createLinearGrid(gridConfig.dim_);
       case GridType::LinearStretched:
@@ -256,8 +274,11 @@ Grid* Grid::createGridOfEquivalentType(size_t numDims) {
     case GridType::LinearL0Boundary:
       newGrid = Grid::createLinearBoundaryGrid(numDims);
       break;
-    case GridType::AnovaBoundary:
-      newGrid = Grid::createAnovaBoundaryGrid(numDims);
+    case GridType::AnovaLinearBoundary:
+      newGrid = Grid::createAnovaLinearBoundaryGrid(numDims);
+      break;
+    case GridType::AnovaPrewaveletBoundary:
+      newGrid = Grid::createAnovaPrewaveletBoundaryGrid(numDims);
       break;
     case GridType::LinearBoundary:
       boundaryLevel =
@@ -392,7 +413,7 @@ GridType Grid::getZeroBoundaryType() {
     case GridType::Periodic:
     case GridType::LinearStencil:
     case GridType::ModLinearStencil:
-    case GridType::AnovaBoundary:
+    case GridType::AnovaLinearBoundary:
       return GridType::Linear;
     case GridType::LinearStretched:
     case GridType::LinearStretchedBoundary:
@@ -404,6 +425,7 @@ GridType Grid::getZeroBoundaryType() {
     case GridType::ModWavelet:
     case GridType::Wavelet:
     case GridType::WaveletBoundary:
+    case GridType::AnovaPrewaveletBoundary:
       return GridType::Wavelet;
     case GridType::Bspline:
     case GridType::BsplineBoundary:
@@ -486,7 +508,9 @@ std::map<std::string, Grid::Factory>& Grid::typeMap() {
     tMap->insert(
         std::pair<std::string, Grid::Factory>("linearBoundary", LinearBoundaryGrid::unserialize));
     tMap->insert(
-        std::pair<std::string, Grid::Factory>("anovaBoundary", AnovaBoundaryGrid::unserialize));
+        std::pair<std::string, Grid::Factory>("anovaLinearBoundary", AnovaLinearBoundaryGrid::unserialize));
+    tMap->insert(
+        std::pair<std::string, Grid::Factory>("anovaPrewaveletBoundary", AnovaPrewaveletBoundaryGrid::unserialize));
     tMap->insert(std::pair<std::string, Grid::Factory>("linearStretchedBoundary",
                                                        LinearStretchedBoundaryGrid::unserialize));
     tMap->insert(std::pair<std::string, Grid::Factory>("linearClenshawCurtis",
@@ -534,7 +558,8 @@ std::map<std::string, Grid::Factory>& Grid::typeMap() {
     tMap->insert(std::make_pair("linearstencil", LinearGridStencil::unserialize));
     tMap->insert(std::make_pair("modlinearstencil", ModLinearGridStencil::unserialize));
     tMap->insert(std::make_pair("linearBoundary", LinearBoundaryGrid::unserialize));
-    tMap->insert(std::make_pair("anovaBoundary", LinearBoundaryGrid::unserialize));
+    tMap->insert(std::make_pair("anovaLinearBoundary", AnovaLinearBoundaryGrid::unserialize));
+    tMap->insert(std::make_pair("anovaPrewaveletBoundary", AnovaPrewaveletBoundaryGrid::unserialize));
     tMap->insert(
         std::make_pair("linearStretchedBoundary", LinearStretchedBoundaryGrid::unserialize));
     tMap->insert(std::make_pair("linearClenshawCurtis", LinearClenshawCurtisGrid::unserialize));
@@ -590,8 +615,10 @@ std::map<sgpp::base::GridType, std::string>& Grid::typeVerboseMap() {
                                                                     "modlinearstencil"));
     verboseMap->insert(
         std::pair<sgpp::base::GridType, std::string>(GridType::LinearBoundary, "linearBoundary"));
-    verboseMap->insert(
-        std::pair<sgpp::base::GridType, std::string>(GridType::AnovaBoundary, "anovaBoundary"));
+    verboseMap->insert(std::pair<sgpp::base::GridType, std::string>(GridType::AnovaLinearBoundary,
+                                                                    "anovaLinearBoundary"));
+    verboseMap->insert(std::pair<sgpp::base::GridType, std::string>(GridType::AnovaPrewaveletBoundary,
+                                                                    "anovaPrewaveletBoundary"));
     verboseMap->insert(std::pair<sgpp::base::GridType, std::string>(
         GridType::LinearStretchedBoundary, "linearStretchedBoundary"));
     verboseMap->insert(std::pair<sgpp::base::GridType, std::string>(GridType::LinearClenshawCurtis,
@@ -643,7 +670,9 @@ std::map<sgpp::base::GridType, std::string>& Grid::typeVerboseMap() {
     verboseMap->insert(std::make_pair(GridType::LinearStencil, "linearstencil"));
     verboseMap->insert(std::make_pair(GridType::ModLinearStencil, "modlinearstencil"));
     verboseMap->insert(std::make_pair(GridType::LinearBoundary, "linearBoundary"));
-    verboseMap->insert(std::make_pair(GridType::AnovaBoundary, "anovaBoundary"));
+    verboseMap->insert(std::make_pair(GridType::AnovaLinearBoundary, "anovaLinearBoundary"));
+    verboseMap->insert(
+        std::make_pair(GridType::AnovaPrewaveletBoundary, "anovaPrewaveletBoundary"));
     verboseMap->insert(
         std::make_pair(GridType::LinearStretchedBoundary, "linearStretchedBoundary"));
     verboseMap->insert(std::make_pair(GridType::LinearClenshawCurtis, "linearClenshawCurtis"));
@@ -777,7 +806,7 @@ GridType Grid::stringToGridType(const std::string& gridType) {
   } else if (gridType.compare("linearBoundary") == 0) {
     return sgpp::base::GridType::LinearBoundary;
   } else if (gridType.compare("anovaBoundary") == 0) {
-    return sgpp::base::GridType::AnovaBoundary;
+    return sgpp::base::GridType::AnovaLinearBoundary;
   } else if (gridType.compare("linearStretchedBoundary") == 0) {
     return sgpp::base::GridType::LinearStretchedBoundary;
   } else if (gridType.compare("linearTruncatedBoundary") == 0) {

@@ -10,6 +10,7 @@
 #include "sgpp/base/algorithm/sweep_anova.hpp"
 #include "OperationQuadrature.hpp"
 #include <sgpp/base/operation/BaseOpFactory.hpp>
+#include <sgpp/base/operation/hash/common/algorithm_sweep/ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary.hpp>
 
 namespace sgpp {
 namespace base {
@@ -56,14 +57,22 @@ void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_v
     double q = opQ->doQuadrature(node_values);
     node_values[0] = q;
 
-    HierarchisationAnovaBoundary func(grid);
-    sweep_anova<HierarchisationAnovaBoundary> s(func, grid.getStorage());
+    HierarchisationAnovaBoundary func2(grid);
+    sweep_anova<HierarchisationAnovaBoundary> s2(func2, grid.getStorage());
     for (size_t i = 0; i < grid.getStorage().getDimension(); i++) {
-      s.sweep1D_AnovaBoundary(copy, copy, i);
+      s2.sweep1D_AnovaBoundary(copy, copy, i);
     }
     node_values = copy;
   }
-}
+
+  if (grid.getType() == GridType::AnovaPrewaveletBoundary)
+  {
+    ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary func3(grid.getStorage());
+    sweep_anova<ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary> s3(func3, grid.getStorage());
+    for (size_t i = 0; i < grid.getStorage().getDimension(); i++) {
+      s3.sweep1D_AnovaBoundary(node_values, node_values, i);
+    }
+  } }
 
 void OperationHierarchisationAnovaBoundary::doDehierarchisation(DataVector& alpha) {
   throw not_implemented_exception();

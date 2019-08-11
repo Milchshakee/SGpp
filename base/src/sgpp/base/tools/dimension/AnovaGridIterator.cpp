@@ -9,6 +9,9 @@ AnovaGridIterator::AnovaGridIterator(HashGridStorage& storage)
   resetToLevelMinusOne();
 }
 
+
+const HashGridPoint& AnovaGridIterator::getIndex() { return index; }
+
 void AnovaGridIterator::resetToLevelMinusOne() {
   for (size_t i = 0; i < storage.getDimension(); i++) {
     index.push(i, 0, 0);

@@ -6,7 +6,7 @@
 #include <sgpp/globaldef.hpp>
 
 #include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
-#include <sgpp/base/operation/hash/common/basis/AnovaBoundaryBasis.hpp>
+#include <sgpp/base/operation/hash/common/basis/AnovaLinearBoundaryBasis.hpp>
 #include <ostream>
 
 namespace sgpp {
@@ -17,20 +17,8 @@ AnovaBoundaryGrid::AnovaBoundaryGrid(std::istream& istr)
     : Grid(istr), generator(storage) 
   {}
 
-AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim)
-    : Grid(dim), generator(storage) {}
-
-sgpp::base::GridType AnovaBoundaryGrid::getType() { return sgpp::base::GridType::AnovaBoundary; }
-
-SBasis& AnovaBoundaryGrid::getBasis() {
-  static SAnovaBoundaryBasis basis;
-  return basis;
-}
-
-Grid* AnovaBoundaryGrid::unserialize(std::istream& istr)
-{
-  return new AnovaBoundaryGrid(istr);
-}
+AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim, AnovaComponentVector& comps)
+    : Grid(dim), generator(storage), comps(comps) {}
 
 void AnovaBoundaryGrid::serialize(std::ostream& ostr, int version) {
   this->Grid::serialize(ostr, version);

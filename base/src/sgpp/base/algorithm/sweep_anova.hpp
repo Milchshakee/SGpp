@@ -16,7 +16,7 @@ namespace sgpp {
 namespace base {
 
 /**
- * Standard sweep operation for ANOVA grids.
+ * Standard sweep operation for ANOVA boundary grids.
  * FUNC should be a class with overwritten operator().
  */
 template <class FUNC>

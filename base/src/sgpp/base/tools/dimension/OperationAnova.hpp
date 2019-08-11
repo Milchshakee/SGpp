@@ -9,6 +9,7 @@
 #include <sgpp/base/datatypes/DataVector.hpp>
 #include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
 #include <sgpp/base/tools/Sample.hpp>
+#include <sgpp/base/tools/dimension/DimReduction.hpp>
 
 namespace sgpp {
 namespace base {
@@ -31,7 +32,7 @@ class OperationAnova {
   ~OperationAnova() = default;
 
   Sample<AnovaBoundaryGrid::AnovaComponent, double> calculateAnovaComponentVariances(
-      const DataVector& alpha);
+      const DataVector& alpha, ErrorRule& rule);
 
 
  private:

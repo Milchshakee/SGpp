@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 #include <sgpp/base/operation/hash/OperationEvalAnovaBoundary.hpp>
-#include "common/basis/AnovaBoundaryBasis.hpp"
+#include "common/basis/AnovaLinearBoundaryBasis.hpp"
 
 namespace sgpp {
 namespace base {
@@ -19,8 +19,8 @@ double OperationEvalAnovaBoundary::eval(const DataVector& alpha, const DataVecto
   typedef std::vector<std::pair<size_t, double> > IndexValVector;
 
   IndexValVector vec;
-  AnovaBoundaryBasis<unsigned int, unsigned int> base;
-  GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> > ga(storage);
+  AnovaLinearBoundaryBasis<unsigned int, unsigned int> base;
+  GetAffectedBasisFunctions<AnovaLinearBoundaryBasis<unsigned int, unsigned int> > ga(storage);
 
   ga(base, point, vec);
 

@@ -239,7 +239,7 @@ base::OperationHierarchisation* createOperationHierarchisation(base::Grid& grid)
              grid.getType() == base::GridType::LinearTruncatedBoundary ||
              grid.getType() == base::GridType::SquareRoot) {
     return new base::OperationHierarchisationLinearBoundary(grid.getStorage());
-  } else if (grid.getType() == base::GridType::AnovaBoundary) {
+  } else if (grid.getType() == base::GridType::AnovaLinearBoundary) {
     return new base::OperationHierarchisationAnovaBoundary(grid);
   } else if (grid.getType() == base::GridType::LinearStretched) {
     return new base::OperationHierarchisationLinearStretched(grid.getStorage());
@@ -291,7 +291,7 @@ base::OperationQuadrature* createOperationQuadrature(base::Grid& grid) {
   } else if (grid.getType() == base::GridType::LinearL0Boundary ||
              grid.getType() == base::GridType::LinearBoundary) {
     return new base::OperationQuadratureLinearBoundary(grid.getStorage());
-  } else if (grid.getType() == base::GridType::AnovaBoundary) {
+  } else if (grid.getType() == base::GridType::AnovaLinearBoundary) {
     return new base::OperationQuadratureAnovaBoundary(grid.getStorage());
   } else if (grid.getType() == base::GridType::ModLinear) {
     return new base::OperationQuadratureModLinear(grid.getStorage());
@@ -465,7 +465,7 @@ base::OperationEval* createOperationEval(base::Grid& grid) {
     return new base::OperationEvalLinearStretchedBoundary(grid.getStorage());
   } else if (grid.getType() == base::GridType::Periodic) {
     return new base::OperationEvalPeriodic(grid.getStorage());
-  } else if (grid.getType() == base::GridType::AnovaBoundary) {
+  } else if (grid.getType() == base::GridType::AnovaLinearBoundary) {
     return new base::OperationEvalAnovaBoundary(grid.getStorage());
   } else {
     throw base::factory_exception(
@@ -500,7 +500,7 @@ base::OperationMultipleEval* createOperationMultipleEval(base::Grid& grid,
     return new base::OperationMultipleEvalLinearStretchedBoundary(grid, dataset);
   } else if (grid.getType() == base::GridType::Periodic) {
     return new base::OperationMultipleEvalPeriodic(grid, dataset);
-  } else if (grid.getType() == base::GridType::AnovaBoundary) {
+  } else if (grid.getType() == base::GridType::AnovaLinearBoundary) {
     return new base::OperationMultipleEvalAnovaBoundary(grid, dataset);
   } else {
     throw base::factory_exception(

@@ -3,8 +3,7 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#ifndef ANOVA_BASIS_HPP
-#define ANOVA_BASIS_HPP
+#pragma once
 
 #include <sgpp/base/operation/hash/common/basis/Basis.hpp>
 
@@ -20,17 +19,17 @@ namespace base {
  * Linear basis on ANOVA boundary grids.
  */
 template <class LT, class IT>
-class AnovaBoundaryBasis : public Basis<LT, IT> {
+class AnovaLinearBoundaryBasis : public Basis<LT, IT> {
  public:
   /**
    * Constructor
    */
-  explicit AnovaBoundaryBasis() {}
+  explicit AnovaLinearBoundaryBasis() {}
 
   /**
    * Destructor.
    */
-  ~AnovaBoundaryBasis() override {}
+  ~AnovaLinearBoundaryBasis() override {}
 
   /**
    * Evaluate a basis function.
@@ -66,9 +65,7 @@ class AnovaBoundaryBasis : public Basis<LT, IT> {
 
 // default type-def (unsigned int for level and index)
 // This works because we don't need the level -1 (Because the value is always 1)
-typedef AnovaBoundaryBasis<unsigned int, unsigned int> SAnovaBoundaryBasis;
+typedef AnovaLinearBoundaryBasis<unsigned int, unsigned int> SAnovaLinearBoundaryBasis;
 
 }  // namespace base
 }  // namespace sgpp
-
-#endif

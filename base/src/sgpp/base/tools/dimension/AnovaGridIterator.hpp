@@ -16,6 +16,8 @@ class AnovaGridIterator {
 
   explicit AnovaGridIterator(HashGridStorage& storage);
 
+  const HashGridPoint& getIndex();
+
   /**
    *  Sets -1,0 in every dimension (Left Level zero ansatzfunction)
    */

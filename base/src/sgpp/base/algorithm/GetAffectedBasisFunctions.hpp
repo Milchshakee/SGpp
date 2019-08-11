@@ -7,7 +7,7 @@
 #define GETAFFECTEDBASISFUNCTIONS_HPP
 
 #include <sgpp/base/grid/GridStorage.hpp>
-#include <sgpp/base/operation/hash/common/basis/AnovaBoundaryBasis.hpp>
+#include <sgpp/base/operation/hash/common/basis/AnovaLinearBoundaryBasis.hpp>
 #include <sgpp/base/operation/hash/common/basis/LinearBoundaryBasis.hpp>
 #include <sgpp/base/operation/hash/common/basis/LinearClenshawCurtisBoundaryBasis.hpp>
 #include <sgpp/base/operation/hash/common/basis/LinearPeriodicBasis.hpp>
@@ -22,6 +22,7 @@
 #include <vector>
 #include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
 #include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
+#include <sgpp/base/operation/hash/common/basis/AnovaPrewaveletBoundaryBasis.hpp>
 
 namespace sgpp {
 namespace base {
@@ -423,8 +424,8 @@ class GetAffectedBasisFunctions<LinearBoundaryBasis<unsigned int, unsigned int> 
  * Template Specialization for LinearBoundaryBasis basis.
  */
 template <>
-class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> > {
-  typedef AnovaBoundaryBasis<unsigned int, unsigned int> SLinearBoundaryBase;
+class GetAffectedBasisFunctions<AnovaLinearBoundaryBasis<unsigned int, unsigned int> > {
+  typedef AnovaLinearBoundaryBasis<unsigned int, unsigned int> SLinearBoundaryBase;
 
  public:
   explicit GetAffectedBasisFunctions(GridStorage& storage)
@@ -536,6 +537,97 @@ class GetAffectedBasisFunctions<AnovaBoundaryBasis<unsigned int, unsigned int> >
     working.resetToLevelMinusOneInDim(current_dim);
   }
 };
+
+  
+/**
+ * Template Specialization for ANOVA prewavelet boundary basis.
+ */
+template <>
+class GetAffectedBasisFunctions<AnovaPrewaveletBoundaryBasis<unsigned int, unsigned int> > {
+  typedef PrewaveletBasis<unsigned int, unsigned int> SAnovaPrewaveletBoundaryBasis;
+
+ public:
+  explicit GetAffectedBasisFunctions(GridStorage& storage) : storage(storage) {}
+
+  ~GetAffectedBasisFunctions() {}
+
+  /**
+   * Returns evaluations of all basis functions that are non-zero at a given evaluation point.
+   * For a given evaluation point \f$x\f$, it stores tuples (std::pair) of
+   * \f$(i,\phi_i(x))\f$ in the result vector for all basis functions that are non-zero.
+   * If one wants to evaluate \f$f_N(x)\f$, one only has to compute
+   * \f[ \sum_{r\in\mathbf{result}} \alpha[r\rightarrow\mathbf{first}] \cdot
+   * r\rightarrow\mathbf{second}. \f]
+   *
+   * @param basis a sparse grid basis
+   * @param point evaluation point within the domain
+   * @param result a vector to store the results in
+   */
+  void operator()(SPrewaveletBase& basis, const DataVector& point,
+                  std::vector<std::pair<size_t, double> >& result) {
+    // Custom iterator
+    AnovaGridIterator working(storage);
+    working.resetToLevelMinusOne();
+    result.clear();
+    rec(basis, point, 0, working, result);
+  }
+
+ protected:
+  GridStorage& storage;
+  typedef index_t index_type;
+
+  /**
+   * Recursive traversal of the "tree" of basis functions for evaluation, used in operator().
+   * For a given evaluation point \f$x\f$, it stores tuples (std::pair) of
+   * \f$(i,\phi_i(x))\f$ in the result vector for all basis functions that are non-zero.
+   *
+   * @param basis a sparse grid basis
+   * @param point evaluation point within the domain
+   * @param current_dim the dimension currently looked at (recursion parameter)
+   * @param iter iterator working on the GridStorage of the basis
+   * @param result a vector to store the results in
+   */
+
+  void rec(SPrewaveletBase& basis, const DataVector& point, size_t current_dim,
+           AnovaGridIterator& iter, std::vector<std::pair<size_t, double> >& result) {
+    double value = 1.0;
+    for (size_t d = 0; d < storage.getDimension(); ++d) {
+      index_type current_index;
+      AnovaBoundaryGrid::level_t current_level;
+      iter.get(d, current_level, current_index);
+      value *= current_level == -1 ? 1 : basis.eval(current_level, current_index, point[d]);
+    }
+    result.push_back(std::make_pair(iter.seq(), value));
+
+    for (size_t d = current_dim; d < storage.getDimension(); d++) {
+        iter.resetToLevelMinusOneInDim(d);
+        rec(basis, point, d, iter, result);
+        iter.resetToLevelZeroInDim(d);
+
+        if (!storage.isInvalidSequenceNumber(iter.seq())) {
+          rec(basis, point, d, iter, result);
+          iter.resetToLevelOneInDim(d);
+          if (!storage.isInvalidSequenceNumber(iter.seq())) {
+            if (iter.hintLeft(d)) {
+              iter.leftChild(d);
+              rec(basis, point, d, iter, result);
+            }
+
+            iter.up(d);
+
+            if (iter.hintRight(d)) {
+              iter.rightChild(d);
+              rec(basis, point, d, iter, result);
+            }
+
+            iter.up(d);
+            }
+        }
+        iter.resetToLevelMinusOneInDim(d);
+    }
+  }
+};
+
 
 /**
  * Template Specialization for LinearStretchedBoundaryBasis basis.
