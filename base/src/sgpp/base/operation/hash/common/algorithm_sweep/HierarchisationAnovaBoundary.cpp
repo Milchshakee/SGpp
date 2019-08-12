@@ -5,8 +5,6 @@
 
 #include <sgpp/base/operation/hash/common/algorithm_sweep/HierarchisationAnovaBoundary.hpp>
 
-#include <sgpp/globaldef.hpp>
-
 namespace sgpp {
 namespace base {
 

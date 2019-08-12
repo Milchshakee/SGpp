@@ -8,7 +8,6 @@
 
 #include <sgpp/base/grid/GridStorage.hpp>
 #include <sgpp/base/datatypes/DataVector.hpp>
-#include <sgpp/base/tools/dimension/AnovaHelper.hpp>
 
 #include <sgpp/globaldef.hpp>
 

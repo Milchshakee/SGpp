@@ -16,16 +16,18 @@ namespace sgpp {
 namespace base {
 
 struct AnovaInfo {
+  Sample<AnovaBoundaryGrid::AnovaComponent, double> errorShares;
 };
 
 class AnovaResult : public Result<SGridSample> {
 public:
   std::vector<bool> activeDimensions;
  size_t dimensions;
+  double errorShare;
 
   AnovaResult() = default;
-  AnovaResult(std::vector<bool>& activeDimensions,
-             size_t dimensions, const SGridSample& sample);
+  AnovaResult(std::vector<bool>& activeDimensions, size_t dimensions, const SGridSample& sample,
+              double errorShare);
 
 
   ScalarFunction& getOriginalFunction() override;
@@ -42,7 +44,7 @@ public:
 
 class AnovaFixedCutter : public FixedCutter<SGridSample, AnovaInfo, AnovaResult> {
  public:
-  AnovaFixedCutter(ErrorRule& r, size_t n);
+  AnovaFixedCutter(size_t n);
 
   AnovaResult cut(const SGridSample& input, const AnovaInfo& info) override;
 };
@@ -56,7 +58,12 @@ class AnovaFixedCutter : public FixedCutter<SGridSample, AnovaInfo, AnovaResult>
 
 class AnovaReducer : public sgpp::base::Reducer<SGridSample, AnovaInfo, AnovaResult> {
  public:
+  AnovaReducer(ErrorRule& rule);
+
   AnovaInfo evaluate(SGridSample& input) override;
+
+private:
+  ErrorRule& rule;
 };
 
 }  // namespace base

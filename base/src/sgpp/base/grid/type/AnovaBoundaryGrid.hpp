@@ -127,7 +127,7 @@ class AnovaBoundaryGrid : public Grid {
    *
    * @param dim           the dimension of the grid
    */
-  AnovaBoundaryGrid(size_t dim, AnovaComponentVector& comps);
+  AnovaBoundaryGrid(size_t dim);
 
   /**
    * Destructor
@@ -141,7 +141,6 @@ class AnovaBoundaryGrid : public Grid {
  protected:
   /// grid generator
   AnovaBoundaryGridGenerator generator;
-  AnovaComponentVector comps;
 };
 
 }  // namespace base

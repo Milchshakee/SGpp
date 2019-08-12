@@ -2,7 +2,7 @@
 #include <sgpp/base/tools/dist/RandomPdfDistribution.hpp>
 #include <sgpp/base/tools/dimension/PcaFuncReducer.hpp>
 
-sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(ErrorRule& r, size_t n) : FixedCutter<sgpp::base::SGridSample, sgpp::base::PcaFuncInfo, sgpp::base::PcaFuncResult>(r, n) {}
+sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(size_t n) : FixedCutter<sgpp::base::SGridSample, sgpp::base::PcaFuncInfo, sgpp::base::PcaFuncResult>(n) {}
 
 sgpp::base::PcaFuncResult sgpp::base::PcaFuncFixedCutter::cut(const SGridSample& input,
                                                               const PcaFuncInfo& info) {
@@ -44,7 +44,9 @@ sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMat
   newSample.hierarchise();
   reduced = newSample;
   evalFunc = EvalFunction(reduced);
-  originalFunction = EvalFunction(input);
+  original = input;
+  original.hierarchise();
+  originalFunction = EvalFunction(original);
 }
 
 sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction()

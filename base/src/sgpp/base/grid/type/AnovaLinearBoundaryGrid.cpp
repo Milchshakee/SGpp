@@ -4,9 +4,8 @@
 sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(std::istream& istr) : AnovaBoundaryGrid(istr) {
 }
 
-sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(size_t dim,
-                                                             AnovaComponentVector& comps)
-    : AnovaBoundaryGrid(dim, comps) {}
+sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(size_t dim)
+    : AnovaBoundaryGrid(dim) {}
 
 sgpp::base::GridType sgpp::base::AnovaLinearBoundaryGrid::getType() {
   return sgpp::base::GridType::AnovaLinearBoundary;

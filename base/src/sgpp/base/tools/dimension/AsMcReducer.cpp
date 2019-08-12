@@ -10,8 +10,8 @@ ScalarFunction& AsMcResult::getOriginalFunction() { return *originalFunc; }
 
 VectorFunction& AsMcResult::getTransformationFunction() { return projection.getFunction(); }
 
-AsMcFixedCutter::AsMcFixedCutter(ErrorRule& r, size_t n, GridType type, level_t level)
-    : FixedCutter<sgpp::base::AsMcInput, sgpp::base::AsInfo, sgpp::base::AsMcResult>(r, n), AsMcCutter(type, level) {}
+AsMcFixedCutter::AsMcFixedCutter(size_t n, GridType type, level_t level)
+    : FixedCutter<sgpp::base::AsMcInput, sgpp::base::AsInfo, sgpp::base::AsMcResult>(n), AsMcCutter(type, level) {}
 
 AsMcErrorRuleCutter::AsMcErrorRuleCutter(ErrorRule& r, double maxError, GridType type,
                                          level_t level)

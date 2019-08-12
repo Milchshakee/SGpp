@@ -12,11 +12,9 @@ void ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary::convertLevelZeroAnsatz
   DataVector& source, DataVector& result, grid_iterator& index, size_t dim) {
   index.resetToLevelMinusOneInDim(dim);
   size_t constantSeq = index.seq();
-  double constant = source[index.seq()];
 
   index.resetToLevelZeroInDim(dim);
   if (!storage.isInvalidSequenceNumber(index.seq())) {
-    double right = source[index.seq()];
     result[constantSeq] += source[index.seq()] / 2;
     result[index.seq()] -= source[index.seq()] / 2;
   }

@@ -48,7 +48,7 @@ public:
 
 class AsMcFixedCutter : public FixedCutter<AsMcInput, AsInfo, AsMcResult>, public AsMcCutter {
  public:
-  AsMcFixedCutter(ErrorRule& r, size_t n, GridType type, level_t level);
+  AsMcFixedCutter(size_t n, GridType type, level_t level);
 
   AsMcResult cut(const AsMcInput& input, const AsInfo& info) override;
 };

@@ -4,13 +4,10 @@
 // sgpp.sparsegrids.org
 
 #include <sgpp/base/operation/hash/OperationHierarchisationAnovaBoundary.hpp>
-
-#include <sgpp/globaldef.hpp>
-#include "common/algorithm_sweep/HierarchisationAnovaBoundary.hpp"
-#include "sgpp/base/algorithm/sweep_anova.hpp"
-#include "OperationQuadrature.hpp"
+#include <sgpp/base/algorithm/sweep_anova.hpp>
 #include <sgpp/base/operation/BaseOpFactory.hpp>
 #include <sgpp/base/operation/hash/common/algorithm_sweep/ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary.hpp>
+#include <sgpp/base/operation/hash/common/algorithm_sweep/HierarchisationAnovaBoundary.hpp>
 
 namespace sgpp {
 namespace base {

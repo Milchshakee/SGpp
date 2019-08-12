@@ -101,5 +101,11 @@ double VarianceMcL2Rule::calculateAbsoluteError(ScalarFunction& f, VectorFunctio
   double e = o.calculateMcL2Error(f, t, r);
   return std::pow(e, 2);
 }
+
+  double VarianceMcL2Rule::calculateAbsoluteError(ScalarFunction& f) {
+  OperationL2 o(seed, samples);
+  double l2 = o.calculateMcL2Norm(f);
+  return std::pow(l2, 2);
+}
 }  // namespace base
 }  // namespace sgpp

@@ -36,7 +36,7 @@ sgpp::base::VectorFunction& sgpp::base::AsQuadResult::getTransformationFunction(
   return projection.getFunction();
 }
 
-sgpp::base::AsQuadFixedCutter::AsQuadFixedCutter(ErrorRule& r, size_t n) : FixedCutter<sgpp::base::AsQuadInput, sgpp::base::AsInfo, sgpp::base::AsQuadResult>(r, n) {}
+sgpp::base::AsQuadFixedCutter::AsQuadFixedCutter(size_t n) : FixedCutter<sgpp::base::AsQuadInput, sgpp::base::AsInfo, sgpp::base::AsQuadResult>(n) {}
 
 sgpp::base::AsQuadResult sgpp::base::AsQuadFixedCutter::cut(const AsQuadInput& input,
                                                             const AsInfo& info) {

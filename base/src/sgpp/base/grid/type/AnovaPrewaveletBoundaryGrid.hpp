@@ -24,7 +24,7 @@ class AnovaPrewaveletBoundaryGrid : public AnovaBoundaryGrid {
    *
    * @param dim           the dimension of the grid
    */
-  AnovaPrewaveletBoundaryGrid(size_t dim, AnovaComponentVector& comps);
+  AnovaPrewaveletBoundaryGrid(size_t dim);
 
   /**
    * Destructor

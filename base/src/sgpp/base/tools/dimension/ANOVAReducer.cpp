@@ -1,10 +1,11 @@
 
 #include <sgpp/base/grid/Grid.hpp>
+#include <sgpp/base/operation/hash/OperationEvalAnovaPrewaveletBoundary.hpp>
 #include <sgpp/base/tools/dimension/AnovaReducer.hpp>
-#include <sgpp/base/tools/dimension/OperationAnova.hpp>
 
-sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad, size_t d, const SGridSample& sample)
-    : activeDimensions(ad), dimensions(d) {
+sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad, size_t d, const SGridSample& sample,
+                                     double errorShare)
+    : activeDimensions(ad), dimensions(d), errorShare(errorShare) {
   size_t active = 0;
   for (size_t d = 0; d < activeDimensions.size(); d++) {
     if (activeDimensions[d]) {
@@ -30,7 +31,7 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad, size_t d, const SGri
   f = MatrixFunction(mat);
 
   // create reduced sample
-  std::shared_ptr<Grid> newGrid(sgpp::base::Grid::createAnovaBoundaryGrid(active));
+  std::shared_ptr<Grid> newGrid(sgpp::base::Grid::createAnovaLinearBoundaryGrid(active));
   newGrid->getGenerator().regular(const_cast<Grid&>(sample.getGrid()).getStorage().getMaxLevel());
 
   std::function<double(const DataVector&)> f = [this, sample](const DataVector& v) {
@@ -66,63 +67,105 @@ sgpp::base::AnovaErrorRuleCutter::AnovaErrorRuleCutter(ErrorRule& r, double maxE
           r, maxError) {}
 
 namespace {
-
-double calcError(sgpp::base::AnovaResult& r, const sgpp::base::SGridSample& sample,
-                 sgpp::base::ErrorRule& rule, size_t dims,
-                 size_t removedDim, std::vector<bool>& ad) {
-  std::vector<bool> activeCopy = ad;
-  ad[removedDim] = false;
-  r = sgpp::base::AnovaResult(activeCopy, dims - 1, sample);
-  return r.calculateRelativeError(rule);
-}
-
-sgpp::base::AnovaResult cutRec(const sgpp::base::SGridSample& sample, double maxError,
-                               sgpp::base::ErrorRule& rule, size_t originalDim, size_t* dim,
-                               std::vector<bool>& activeDimensions, size_t minDim = 1) {
-  sgpp::base::AnovaResult r;
-  double minError = std::numeric_limits<double>::infinity();
-  size_t min = 0;
-  for (size_t d = 0; d < originalDim; d++) {
-    if (activeDimensions[d]) {
-      double error = calcError(r, sample, rule, *dim, d, activeDimensions);
-      if (error < minError) {
-        minError = error;
-        min = d;
-      }
-    }
+void cutRec(double maxErrorShare, double* currentError, size_t* dim,
+            sgpp::base::Sample<sgpp::base::AnovaBoundaryGrid::AnovaComponent, double>& errors,
+            std::vector<bool>& activeDimensions, size_t minDim = 1) {
+  if (*dim <= minDim) {
+    return;
   }
 
-  if (minError <= maxError) {
-    if (*dim <= minDim) {
-      return r;
+  std::vector<double> values(*dim);
+  for (size_t d = 0; d < *dim; d++) {
+    double er = 0;
+    for (sgpp::base::AnovaBoundaryGrid::AnovaComponent& c : errors.getKeys()) {
+      if (c[d]) {
+        er += errors.getValue(c);
+      }
+    }
+    values[d] = er;
+  }
+
+  auto min = std::min_element(values.begin(), values.end());
+  size_t minIndex = min - values.begin();
+
+  double additionalError = *min;
+  if (((*currentError) + additionalError) < maxErrorShare) {
+    // Update active components
+    size_t removed = 0;
+    for (size_t i = 0; i < errors.getSize(); i++) {
+      if (errors.getKeys()[i][minIndex]) {
+        errors.getKeys().erase(errors.getKeys().begin() + i - removed);
+        removed++;
+      }
     }
 
-    activeDimensions[min] = false;
+    // Remove dimension from remaining components
+    for (sgpp::base::AnovaBoundaryGrid::AnovaComponent& c : errors.getKeys()) {
+      c.erase(c.begin() + minIndex);
+    }
+
+    // Update active dimensions
+    size_t counter = 0;
+    for (size_t d = 0; d < activeDimensions.size(); d++) {
+      if (activeDimensions[d]) {
+        if (counter == minIndex) {
+          activeDimensions[d] = false;
+        }
+        counter++;
+      }
+    }
+
+    (*currentError) += additionalError;
     (*dim) -= 1;
-    cutRec(sample, maxError, rule, originalDim, dim, activeDimensions, minDim);
+    cutRec(maxErrorShare, currentError, dim, errors, activeDimensions, minDim);
   }
 }
 }  // namespace
 
-sgpp::base::AnovaFixedCutter::AnovaFixedCutter(ErrorRule& r, size_t n)
-    : FixedCutter<sgpp::base::SGridSample, sgpp::base::AnovaInfo, sgpp::base::AnovaResult>(r, n) {}
+sgpp::base::AnovaFixedCutter::AnovaFixedCutter(size_t n)
+    : FixedCutter<sgpp::base::SGridSample, sgpp::base::AnovaInfo, sgpp::base::AnovaResult>(n) {}
 
 sgpp::base::AnovaResult sgpp::base::AnovaFixedCutter::cut(const SGridSample& input,
                                                           const AnovaInfo& info) {
   size_t dim = input.getDimensions();
   std::vector<bool> activeDimensions(dim, true);
-  cutRec(input, 1.0, r, input.getDimensions(), &dim, activeDimensions, n);
+  sgpp::base::Sample<sgpp::base::AnovaBoundaryGrid::AnovaComponent, double> errorShares =
+      info.errorShares;
+  double share = 1.0;
+  cutRec(1.0, &share, &dim, errorShares, activeDimensions, n);
 
-  return AnovaResult(activeDimensions, dim, input);
+  return AnovaResult(activeDimensions, dim, input, share);
 }
 
 sgpp::base::AnovaResult sgpp::base::AnovaErrorRuleCutter::cut(const SGridSample& input,
                                                               const AnovaInfo& info) {
   size_t dim = input.getDimensions();
   std::vector<bool> activeDimensions(dim, true);
-  cutRec(input, maxError, r, input.getDimensions(), &dim, activeDimensions);
+  sgpp::base::Sample<sgpp::base::AnovaBoundaryGrid::AnovaComponent, double> errorShares =
+      info.errorShares;
+  double share = 1.0;
+  cutRec(maxError, &share, &dim, errorShares, activeDimensions);
 
-  return AnovaResult(activeDimensions, dim, input);
+  return AnovaResult(activeDimensions, dim, input, share);
 }
 
-sgpp::base::AnovaInfo sgpp::base::AnovaReducer::evaluate(SGridSample& input) { return AnovaInfo{}; }
+
+sgpp::base::AnovaReducer::AnovaReducer(ErrorRule& rule) : rule(rule) {
+}
+
+sgpp::base::AnovaInfo sgpp::base::AnovaReducer::evaluate(SGridSample& input) {
+  EvalFunction s(input);
+  double sum = rule.calculateAbsoluteError(s);
+  std::map<AnovaBoundaryGrid::AnovaComponent, double> errorShares;
+  for (size_t i = 0; i < input.getSize(); i++) {
+    GridPoint& gp = const_cast<Grid&>(input.getGrid()).getStorage().getPoint(i);
+    AnovaBoundaryGrid::AnovaComponent c = AnovaBoundaryGrid::getAnovaComponentOfPoint(gp);
+    if (errorShares.find(c) == errorShares.end()) {
+      OperationEvalAnovaPrewaveletBoundary b(const_cast<Grid&>(input.getGrid()).getStorage(), c);
+      EvalFunction f(input, b);
+      double val = rule.calculateAbsoluteError(f) / sum;
+      errorShares.emplace(c, val);
+    }
+  }
+  return {errorShares};
+}

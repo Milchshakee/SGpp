@@ -17,8 +17,8 @@ AnovaBoundaryGrid::AnovaBoundaryGrid(std::istream& istr)
     : Grid(istr), generator(storage) 
   {}
 
-AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim, AnovaComponentVector& comps)
-    : Grid(dim), generator(storage), comps(comps) {}
+AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim)
+    : Grid(dim), generator(storage) {}
 
 void AnovaBoundaryGrid::serialize(std::ostream& ostr, int version) {
   this->Grid::serialize(ostr, version);

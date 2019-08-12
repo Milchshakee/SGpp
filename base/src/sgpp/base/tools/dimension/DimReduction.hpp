@@ -21,11 +21,11 @@ class Cutter {
 
 class ErrorRule {
 public:
-  virtual double calculateBasisFunction(double alpha, const HashGridPoint& point) = 0;
   virtual double calculateRelativeError(ScalarFunction& f, VectorFunction& t,
                                         ScalarFunction& r) = 0;
   virtual double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t,
                                         ScalarFunction& r) = 0;
+  virtual double calculateAbsoluteError(ScalarFunction& f) = 0;
 };
 
   class VarianceMcL2Rule : public ErrorRule {
@@ -33,6 +33,7 @@ public:
     VarianceMcL2Rule(uint64_t seed, size_t samples);
   double calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
     double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
+    double calculateAbsoluteError(ScalarFunction& f);
 
   private:
   uint64_t seed;
@@ -42,13 +43,11 @@ public:
     template <class INPUT, class INFO, class OUTPUT>
   class FixedCutter : public Cutter<INPUT, INFO, OUTPUT> {
    public:
-    FixedCutter(ErrorRule& r, size_t n)
-      : r(r),
-        n(n) {
+    FixedCutter(size_t n)
+      : n(n) {
     }
 
    protected:
-    ErrorRule& r;
     size_t n;
   };
 

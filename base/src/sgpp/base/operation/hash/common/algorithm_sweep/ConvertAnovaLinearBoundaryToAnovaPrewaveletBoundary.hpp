@@ -7,10 +7,8 @@
 
 #include <sgpp/base/datatypes/DataVector.hpp>
 #include <sgpp/base/grid/GridStorage.hpp>
-
-#include <sgpp/globaldef.hpp>
-#include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
 #include <sgpp/base/operation/hash/common/algorithm_sweep/ConvertLinearToPrewavelet.hpp>
+#include <sgpp/base/grid/storage/hashmap/AnovaGridIterator.hpp>
 
 namespace sgpp {
 namespace base {

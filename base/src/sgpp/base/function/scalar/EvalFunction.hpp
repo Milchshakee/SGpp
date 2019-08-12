@@ -18,6 +18,7 @@ class EvalFunction : public ScalarFunction {
  public:
   EvalFunction();
   EvalFunction(const SGridSample& sample);
+  EvalFunction(const SGridSample& sample, OperationEval& evalOp);
   ~EvalFunction() override = default;
 
   double eval(const base::DataVector& x) override;
@@ -25,6 +26,7 @@ class EvalFunction : public ScalarFunction {
 
  private:
   const SGridSample* sample;
+  OperationEval* evalOp;
 };
 }  // namespace base
 }  // namespace sgpp

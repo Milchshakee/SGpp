@@ -4,14 +4,11 @@
 // sgpp.sparsegrids.org
 
 #include <sgpp/base/grid/GridStorage.hpp>
-
 #include <sgpp/base/grid/generation/hashmap/HashCoarsening.hpp>
 #include <sgpp/base/grid/generation/hashmap/HashGenerator.hpp>
 #include <sgpp/base/grid/generation/hashmap/HashRefinementBoundaries.hpp>
 #include <sgpp/base/grid/generation/hashmap/HashRefinementBoundariesMaxLevel.hpp>
-
 #include <sgpp/base/grid/generation/AnovaBoundaryGridGenerator.hpp>
-#include <sgpp/globaldef.hpp>
 
 #include <vector>
 

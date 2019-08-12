@@ -15,14 +15,13 @@
 #include <sgpp/base/operation/hash/common/basis/PolyBoundaryBasis.hpp>
 #include <sgpp/base/operation/hash/common/basis/PolyClenshawCurtisBoundaryBasis.hpp>
 #include <sgpp/base/operation/hash/common/basis/PrewaveletBasis.hpp>
+#include <sgpp/base/operation/hash/common/basis/AnovaPrewaveletBoundaryBasis.hpp>
+#include <sgpp/base/grid/storage/hashmap/AnovaGridIterator.hpp>
 
 #include <sgpp/globaldef.hpp>
 
 #include <utility>
 #include <vector>
-#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
-#include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
-#include <sgpp/base/operation/hash/common/basis/AnovaPrewaveletBoundaryBasis.hpp>
 
 namespace sgpp {
 namespace base {

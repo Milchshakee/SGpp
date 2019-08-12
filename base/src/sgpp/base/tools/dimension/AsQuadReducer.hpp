@@ -39,7 +39,7 @@ namespace base {
     class AsQuadFixedCutter : public FixedCutter<AsQuadInput, AsInfo, AsQuadResult>
     {
     public:
-  AsQuadFixedCutter(ErrorRule& r, size_t n);
+  AsQuadFixedCutter(size_t n);
 
       AsQuadResult cut(const AsQuadInput& input, const AsInfo& info) override;
     };

@@ -30,6 +30,7 @@ public:
   SGridSample& getReducedOutput() override;
 
 private:
+  SGridSample original;
   SGridSample reduced;
   EvalFunction originalFunction;
  EvalFunction evalFunc;
@@ -48,7 +49,7 @@ class PcaFuncErrorRuleCutter : public ErrorRuleCutter<SGridSample, PcaFuncInfo, 
 
 class PcaFuncFixedCutter : public FixedCutter<SGridSample, PcaFuncInfo, PcaFuncResult> {
  public:
-  PcaFuncFixedCutter(ErrorRule& r, size_t n);
+  PcaFuncFixedCutter(size_t n);
 
   PcaFuncResult cut(const SGridSample& input, const PcaFuncInfo& info) override;
 };

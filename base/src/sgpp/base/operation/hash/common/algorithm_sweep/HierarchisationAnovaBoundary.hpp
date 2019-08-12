@@ -7,11 +7,8 @@
 #define HIERARCHISATIONANOVABOUNDARY_HPP
 
 #include <sgpp/base/datatypes/DataVector.hpp>
-#include <sgpp/base/grid/GridStorage.hpp>
-#include <sgpp/base/tools/dimension/AnovaGridIterator.hpp>
-
-#include <sgpp/globaldef.hpp>
-#include "sgpp/base/grid/type/AnovaBoundaryGrid.hpp"
+#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
+#include <sgpp/base/grid/storage/hashmap/AnovaGridIterator.hpp>
 
 namespace sgpp {
 namespace base {

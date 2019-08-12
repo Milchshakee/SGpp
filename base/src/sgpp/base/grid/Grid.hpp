@@ -238,7 +238,6 @@ class Grid {
    *
    * @return grid
    */
-  static Grid* createAnovaLinearBoundaryGrid(size_t dim, std::vector<std::vector<bool>>& comps);
   static Grid* createAnovaLinearBoundaryGrid(size_t dim);
 
     /**
@@ -256,9 +255,6 @@ class Grid {
      *
      * @return grid
      */
-    static Grid* createAnovaPrewaveletBoundaryGrid(size_t dim,
-                                                   std::vector<std::vector<bool>>& comps);
-
       static Grid* createAnovaPrewaveletBoundaryGrid(size_t dim);
 
   /**

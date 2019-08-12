@@ -167,13 +167,12 @@ class HashGenerator {
    * @param storage Hashmap, that stores the grid points
    * @param level maximum level of the ANOVA sparse grid (uses the compatibility level)
    */
-  void regularWithAnovaBoundaries(GridStorage& storage, level_t level,
-                                  AnovaBoundaryGrid::AnovaComponentVector& comps) {
+  void regularWithAnovaBoundaries(GridStorage& storage, level_t level) {
     if (storage.getSize() > 0) {
       throw generation_exception("storage not empty");
     }
 
-    this->regular_anova_boundary_truncated_iter(storage, level, comps);
+    this->regular_anova_boundary_truncated_iter(storage, level);
   }
 
   /**
@@ -290,7 +289,7 @@ class HashGenerator {
    * @param storage pointer to storage object into which the grid points should be stored
    * @param n level maximum level of the ANOVA sparse grid (uses the compatibility level)
    */
-  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n, AnovaBoundaryGrid::AnovaComponentVector & comps) {
+  void regular_anova_boundary_truncated_iter(GridStorage& storage, level_t n) {
     const size_t dim = storage.getDimension();
 
     if (n == 0) {
@@ -337,10 +336,7 @@ class HashGenerator {
 
         idx.setLeaf(!hasZeroLevel && actualIdx.getLevelSum() == n);
 
-        AnovaBoundaryGrid::AnovaComponent c = AnovaBoundaryGrid::getAnovaComponentOfPoint(idx);
-        if (comps.empty() || std::find(comps.begin(), comps.end(), c) != comps.end()) {
-          storage.insert(idx);
-          }
+        storage.insert(idx);
       }
     }
   }

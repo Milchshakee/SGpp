@@ -7,7 +7,11 @@ namespace base {
 EvalFunction::EvalFunction() : ScalarFunction(0), sample(nullptr) {}
 
 EvalFunction::EvalFunction(const SGridSample& sample)
-    : ScalarFunction(sample.getDimensions()), sample(&sample)
+    : EvalFunction(sample, *op_factory::createOperationEval(const_cast<Grid&>(sample.getGrid()))) {
+}
+
+EvalFunction::EvalFunction(const SGridSample& sample, OperationEval& evalOp)
+    : ScalarFunction(sample.getDimensions()), sample(&sample), evalOp(&evalOp)
 {
   if (!sample.isHierarchised())
   {

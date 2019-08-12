@@ -4,16 +4,15 @@
 sgpp::base::AnovaPrewaveletBoundaryGrid::AnovaPrewaveletBoundaryGrid(std::istream& istr)
     : AnovaBoundaryGrid(istr) {}
 
-sgpp::base::AnovaPrewaveletBoundaryGrid::AnovaPrewaveletBoundaryGrid(size_t dim,
-                                                                     AnovaComponentVector& comps)
-    : AnovaBoundaryGrid(dim, comps) {}
+sgpp::base::AnovaPrewaveletBoundaryGrid::AnovaPrewaveletBoundaryGrid(size_t dim)
+    : AnovaBoundaryGrid(dim) {}
 
 sgpp::base::GridType sgpp::base::AnovaPrewaveletBoundaryGrid::getType() {
   return sgpp::base::GridType::AnovaLinearBoundary;
 }
 
 sgpp::base::SBasis& sgpp::base::AnovaPrewaveletBoundaryGrid::getBasis() {
-  SAnovaPrewaveletBoundaryBasis basis;
+  static SAnovaPrewaveletBoundaryBasis basis;
   return basis;
 }
 

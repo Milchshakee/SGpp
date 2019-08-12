@@ -67,22 +67,11 @@ Grid* Grid::createLinearGrid(size_t dim) { return new LinearGrid(dim); }
 Grid* Grid::createLinearStretchedGrid(size_t dim) { return new LinearStretchedGrid(dim); }
 
 Grid* Grid::createAnovaLinearBoundaryGrid(size_t dim) {
-  std::vector<std::vector<bool>> b;
-  return new AnovaLinearBoundaryGrid(dim, b);
-}
-
-Grid* Grid::createAnovaLinearBoundaryGrid(size_t dim, std::vector<std::vector<bool>>& comps) {
-  std::vector<std::vector<bool>> b;
-  return new AnovaLinearBoundaryGrid(dim, comps);
+  return new AnovaLinearBoundaryGrid(dim);
 }
 
   Grid* Grid::createAnovaPrewaveletBoundaryGrid(size_t dim) {
-  std::vector<std::vector<bool>> b;
-  return new AnovaPrewaveletBoundaryGrid(dim, b);
-}
-
-Grid* Grid::createAnovaPrewaveletBoundaryGrid(size_t dim, std::vector<std::vector<bool>>& comps) {
-  return new AnovaPrewaveletBoundaryGrid(dim, comps);
+  return new AnovaPrewaveletBoundaryGrid(dim);
 }
 
 Grid* Grid::createLinearBoundaryGrid(size_t dim, level_t boundaryLevel) {

@@ -19,19 +19,19 @@ namespace base {
  * boundaries
  *
  */
-class OperationEvalAnovaBoundary : public OperationEval {
+class OperationEvalAnovaLinearBoundary : public OperationEval {
  public:
   /**
    * Constructor
    *
    * @param storage the grid's GridStorage object
    */
-  explicit OperationEvalAnovaBoundary(GridStorage& storage) : storage(storage) {}
+  explicit OperationEvalAnovaLinearBoundary(GridStorage& storage) : storage(storage) {}
 
   /**
    * Destructor
    */
-  ~OperationEvalAnovaBoundary() override {}
+  ~OperationEvalAnovaLinearBoundary() override {}
 
   double eval(const DataVector& alpha, const DataVector& point) override;
 

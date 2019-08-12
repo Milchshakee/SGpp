@@ -4,18 +4,13 @@
 // sgpp.sparsegrids.org
 
 #include <sgpp/base/algorithm/GetAffectedBasisFunctions.hpp>
-
-#include <sgpp/globaldef.hpp>
-
-#include <utility>
 #include <vector>
-#include <sgpp/base/operation/hash/OperationEvalAnovaBoundary.hpp>
-#include "common/basis/AnovaLinearBoundaryBasis.hpp"
+#include <sgpp/base/operation/hash/OperationEvalAnovaLinearBoundary.hpp>
 
 namespace sgpp {
 namespace base {
 
-double OperationEvalAnovaBoundary::eval(const DataVector& alpha, const DataVector& point) {
+double OperationEvalAnovaLinearBoundary::eval(const DataVector& alpha, const DataVector& point) {
   typedef std::vector<std::pair<size_t, double> > IndexValVector;
 
   IndexValVector vec;

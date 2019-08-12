@@ -26,7 +26,7 @@ class AnovaLinearBoundaryGrid : public AnovaBoundaryGrid {
    *
    * @param dim           the dimension of the grid
    */
-  AnovaLinearBoundaryGrid(size_t dim, AnovaComponentVector& comps);
+  AnovaLinearBoundaryGrid(size_t dim);
 
   /**
    * Destructor
