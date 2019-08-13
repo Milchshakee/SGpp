@@ -29,24 +29,20 @@ sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMat
   std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
   newGrid->getGenerator().regular(const_cast<Grid&>(input.getGrid()).getStorage().getMaxLevel());
 
-  SGridSample copy = input;
-  copy.hierarchise();
-  EvalFunction e(copy);
-  size_t dim = input.getDimensions();
-  std::function<double(const DataVector&)> func = [this, &e, dim, n](const DataVector& v) {
+  
+  original = input;
+  original.hierarchise();
+  originalFunction = EvalFunction(original);
+  std::function<double(const DataVector&)> func = [this](const DataVector& v) {
     DataVector newV;
     projection.inverse(v, newV);
-    std::cout << "e: " + newV.toString() << std::endl;
-    return e.eval(newV);
+    return originalFunction.eval(newV);
   };
 
   SGridSample newSample(newGrid, func);
   newSample.hierarchise();
   reduced = newSample;
   evalFunc = EvalFunction(reduced);
-  original = input;
-  original.hierarchise();
-  originalFunction = EvalFunction(original);
 }
 
 sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction()
@@ -81,20 +77,15 @@ sgpp::base::PcaFuncInfo sgpp::base::PcaFuncReducer::evaluate(SGridSample& input)
   auto reducer = sgpp::base::PcaReducer(solver);
   sgpp::base::PcaInfo info = reducer.evaluate(d);
 
-  size_t a = info.activeComponentsCount;
   size_t dim = input.getDimensions();
   PcaFuncInfo toReturn;
   toReturn.mean = info.mean;
-  toReturn.varianceShares = DataVector(dim);
   toReturn.basis = DataMatrix(dim, dim);
-  toReturn.eigenValues = DataVector(dim);
 
   for (size_t d = 0; d < dim; ++d) {
-    toReturn.varianceShares[d] = d >= a ? 0 : info.varianceShares[a - d - 1];
     sgpp::base::DataVector pa(input.getDimensions());
     info.basis.getColumn(d, pa);
     toReturn.basis.setColumn(dim - d - 1, pa);
-    toReturn.eigenValues.set(dim - d - 1, info.eigenValues.get(d));
   }
   return toReturn;
 }

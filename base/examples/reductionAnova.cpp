@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
   sgpp::base::SGridSample sample(grid, func);
   sample.hierarchise();
 
-  sgpp::base::VarianceMcL2Rule rule(std::mt19937_64::default_seed, 10000);
+  sgpp::base::L2SquaredMcRule rule(std::mt19937_64::default_seed, 10000);
 
   auto reducer = sgpp::base::AnovaReducer(rule);
   sgpp::base::AnovaInfo info = reducer.evaluate(sample);

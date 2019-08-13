@@ -21,16 +21,16 @@ class Cutter {
 
 class ErrorRule {
 public:
-  virtual double calculateRelativeError(ScalarFunction& f, VectorFunction& t,
-                                        ScalarFunction& r) = 0;
+  double calculateRelativeError(ScalarFunction& f, VectorFunction& t,
+                                        ScalarFunction& r);
   virtual double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t,
                                         ScalarFunction& r) = 0;
   virtual double calculateAbsoluteError(ScalarFunction& f) = 0;
 };
 
-  class VarianceMcL2Rule : public ErrorRule {
+  class L2SquaredMcRule : public ErrorRule {
  public:
-    VarianceMcL2Rule(uint64_t seed, size_t samples);
+    L2SquaredMcRule(uint64_t seed, size_t samples);
   double calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
     double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
     double calculateAbsoluteError(ScalarFunction& f);
@@ -61,7 +61,7 @@ class Result {
   }
 
     double calculateAbsoluteError(ErrorRule& c) {
-    return c.calculateRelativeError(getOriginalFunction(), getTransformationFunction(),
+    return c.calculateAbsoluteError(getOriginalFunction(), getTransformationFunction(),
                             getReducedFunction());
   }
 
@@ -105,8 +105,9 @@ class Reducer {
     VectorFunction& getFunction();
 
   private:
-    DataMatrix basis;
-    DataMatrix cutBasis;
+    DataMatrix cutTransposedBasis;
+    /// basis transposed and then cut
+    DataMatrix transposedCutBasis;
     size_t oldDimensions;
     size_t newDimensions;
     DataVector mean;

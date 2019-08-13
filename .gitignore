@@ -117,6 +117,8 @@ custom.py
 /bin/
 *.user
 
+base/examples/ba*
+
 GPATH
 GRTAGS
 GSYMS

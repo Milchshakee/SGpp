@@ -15,9 +15,7 @@ namespace base {
 
 struct PcaFuncInfo {
   sgpp::base::DataMatrix basis;
-  sgpp::base::DataVector eigenValues;
   DataVector mean;
-  DataVector varianceShares;
 };
 
 class PcaFuncResult : public Result<SGridSample> {

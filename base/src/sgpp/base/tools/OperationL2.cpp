@@ -39,7 +39,8 @@ double sgpp::base::OperationL2::calculateMcL2Error(ScalarFunction& func,
     double val = func.eval(point);
     DataVector out(newDimensions);
     transformation.eval(point, out);
-    res += pow(val - reduced.eval(out), 2);
+    double newVal = reduced.eval(out);
+    res += pow(val - newVal, 2);
   }
 
   return sqrt(res / static_cast<double>(samples));
