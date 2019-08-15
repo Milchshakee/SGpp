@@ -46,6 +46,12 @@ namespace base {
 
 class AsQuadReducer : public Reducer<AsQuadInput, AsInfo, AsQuadResult> {
  public:
+  static GridSample<DataVector> fromGradientFunction(std::shared_ptr<Grid>&,
+                                                     VectorFunction& gradient);
+
+  static GridSample<DataVector> fromFiniteDifferences(std::shared_ptr<Grid>&, ScalarFunction& func,
+                                                       double h);
+
   AsInfo evaluate(AsQuadInput& input) override;
 
 };

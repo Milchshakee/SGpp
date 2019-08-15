@@ -1,8 +1,9 @@
 #include <sgpp/base/function/scalar/EvalFunction.hpp>
-#include <sgpp/base/tools/dist/RandomPdfDistribution.hpp>
 #include <sgpp/base/tools/dimension/PcaFuncReducer.hpp>
+#include <sgpp/base/tools/dist/RandomPdfDistribution.hpp>
 
-sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(size_t n) : FixedCutter<sgpp::base::SGridSample, sgpp::base::PcaFuncInfo, sgpp::base::PcaFuncResult>(n) {}
+sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(size_t n)
+    : FixedCutter<sgpp::base::SGridSample, sgpp::base::PcaFuncInfo, sgpp::base::PcaFuncResult>(n) {}
 
 sgpp::base::PcaFuncResult sgpp::base::PcaFuncFixedCutter::cut(const SGridSample& input,
                                                               const PcaFuncInfo& info) {
@@ -10,7 +11,7 @@ sgpp::base::PcaFuncResult sgpp::base::PcaFuncFixedCutter::cut(const SGridSample&
 }
 
 sgpp::base::PcaFuncResult sgpp::base::PcaFuncErrorRuleCutter::cut(const SGridSample& input,
-                                                                 const PcaFuncInfo& info) {
+                                                                  const PcaFuncInfo& info) {
   PcaFuncResult last(input, info.basis, input.getDimensions(), info.mean);
   for (size_t d = 1; d < input.getDimensions(); ++d) {
     PcaFuncResult result(input, info.basis, input.getDimensions() - d, info.mean);
@@ -18,7 +19,7 @@ sgpp::base::PcaFuncResult sgpp::base::PcaFuncErrorRuleCutter::cut(const SGridSam
       return last;
     } else {
       last = result;
-      }
+    }
   }
   return last;
 }
@@ -29,10 +30,7 @@ sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMat
   std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
   newGrid->getGenerator().regular(const_cast<Grid&>(input.getGrid()).getStorage().getMaxLevel());
 
-  
-  original = input;
-  original.hierarchise();
-  originalFunction = EvalFunction(original);
+  originalFunction = EvalFunction(input);
   std::function<double(const DataVector&)> func = [this](const DataVector& v) {
     DataVector newV;
     projection.inverse(v, newV);
@@ -45,30 +43,26 @@ sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMat
   evalFunc = EvalFunction(reduced);
 }
 
-sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction()
-{ return evalFunc; }
+sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction() { return evalFunc; }
 
-sgpp::base::VectorFunction& sgpp::base::PcaFuncResult::getTransformationFunction()
-{
+sgpp::base::VectorFunction& sgpp::base::PcaFuncResult::getTransformationFunction() {
   return projection.getFunction();
 }
-
 
 sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getOriginalFunction() {
   return originalFunction;
 }
 
-sgpp::base::SGridSample& sgpp::base::PcaFuncResult::getReducedOutput()
-{ return reduced; }
+sgpp::base::SGridSample& sgpp::base::PcaFuncResult::getReducedOutput() { return reduced; }
 
 sgpp::base::PcaFuncReducer::PcaFuncReducer(std::shared_ptr<PcaSolver> solver, uint64_t seed,
                                            size_t samples, double stepSize, size_t iterations)
     : solver(solver), seed(seed), samples(samples), stepSize(stepSize), iterations(iterations) {}
 
 sgpp::base::PcaFuncInfo sgpp::base::PcaFuncReducer::evaluate(SGridSample& input) {
-  if (input.isHierarchised()) {
-    throw std::invalid_argument("Input is hierarchised");
-    }
+  if (!input.isHierarchised()) {
+    throw std::invalid_argument("Input is not hierarchised");
+  }
 
   SGridSample density = input;
   toDensity(density);
@@ -91,6 +85,8 @@ sgpp::base::PcaFuncInfo sgpp::base::PcaFuncReducer::evaluate(SGridSample& input)
 }
 
 void sgpp::base::PcaFuncReducer::toDensity(SGridSample& input) {
+  input.dehierarchise();
+
   double min = std::numeric_limits<double>::infinity();
   for (size_t i = 0; i < input.getSize(); ++i) {
     double val = input.getValues()[i];
@@ -99,22 +95,20 @@ void sgpp::base::PcaFuncReducer::toDensity(SGridSample& input) {
     }
   }
 
-  SGridSample copy = input;
   for (size_t i = 0; i < input.getSize(); ++i) {
-    copy.getValues()[i] -= min;
+    input.getValues()[i] -= min;
   }
 
-  copy.hierarchise();
-  double quad = copy.quadrature();
+  input.hierarchise();
+  double quad = input.quadrature();
   if (quad == 0.0) {
     for (size_t i = 0; i < input.getSize(); ++i) {
       input.getValues()[i] = 1;
     }
-    } else {
+  } else {
     double scale = 1.0 / quad;
     for (size_t i = 0; i < input.getSize(); ++i) {
       input.getValues()[i] *= scale;
     }
-      }
-  input.hierarchise();
+  }
 }

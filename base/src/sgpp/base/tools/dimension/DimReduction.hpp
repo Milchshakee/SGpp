@@ -28,6 +28,18 @@ public:
   virtual double calculateAbsoluteError(ScalarFunction& f) = 0;
 };
 
+    class L2McRule : public ErrorRule {
+ public:
+  L2McRule(uint64_t seed, size_t samples);
+  double calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
+  double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
+  double calculateAbsoluteError(ScalarFunction& f);
+
+ private:
+  uint64_t seed;
+  size_t samples;
+};
+
   class L2SquaredMcRule : public ErrorRule {
  public:
     L2SquaredMcRule(uint64_t seed, size_t samples);
@@ -105,9 +117,9 @@ class Reducer {
     VectorFunction& getFunction();
 
   private:
-    DataMatrix cutTransposedBasis;
+    DataMatrix oldToNewBasis;
     /// basis transposed and then cut
-    DataMatrix transposedCutBasis;
+    DataMatrix newToOldBasis;
     size_t oldDimensions;
     size_t newDimensions;
     DataVector mean;

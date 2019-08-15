@@ -91,6 +91,26 @@ L2SquaredMcRule::L2SquaredMcRule(uint64_t seed, size_t samples) : seed(seed), sa
 }
 
 
+L2McRule::L2McRule(uint64_t seed, size_t samples) : seed(seed), samples(samples) {}
+
+double L2McRule::calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) {
+  double e = calculateAbsoluteError(f, t, r);
+  double fe = calculateAbsoluteError(f);
+  return fe != 0.0 ? e / fe : 0.0;
+}
+
+double L2McRule::calculateAbsoluteError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) {
+  OperationL2 o(seed, samples);
+  double e = o.calculateMcL2Error(f, t, r);
+  return e;
+}
+
+double L2McRule::calculateAbsoluteError(ScalarFunction& f) {
+  OperationL2 o(seed, samples);
+  double l2 = o.calculateMcL2Norm(f);
+  return l2;
+}
+
 double ErrorRule::calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) {
   double e = calculateAbsoluteError(f, t, r);
   double fe = calculateAbsoluteError(f);

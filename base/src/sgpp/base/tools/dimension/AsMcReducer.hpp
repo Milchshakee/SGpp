@@ -75,7 +75,8 @@ class AsMcReducer : public Reducer<AsMcInput, AsInfo, AsMcResult> {
  public:
   static PointSample<DataMatrix> fromGradientSample(const PointSample<DataVector>& gradients);
 
-  static PointSample<DataMatrix> fromFiniteDifferences(ScalarFunction& func, VectorDistribution& v);
+  static PointSample<DataMatrix> fromFiniteDifferences(ScalarFunction& func, VectorDistribution& v,
+                                                       double h);
 
   AsInfo evaluate(AsMcInput& input) override;
 };

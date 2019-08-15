@@ -18,10 +18,11 @@ EvalFunction::EvalFunction(const SGridSample& sample, OperationEval& evalOp)
     throw std::invalid_argument("Sample must be hierachised");
   } }
 
-double EvalFunction::eval(const base::DataVector& x) { return sample->eval(x); }
+double EvalFunction::eval(const base::DataVector& x)
+{ return evalOp->eval(sample->getValuesDataVector(), x); }
 
 void EvalFunction::clone(std::unique_ptr<ScalarFunction>& clone) const {
-  clone = std::make_unique<EvalFunction>(*sample);
+  clone = std::make_unique<EvalFunction>(*sample, *evalOp);
 }
 }  // namespace base
 }  // namespace sgpp

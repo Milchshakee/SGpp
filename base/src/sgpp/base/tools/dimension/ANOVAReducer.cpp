@@ -48,6 +48,7 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad, size_t d, const SGri
     return sample.getValue(newV);
   };
   reducedSample = SGridSample(newGrid, f);
+  reducedSample.hierarchise();
   eval = EvalFunction(reducedSample);
   originalFunction = EvalFunction(sample);
 }

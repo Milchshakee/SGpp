@@ -28,7 +28,6 @@ public:
   SGridSample& getReducedOutput() override;
 
 private:
-  SGridSample original;
   SGridSample reduced;
   EvalFunction originalFunction;
  EvalFunction evalFunc;

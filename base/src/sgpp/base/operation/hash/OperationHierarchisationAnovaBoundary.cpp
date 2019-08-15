@@ -48,6 +48,7 @@ void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_v
   for (size_t i = 0; i < grid.getStorage().getDimension(); i++) {
     s.sweep1D_AnovaBoundary(node_values, node_values, i);
   }
+
   if (integral) {
     std::unique_ptr<OperationQuadrature> opQ(
         op_factory::createOperationQuadrature(grid));

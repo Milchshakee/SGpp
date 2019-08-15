@@ -5,7 +5,7 @@ namespace sgpp {
 namespace base {
 
 RandomUniformDistribution::RandomUniformDistribution(size_t size, uint64_t seed, size_t dimensions)
-    : RandomDistribution(size, dimensions, seed) {
+    : RandomDistribution(size, dimensions, seed), distributions(size) {
   for (size_t dim = 0; dim < dimensions; ++dim) {
     std::uniform_real_distribution<double> distribution(0, 1);
     distributions[dim] = distribution;

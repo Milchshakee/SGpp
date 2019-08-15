@@ -1,19 +1,47 @@
-
 #include <sgpp/base/function/scalar/EvalFunction.hpp>
 #include <sgpp/base/tools/dimension/AsQuadReducer.hpp>
+
+
+sgpp::base::GridSample<sgpp::base::DataVector> sgpp::base::AsQuadReducer::fromGradientFunction(
+  std::shared_ptr<Grid>& grid, VectorFunction& gradient) {
+  sgpp::base::GridSample<sgpp::base::DataVector> gradientSamples =
+      sgpp::base::SampleHelper::sampleGrid(grid, gradient);
+  return gradientSamples;
+}
+
+sgpp::base::GridSample<sgpp::base::DataVector> sgpp::base::AsQuadReducer::fromFiniteDifferences(
+    std::shared_ptr<Grid>& grid, ScalarFunction& func, double h)
+{
+  std::vector<DataVector> samples(grid->getSize(), DataVector(grid->getDimension()));
+  GridDistribution dist(*grid);
+  DataVector working;
+  for (size_t i = 0; i < grid->getSize(); ++i) {
+    const DataVector& vec = dist.getVectors()[i];
+    working = vec;
+    for (size_t d = 0; d < grid->getDimension(); ++d) {
+      double hOffset = vec[d] + h;
+      if (hOffset > 1.0) {
+        hOffset -= 2 * h;
+      }
+      working[d] = hOffset;
+      double val = (func.eval(vec) - func.eval(working)) / h;
+      samples[i][d] = val;
+      working[d] = vec[d];
+    }
+  }
+  return GridSample<DataVector>(grid, samples);
+}
 
 sgpp::base::AsQuadResult::AsQuadResult(const SGridSample& input, const DataMatrix& m, size_t n)
     : projection(m, n, DataVector(m.getNrows(), 0.5)) {
   std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
   newGrid->getGenerator().regular(const_cast<Grid&>(input.getGrid()).getStorage().getMaxLevel());
 
-  SGridSample copy = input;
-  copy.hierarchise();
-  EvalFunction e(copy);
-  std::function<double(const DataVector&)> func = [this, &e](const DataVector& v) {
+  originalFunc = EvalFunction(input);
+  std::function<double(const DataVector&)> func = [this](const DataVector& v) {
     DataVector newV;
     projection.inverse(v, newV);
-    return e.eval(newV);
+    return originalFunc.eval(newV);
   };
 
   SGridSample newSample(newGrid, func);

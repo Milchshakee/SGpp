@@ -8,7 +8,7 @@ sgpp::base::AnovaPrewaveletBoundaryGrid::AnovaPrewaveletBoundaryGrid(size_t dim)
     : AnovaBoundaryGrid(dim) {}
 
 sgpp::base::GridType sgpp::base::AnovaPrewaveletBoundaryGrid::getType() {
-  return sgpp::base::GridType::AnovaLinearBoundary;
+  return sgpp::base::GridType::AnovaPrewaveletBoundary;
 }
 
 sgpp::base::SBasis& sgpp::base::AnovaPrewaveletBoundaryGrid::getBasis() {
