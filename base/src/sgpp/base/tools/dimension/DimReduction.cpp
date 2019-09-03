@@ -16,8 +16,8 @@ InputProjection::InputProjection(const DataMatrix& basis, size_t n, const DataVe
 
   void InputProjection::calculateRanges() {
   size_t dim = newDimensions;
-  posRange = DataVector(dim, 2);
-  negRange = DataVector(dim, -2);
+  posRange = DataVector(dim, std::numeric_limits<double>::infinity());
+  negRange = DataVector(dim, -std::numeric_limits<double>::infinity());
   for (size_t d = 0; d < dim; ++d) {
     double m = mean[d];
     for (size_t i = 0; i < newDimensions; ++i) {

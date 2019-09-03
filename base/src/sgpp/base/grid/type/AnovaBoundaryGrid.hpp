@@ -7,6 +7,7 @@
 
 #include <sgpp/base/grid/Grid.hpp>
 #include <sgpp/base/grid/generation/AnovaBoundaryGridGenerator.hpp>
+#include <sgpp/base/grid/AnovaTypes.hpp>
 
 namespace sgpp {
 namespace base {
@@ -48,20 +49,6 @@ class AnovaBoundaryGrid : public Grid {
    * Level type for ANOVA grids (uses -1 level)
    */
   typedef int32_t level_t;
-
-  /**
-   * Level-Index pair for ANOVA grids (uses -1 level)
-   */
-  struct LevelIndexPair {
-    /**
-     * Level of the grid point in the hierarchy.
-     */
-    level_t level;
-    /**
-     * Index of the grid point in the index set for that particular level.
-     */
-    sgpp::base::HashGridPoint::index_type index;
-  };
 
   /**
    * Converts a compatibility level to the true ANOVA grid level
@@ -122,12 +109,19 @@ class AnovaBoundaryGrid : public Grid {
     }
   }
 
-  /**
+    /**
    * Constructor Anova Boundary Grid
    *
    * @param dim           the dimension of the grid
    */
   AnovaBoundaryGrid(size_t dim);
+
+  /**
+   * Constructor Anova Boundary Grid
+   *
+   * @param dim           the dimension of the grid
+   */
+  AnovaBoundaryGrid(size_t dim, std::vector<AnovaTypes::LevelIndexPair>& anchor);
 
   /**
    * Destructor
@@ -138,9 +132,18 @@ class AnovaBoundaryGrid : public Grid {
 
   void serialize(std::ostream& ostr, int version = SERIALIZATION_VERSION) override;
 
+  bool hasAnchor();
+
+  const std::vector<AnovaTypes::LevelIndexPair>& getAnchor();
+
+  std::function<double(const DataVector&)>& getSamplingFunction(
+      std::function<double(const DataVector&)>& func);
+
  protected:
   /// grid generator
   AnovaBoundaryGridGenerator generator;
+
+  std::vector<AnovaTypes::LevelIndexPair> anchor;
 };
 
 }  // namespace base

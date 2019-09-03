@@ -9,7 +9,6 @@ AnovaGridIterator::AnovaGridIterator(HashGridStorage& storage)
   resetToLevelMinusOne();
 }
 
-
 const HashGridPoint& AnovaGridIterator::getIndex() { return index; }
 
 void AnovaGridIterator::resetToLevelMinusOne() {
@@ -119,6 +118,46 @@ void AnovaGridIterator::get(size_t d, AnovaBoundaryGrid::level_t& l, index_t& i)
   HashGridPoint::index_type iRaw;
   index.get(d, lRaw, iRaw);
   AnovaBoundaryGrid::fromNormalGridPointLevelIndex(lRaw, iRaw, l, i);
+}
+
+void AnovaGridIterator::set(size_t d, AnovaBoundaryGrid::level_t l, index_t i) {
+  HashGridPoint::level_type lRaw;
+  HashGridPoint::index_type iRaw;
+  AnovaBoundaryGrid::toNormalGridPointLevelIndex(l, i, lRaw, iRaw);
+  index.set(d, lRaw, iRaw);
+}
+
+AnovaBoundaryGrid::level_t AnovaGridIterator::getGridDepth(size_t dim) {
+  AnovaBoundaryGrid::level_t depth = -1;
+
+  AnovaBoundaryGrid::level_t orig_level, cur_level;
+  index_t orig_index, cur_index;
+  get(dim, orig_level, orig_index);
+
+  resetToLevelMinusOneInDim(dim);
+  resetToLevelZeroInDim(dim);
+  if (!storage.isInvalidSequenceNumber(this->seq())) {
+    depth++;
+    resetToLevelOneInDim(dim);
+    if (!storage.isInvalidSequenceNumber(this->seq())) {
+      depth++;
+
+      while (true) {
+        if (this->hintLeft(dim)) {
+          depth++;
+          this->leftChild(dim);
+        } else if (this->hintRight(dim)) {
+          depth++;
+          this->rightChild(dim);
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  this->set(dim, orig_level, orig_index);
+  return depth;
 }
 
 size_t AnovaGridIterator::seq() const { return seq_; }

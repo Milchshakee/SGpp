@@ -118,6 +118,22 @@ class AnovaGridIterator {
    */
   void get(size_t d, AnovaBoundaryGrid::level_t& l, index_t& i) const;
 
+    /**
+   * Sets level @c l and index @c i in dimension @c d of the current grid point
+   *
+   * @param d the dimension of interest
+   * @param l the ansatz function's level
+   * @param i the ansatz function's index
+   */
+  void set(size_t d, AnovaBoundaryGrid::level_t l, index_t i);
+
+  /**
+   * Returns the the maximal level of the grid in the given dimension.
+   *
+   * @param dim the dimension
+   */
+  AnovaBoundaryGrid::level_t getGridDepth(size_t dim);
+
   /**
    * returns the current sequence number
    *

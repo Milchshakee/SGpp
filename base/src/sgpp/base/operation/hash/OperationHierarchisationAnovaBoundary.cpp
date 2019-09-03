@@ -13,10 +13,10 @@ namespace sgpp {
 namespace base {
 
 bool OperationHierarchisationAnovaBoundary::integral = false;
-std::vector<AnovaBoundaryGrid::LevelIndexPair> OperationHierarchisationAnovaBoundary::anchor;
+std::vector<AnovaTypes::LevelIndexPair> OperationHierarchisationAnovaBoundary::anchor;
 
 double OperationHierarchisationAnovaBoundary::getAnchorValue(
-    std::vector<AnovaBoundaryGrid::LevelIndexPair>& anchor, DataVector& node_values) {
+    std::vector<AnovaTypes::LevelIndexPair>& anchor, DataVector& node_values) {
   for (size_t i = 0; i < grid.getStorage().getSize(); ++i) {
     GridPoint& gp = grid.getStorage().getPoint(i);
     for (size_t d = 0; d < grid.getStorage().getDimension(); ++d) {
@@ -66,6 +66,7 @@ void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_v
   if (grid.getType() == GridType::AnovaPrewaveletBoundary)
   {
     ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary func3(grid.getStorage());
+    func3.convertLevelZeroAnsatzFunction(node_values, node_values);
     sweep_anova<ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary> s3(func3, grid.getStorage());
     for (size_t i = 0; i < grid.getStorage().getDimension(); i++) {
       s3.sweep1D_AnovaBoundary(node_values, node_values, i);

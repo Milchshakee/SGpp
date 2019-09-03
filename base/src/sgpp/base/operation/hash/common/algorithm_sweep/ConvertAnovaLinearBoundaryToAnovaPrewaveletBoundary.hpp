@@ -65,8 +65,14 @@ class ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary {
    */
   ~ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary() {}
 
-  void convertLevelZeroAnsatzFunction(DataVector& source, DataVector& result, grid_iterator& index,
-                                      size_t dim);
+  double calcBorderFuntionValues(DataVector& source, DataVector& functionValues, 
+                                   AnovaBoundaryGrid::AnovaComponent& comp);
+
+  double hierarchiseBorders(DataVector& functionValues,
+                            AnovaBoundaryGrid::AnovaComponent& comp, bool neg);
+  double hierarchiseBorders(DataVector& result, DataVector& functionValues);
+
+  void convertLevelZeroAnsatzFunction(DataVector& source, DataVector& result);
 
   /**
    * Converts a given linear base to a prewavelet base.

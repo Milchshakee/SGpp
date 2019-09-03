@@ -242,7 +242,7 @@ base::OperationHierarchisation* createOperationHierarchisation(base::Grid& grid)
     return new base::OperationHierarchisationLinearBoundary(grid.getStorage());
   } else if (grid.getType() == base::GridType::AnovaLinearBoundary ||
              grid.getType() == base::GridType::AnovaPrewaveletBoundary) {
-    return new base::OperationHierarchisationAnovaBoundary(grid);
+    return new base::OperationHierarchisationAnovaBoundary(dynamic_cast<base::AnovaBoundaryGrid&>(grid));
   } else if (grid.getType() == base::GridType::LinearStretched) {
     return new base::OperationHierarchisationLinearStretched(grid.getStorage());
   } else if (grid.getType() == base::GridType::LinearStretchedBoundary) {

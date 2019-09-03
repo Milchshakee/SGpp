@@ -24,7 +24,7 @@ class OperationHierarchisationAnovaBoundary : public OperationHierarchisation {
    *
    * @param grid the grid object
    */
-  explicit OperationHierarchisationAnovaBoundary(Grid& grid) : grid(grid) {}
+  explicit OperationHierarchisationAnovaBoundary(AnovaBoundaryGrid& grid) : grid(grid) {}
 
   /**
    * Destructor
@@ -35,45 +35,10 @@ class OperationHierarchisationAnovaBoundary : public OperationHierarchisation {
   void doDehierarchisation(DataVector& alpha) override;
 
  protected:
-  Grid& grid;
-
- public:
-  /**
-   * Creates an anchor for the point at level -1 in all dimensions.
-   */
-  static std::vector<AnovaBoundaryGrid::LevelIndexPair> defaultAnchor(size_t dims) {
-    return std::vector<AnovaBoundaryGrid::LevelIndexPair>(dims, {-1, 0});
-  }
-
-  /**
-   * Make all hierarchisation operations use the point at level -1 in all dimensions as an anchor.
-   */
-  static void setDefaultPolicy() {
-    integral = false;
-    anchor.clear();
-  }
-
-  /**
-   * Make all hierarchisation operations set the value of the constant function to the expected value of the function (the integral of the function).
-   */
-  static void setIntegralPolicy() {
-    integral = true;
-    anchor.clear();
-  }
-
-    /**
-   * Make all hierarchisation operations use a custom anchor point.
-   */
-  static void setAnchorPolicy(std::vector<AnovaBoundaryGrid::LevelIndexPair>& anchor) {
-    OperationHierarchisationAnovaBoundary::anchor = anchor;
-  }
-
+  AnovaBoundaryGrid& grid;
  private:
-  double getAnchorValue(std::vector<AnovaBoundaryGrid::LevelIndexPair>& anchor,
+  double getAnchorValue(std::vector<AnovaTypes::LevelIndexPair>& anchor,
                         DataVector& node_values);
-
-  static bool integral;
-  static std::vector<AnovaBoundaryGrid::LevelIndexPair> anchor;
 };
 
 }  // namespace base
