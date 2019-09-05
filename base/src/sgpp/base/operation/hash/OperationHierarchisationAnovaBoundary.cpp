@@ -12,9 +12,6 @@
 namespace sgpp {
 namespace base {
 
-bool OperationHierarchisationAnovaBoundary::integral = false;
-std::vector<AnovaTypes::LevelIndexPair> OperationHierarchisationAnovaBoundary::anchor;
-
 double OperationHierarchisationAnovaBoundary::getAnchorValue(
     std::vector<AnovaTypes::LevelIndexPair>& anchor, DataVector& node_values) {
   for (size_t i = 0; i < grid.getStorage().getSize(); ++i) {
@@ -33,8 +30,8 @@ double OperationHierarchisationAnovaBoundary::getAnchorValue(
 }
 
 void OperationHierarchisationAnovaBoundary::doHierarchisation(DataVector& node_values) {
-  if (!anchor.empty()) {
-    double a = getAnchorValue(anchor, node_values);
+  if (!grid.getAnchor().empty()) {
+    double a = getAnchorValue(grid.getAnchor(), node_values);
     node_values[0] = a;
   }
 
