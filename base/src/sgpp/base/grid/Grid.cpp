@@ -74,6 +74,10 @@ Grid* Grid::createAnovaLinearBoundaryGrid(size_t dim) {
   return new AnovaPrewaveletBoundaryGrid(dim);
 }
 
+    Grid* Grid::createAnovaPrewaveletBoundaryGrid(size_t dim, std::vector<AnovaTypes::LevelIndexPair>& anchor) {
+  return new AnovaPrewaveletBoundaryGrid(dim, anchor);
+}
+
 Grid* Grid::createLinearBoundaryGrid(size_t dim, level_t boundaryLevel) {
   if (boundaryLevel == 0) {
     return new LinearL0BoundaryGrid(dim);

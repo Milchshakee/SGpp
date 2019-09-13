@@ -163,7 +163,8 @@ double OperationQuadratureMC::doQuadratureL2Error(ScalarFunction& func,
           d, static_cast<double>(this->simple_rand()) / RAND_MAX);
     }
     double val = func.eval(point);
-    res += pow(val - opEval->eval(alpha, point), 2);
+    double m = opEval->eval(alpha, point);
+    res += pow(val - m, 2);
   }
 
   // multiply with determinant of "unit cube -> BoundingBox" transformation

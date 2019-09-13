@@ -31,15 +31,6 @@ class OperationAnovaDecomposition {
   
   void decompose(const DataVector& alpha, DataVector& result);
 
-  /**
-   * Compute first moment of the function
-   * @f[ \int_{\Omega} x\cdot f(x) dx. @f]
-   *
-   * @param alpha Coefficient vector for current grid
-   * @param bounds describes the boundaries of the hypercube of the original function
-   */
-  void calcExpectedValue(const DataVector& alpha, DataVector& result, const AnovaBoundaryGrid::AnovaComponent& component);
-
  protected:
   // Pointer to the grid's GridStorage object
   GridStorage& storage;

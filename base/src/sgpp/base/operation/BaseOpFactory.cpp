@@ -45,7 +45,7 @@
 #include <sgpp/base/operation/hash/OperationHierarchisationPrewavelet.hpp>
 #include <sgpp/base/operation/hash/OperationStencilHierarchisationLinear.hpp>
 #include <sgpp/base/operation/hash/OperationStencilHierarchisationModLinear.hpp>
-#include <sgpp/base/operation/hash/OperationHierarchisationAnovaBoundary.hpp>
+#include <sgpp/base/operation/hash/OperationHierarchisationAnovaPrewaveletBoundary.hpp>
 
 #include <sgpp/base/operation/hash/OperationArbitraryBoundaryHierarchisation.hpp>
 
@@ -240,9 +240,8 @@ base::OperationHierarchisation* createOperationHierarchisation(base::Grid& grid)
              grid.getType() == base::GridType::LinearTruncatedBoundary ||
              grid.getType() == base::GridType::SquareRoot) {
     return new base::OperationHierarchisationLinearBoundary(grid.getStorage());
-  } else if (grid.getType() == base::GridType::AnovaLinearBoundary ||
-             grid.getType() == base::GridType::AnovaPrewaveletBoundary) {
-    return new base::OperationHierarchisationAnovaBoundary(dynamic_cast<base::AnovaBoundaryGrid&>(grid));
+  } else if (grid.getType() == base::GridType::AnovaPrewaveletBoundary) {
+    return new base::OperationHierarchisationAnovaPrewaveletBoundary(grid);
   } else if (grid.getType() == base::GridType::LinearStretched) {
     return new base::OperationHierarchisationLinearStretched(grid.getStorage());
   } else if (grid.getType() == base::GridType::LinearStretchedBoundary) {

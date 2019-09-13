@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <sgpp/base/operation/hash/common/basis/Basis.hpp>
 #include <cmath>
+#include <sgpp/base/operation/hash/common/basis/Basis.hpp>
 
 namespace sgpp {
 namespace base {
@@ -48,55 +48,50 @@ class AnovaPrewaveletBoundaryBasis : public Basis<LT, IT> {
     if (level == 0) {
       return 2 * (p - 0.5);
     }
-    
-    if (p == 0.0 || p == 1.0) {
-      return 0.0;
-    }
 
     if (1 == level) {
-      return evalNormalHat(level, index, p);
-    } else if (1 == index) {  // left border
-      // Index of the affected hatbasis. The affected bases are ab and ab + 1
-      int ab = static_cast<int>(floor(p * static_cast<double>(1 << level)));
-
-      if (ab == 0) {
-        return 0.9 * evalNormalHat(level, 1, p);
-      } else if (ab == 3) {
-        return 0.1 * evalNormalHat(level, 3, p);
+      if (p <= 0.5) {
+        return -1 + (p * 2);
       } else {
-        return border_stamp[ab - 1] * evalNormalHat(level, ab, p) +
-               border_stamp[ab] * evalNormalHat(level, ab + 1, p);
+        return 1 - ((2 * p - 1) * 2);
       }
-    } else if ((unsigned int)(1 << level) - 1 == index) {  // right border
-      // Index of the affected hatbasis. The affected bases are ab and ab + 1
-      int ab = static_cast<int>(floor(p * static_cast<double>(1 << level)));
+    }
 
-      if (ab == (1 << level) - 1) {
-        return 0.9 * evalNormalHat(level, (1 << level) - 1, p);
-      } else if (ab == (1 << level) - 4) {
-        return 0.1 * evalNormalHat(level, (1 << level) - 3, p);
-      } else {
-        return border_stamp[(1 << level) - 1 - ab] * evalNormalHat(level, ab, p) +
-               border_stamp[(1 << level) - 2 - ab] * evalNormalHat(level, ab + 1, p);
+    if (1 == index) {
+      double res = 0;
+      for (size_t i = 0; i < 4; i++) {
+        res += border_stamp[i] * evalNormalHat(level, i, p);
       }
+      return res;
+    }
+
+    if ((unsigned int)(1 << level) - 1 == index) {  // right border
+      double res = 0;
+      for (int32_t i = 3; i >= 0; i--) {
+        res += border_stamp[i] * evalNormalHat(level, (1 << level) - i, p);
+      }
+      return res;
+    }
+
+    if (p == 0.0 || p == 1.0) {
+      return 0.0;
+      }
+
+    // Index of the affected hatbasis. The affected bases are ab and ab + 1
+    unsigned int ab = static_cast<int>(floor(p * static_cast<double>(1 << level)));
+
+    if (ab == index - 3) {
+      return normal_stamp[0] * evalNormalHat(level, ab + 1, p);
+    } else if (ab == index + 2) {
+      return normal_stamp[4] * evalNormalHat(level, ab, p);
     } else {
-      // Index of the affected hatbasis. The affected bases are ab and ab + 1
-      unsigned int ab = static_cast<int>(floor(p * static_cast<double>(1 << level)));
-
-      if (ab == index - 3) {
-        return normal_stamp[0] * evalNormalHat(level, ab + 1, p);
-      } else if (ab == index + 2) {
-        return normal_stamp[4] * evalNormalHat(level, ab, p);
-      } else {
-        int stamp = ab - index + 2;
-        return normal_stamp[stamp] * evalNormalHat(level, ab, p) +
-               normal_stamp[stamp + 1] * evalNormalHat(level, ab + 1, p);
-      }
+      int stamp = ab - index + 2;
+      return normal_stamp[stamp] * evalNormalHat(level, ab, p) +
+             normal_stamp[stamp + 1] * evalNormalHat(level, ab + 1, p);
     }
   }
 
-  double getIntegral(LT level, IT index) override { return -1.0;
-  }
+  double getIntegral(LT level, IT index) override { return -1.0; }
 
   size_t getDegree() const override { return 1; }
 };
@@ -105,8 +100,7 @@ template <class LT, class IT>
 const double AnovaPrewaveletBoundaryBasis<LT, IT>::normal_stamp[] = {0.1, -0.6, 1.0, -0.6, 0.1};
 
 template <class LT, class IT>
-const double AnovaPrewaveletBoundaryBasis<LT, IT>::border_stamp[] = {0.9, -0.6, 0.1};
-
+const double AnovaPrewaveletBoundaryBasis<LT, IT>::border_stamp[] = {-1.2, 1.1, -0.6, 0.1};
 
 // default type-def (unsigned int for level and index)
 // This works because we don't need the level -1 (Because the value is always 1)

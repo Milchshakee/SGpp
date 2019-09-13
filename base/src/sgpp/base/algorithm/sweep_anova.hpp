@@ -63,7 +63,7 @@ class sweep_anova {
    */
   ~sweep_anova() {}
 
-    /**
+  /**
    * Descends on all dimensions beside dim_sweep. Class functor for dim_sweep
    * Boundaries are regarded
    *
@@ -89,7 +89,7 @@ class sweep_anova {
   }
 
  protected:
-    /**
+  /**
    * Descends on all dimensions beside dim_sweep. Class functor for dim_sweep.
    * Boundaries are regarded
    *
@@ -156,7 +156,6 @@ class sweep_anova {
   }
 };
 
-  
 /**
  * Standard sweep operation for ANOVA boundary grids.
  * FUNC should be a class with overwritten operator().
@@ -178,9 +177,7 @@ class sweep_anova_component {
    *
    * @param storage the storage that contains the grid points
    */
-  explicit sweep_anova_component(GridStorage& storage)
-      : functor(),
-        storage(storage) {}
+  explicit sweep_anova_component(GridStorage& storage) : functor(), storage(storage) {}
 
   /**
    * Create a new sweep object with a copied functor
@@ -188,9 +185,7 @@ class sweep_anova_component {
    * @param functor the functor that is executed on the grid
    * @param storage the storage that contains the grid points
    */
-  sweep_anova_component(FUNC& functor, GridStorage& storage)
-      : functor(functor),
-        storage(storage) {}
+  sweep_anova_component(FUNC& functor, GridStorage& storage) : functor(functor), storage(storage) {}
 
   /**
    * Destructor
@@ -203,11 +198,23 @@ class sweep_anova_component {
    *
    * @param source a DataVector containing the source coefficients of the grid points
    * @param result a DataVector containing the result coefficients of the grid points
+   */
+  void sweep1D_AnovaBoundary_AllComponents(const DataVector& source, DataVector& result) {
+    AnovaBoundaryGrid::AnovaComponent comp(storage.getDimension(), false);
+    sweep1D_AnovaBoundary_AllComponents_rec(source, result, comp, 0);
+  }
+
+  /**
+   * Descends on all dimensions beside dim_sweep. Class functor for dim_sweep
+   * Boundaries are regarded
+   *
+   * @param source a DataVector containing the source coefficients of the grid points
+   * @param result a DataVector containing the result coefficients of the grid points
    * @param component true at a certain index signals the dimensions in which the functor is
    * executed
    */
-  void sweep1D_AnovaBoundary(const DataVector& source, DataVector& result,
-                             const AnovaBoundaryGrid::AnovaComponent& component) {
+  void sweep1D_AnovaBoundary_Component(const DataVector& source, DataVector& result,
+                                       const AnovaBoundaryGrid::AnovaComponent& component) {
     // generate a list of all dimension (-dim_sweep) from
     // dimension recursion unrolling
     std::vector<size_t> dim_list;
@@ -215,17 +222,58 @@ class sweep_anova_component {
     grid_iterator index(storage);
     for (size_t i = 0; i < storage.getDimension(); i++) {
       if (!component[i]) {
-        dim_list.push_back(i);
-        index.set(i, -1, 0);
+        index.resetToLevelMinusOneInDim(i);
       } else {
-        index.set(i, 0, 1);
-        }
+        dim_list.push_back(i);
+        index.resetToLevelZeroInDim(i);
+      }
     }
 
-    sweep_AnovaBoundary_rec(source, result, index, dim_list, storage.getDimension() - 1, component);
+    sweep_AnovaBoundary_rec(source, result, index, dim_list, dim_list.size(), component);
+  }
+
+  /**
+   * Descends on all dimensions beside dim_sweep. Class functor for dim_sweep
+   * Boundaries are regarded
+   *
+   * @param source a DataVector containing the source coefficients of the grid points
+   * @param result a DataVector containing the result coefficients of the grid points
+   * @param component true at a certain index signals the dimensions in which the functor is
+   * executed
+   */
+  void sweep1D_AnovaBoundary_Component(const DataVector& source, DataVector& result,
+                                       const AnovaGridIterator& index,
+                                       const AnovaBoundaryGrid::AnovaComponent& component) {
+    // generate a list of all dimension (-dim_sweep) from
+    // dimension recursion unrolling
+    std::vector<size_t> dim_list;
+
+    for (size_t i = 0; i < storage.getDimension(); i++) {
+      if (component[i]) {
+        dim_list.push_back(i);
+      }
+    }
+
+    grid_iterator copyIndex = index;
+    sweep_AnovaBoundary_rec(source, result, copyIndex, dim_list, dim_list.size(), component);
   }
 
  protected:
+  void sweep1D_AnovaBoundary_AllComponents_rec(const DataVector& source, DataVector& result,
+                                               AnovaBoundaryGrid::AnovaComponent& comp,
+                                               size_t dim) {
+    if (dim == storage.getDimension()) {
+      sweep1D_AnovaBoundary_Component(source, result, comp);
+      return;
+    }
+
+    AnovaBoundaryGrid::AnovaComponent copy = comp;
+    copy[dim] = false;
+    sweep1D_AnovaBoundary_AllComponents_rec(source, result, copy, dim + 1);
+    copy[dim] = true;
+    sweep1D_AnovaBoundary_AllComponents_rec(source, result, copy, dim + 1);
+  }
+
   /**
    * Descends on all dimensions beside dim_sweep. Class functor for dim_sweep.
    * Boundaries are regarded
@@ -237,9 +285,9 @@ class sweep_anova_component {
    * @param dim_rem number of remaining dims
    * @param dim_sweep static dimension, in this dimension the functor is executed
    */
-  void sweep_AnovaBoundary_rec(const DataVector& source, DataVector& result, AnovaGridIterator& index,
-                               std::vector<size_t>& dim_list, size_t dim_rem,
-                               const AnovaBoundaryGrid::AnovaComponent& dim_sweep) {
+  void sweep_AnovaBoundary_rec(const DataVector& source, DataVector& result,
+                               AnovaGridIterator& index, std::vector<size_t>& dim_list,
+                               size_t dim_rem, const AnovaBoundaryGrid::AnovaComponent& dim_sweep) {
     if (dim_rem == 0) {
       functor(source, result, index, dim_sweep);
     } else {

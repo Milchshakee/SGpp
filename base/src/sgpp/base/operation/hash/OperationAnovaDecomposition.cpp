@@ -2,6 +2,12 @@
 #include <sgpp/base/grid/storage/hashmap/AnovaGridIterator.hpp>
 #include <sgpp/base/operation/hash/OperationAnovaDecomposition.hpp>
 
+using namespace sgpp::base;
+
+typedef std::function<void(const sgpp::base::DataVector&, sgpp::base::DataVector&, sgpp::base::AnovaGridIterator&,
+                           const sgpp::base::AnovaBoundaryGrid::AnovaComponent&)>
+    FuncType;
+
 size_t getIndex(sgpp::base::AnovaGridIterator& it,
                 const sgpp::base::AnovaBoundaryGrid::AnovaComponent& component) {
   sgpp::base::AnovaGridIterator copy = it;
@@ -13,21 +19,12 @@ size_t getIndex(sgpp::base::AnovaGridIterator& it,
   return copy.seq();
 }
 
-void sgpp::base::OperationAnovaDecomposition::decompose(const DataVector& alpha,
-                                                        DataVector& result) {}
-
-void sgpp::base::OperationAnovaDecomposition::calcExpectedValue(
-    const DataVector& alpha, DataVector& result,
-    const AnovaBoundaryGrid::AnovaComponent& component) {
-  typedef std::function<void(DataVector&, DataVector&, AnovaGridIterator&,
-                             const AnovaBoundaryGrid::AnovaComponent&)>
-      FuncType;
-
-  FuncType f = [this, &component, &alpha](DataVector& in, DataVector& out,
-                                                   AnovaGridIterator& it,
-                                                   const AnovaBoundaryGrid::AnovaComponent& c) {
+void calcExpectedValue(const DataVector& alpha, DataVector& result, AnovaGridIterator& it,
+                       const AnovaBoundaryGrid::AnovaComponent& component) {
+  FuncType f = [&component, &alpha](const DataVector& in, DataVector& out, AnovaGridIterator& it,
+                                    const AnovaBoundaryGrid::AnovaComponent& c) {
     double funcMean = 1;
-    for (size_t dim = 0; dim < storage.getDimension(); dim++) {
+    for (size_t dim = 0; dim < it.getStorage().getDimension(); dim++) {
       if (component[dim]) {
         AnovaTypes::level_t level;
         AnovaTypes::index_t index;
@@ -51,6 +48,19 @@ void sgpp::base::OperationAnovaDecomposition::calcExpectedValue(
 
     out[getIndex(it, component)] += alpha.get(it.seq()) * funcMean;
   };
-  sweep_anova_component<FuncType> sweep(f, storage);
-  sweep.sweep1D_AnovaBoundary(alpha, result, component);
+
+  AnovaBoundaryGrid::AnovaComponent rest(component.size());
+  for (size_t dim = 0; dim < component.size(); dim++) {
+    rest[dim] = !component[dim];
+  }
+
+  sweep_anova_component<FuncType> sweep(f, it.getStorage());
+  sweep.sweep1D_AnovaBoundary_Component(alpha, result, it, rest);
+}
+
+void sgpp::base::OperationAnovaDecomposition::decompose(const DataVector& alpha,
+                                                        DataVector& result) {
+  FuncType func = calcExpectedValue;
+  sweep_anova_component<FuncType> sweep(func, storage);
+  sweep.sweep1D_AnovaBoundary_AllComponents(alpha, result);
 }

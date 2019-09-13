@@ -17,19 +17,19 @@ namespace base {
  * Hierarchisation on ANOVA boundary grids
  *
  */
-class OperationHierarchisationAnovaBoundary : public OperationHierarchisation {
+class OperationHierarchisationAnovaLinearBoundary : public OperationHierarchisation {
  public:
   /**
    * Constructor
    *
    * @param grid the grid object
    */
-  explicit OperationHierarchisationAnovaBoundary(AnovaBoundaryGrid& grid) : grid(grid) {}
+  explicit OperationHierarchisationAnovaLinearBoundary(AnovaBoundaryGrid& grid) : grid(grid) {}
 
   /**
    * Destructor
    */
-  ~OperationHierarchisationAnovaBoundary() override {}
+  ~OperationHierarchisationAnovaLinearBoundary() override {}
 
   void doHierarchisation(DataVector& node_values) override;
   void doDehierarchisation(DataVector& alpha) override;

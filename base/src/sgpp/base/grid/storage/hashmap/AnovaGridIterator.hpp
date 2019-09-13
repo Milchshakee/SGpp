@@ -141,6 +141,10 @@ class AnovaGridIterator {
    */
   size_t seq() const;
 
+  GridStorage& getStorage()
+  { return storage;
+  }
+
  private:
   /// reference the the hashmap that stores the gridpoints
   HashGridStorage& storage;

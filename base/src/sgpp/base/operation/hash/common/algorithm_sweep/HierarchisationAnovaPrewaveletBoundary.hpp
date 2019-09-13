@@ -7,7 +7,6 @@
 
 #include <sgpp/base/datatypes/DataVector.hpp>
 #include <sgpp/base/grid/GridStorage.hpp>
-#include <sgpp/base/operation/hash/common/algorithm_sweep/ConvertLinearToPrewavelet.hpp>
 #include <sgpp/base/grid/storage/hashmap/AnovaGridIterator.hpp>
 
 namespace sgpp {
@@ -35,14 +34,12 @@ namespace base {
  * (red crosses) and temp values (green circles) to calculate the new hierarchical coefficients (red
  * arrows) and new temp values (green arrows)."
  */
-class ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary {
+class HierarchisationAnovaPrewaveletBoundary {
  protected:
   typedef AnovaGridIterator grid_iterator;
 
   /// the grid object
   GridStorage& storage;
-
-  ConvertLinearToPrewavelet convert;
 
  public:
   /**
@@ -57,21 +54,23 @@ class ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary {
    * executed
    * @param shadowstorage shadow points (see detailed description)
    */
-  ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary(GridStorage& storage)
-      : storage(storage), convert(storage, storage) {}
+  HierarchisationAnovaPrewaveletBoundary(GridStorage& storage)
+      : storage(storage) {}
 
   /**
    * Destructor
    */
-  ~ConvertAnovaLinearBoundaryToAnovaPrewaveletBoundary() {}
+  ~HierarchisationAnovaPrewaveletBoundary() {}
 
-  double calcBorderFuntionValues(DataVector& source, DataVector& functionValues, 
-                                   AnovaBoundaryGrid::AnovaComponent& comp);
+  void hierarchiseBorders(DataVector& result, DataVector& functionValues,
+                                              double& sum, size_t& count,
+                                              AnovaGridIterator& originalIndex, size_t dim,
+                                              AnovaGridIterator& index);
 
-  double hierarchiseBorders(DataVector& functionValues,
-                            AnovaBoundaryGrid::AnovaComponent& comp, bool neg);
-  double hierarchiseBorders(DataVector& result, DataVector& functionValues);
+  void convertLevelZeroAnsatzFunction(DataVector& source, DataVector& result,
+                                      AnovaGridIterator& index, size_t dim);
 
+  
   void convertLevelZeroAnsatzFunction(DataVector& source, DataVector& result);
 
   /**

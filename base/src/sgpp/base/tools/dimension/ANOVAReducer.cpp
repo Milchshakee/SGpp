@@ -31,7 +31,7 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad, size_t d, const SGri
   f = MatrixFunction(mat);
 
   // create reduced sample
-  std::shared_ptr<Grid> newGrid(sgpp::base::Grid::createAnovaLinearBoundaryGrid(active));
+  std::shared_ptr<Grid> newGrid(sgpp::base::Grid::createAnovaPrewaveletBoundaryGrid(active));
   newGrid->getGenerator().regular(const_cast<Grid&>(sample.getGrid()).getStorage().getMaxLevel());
 
   std::function<double(const DataVector&)> f = [this, sample](const DataVector& v) {

@@ -81,7 +81,10 @@ void AnovaGridIterator::stepRight(size_t d) {
 
 bool AnovaGridIterator::isInnerPoint() const { return index.isInnerPoint(); }
 
-bool AnovaGridIterator::hint() const { return storage.getPoint(this->seq_).isLeaf(); }
+bool AnovaGridIterator::hint() const
+{
+  return storage.getPoint(this->seq_).isLeaf();
+}
 
 bool AnovaGridIterator::hintLeft(size_t d) {
   index_type::level_type l;
@@ -125,13 +128,14 @@ void AnovaGridIterator::set(size_t d, AnovaBoundaryGrid::level_t l, index_t i) {
   HashGridPoint::index_type iRaw;
   AnovaBoundaryGrid::toNormalGridPointLevelIndex(l, i, lRaw, iRaw);
   index.set(d, lRaw, iRaw);
+  this->seq_ = storage.getSequenceNumber(index);
 }
 
 AnovaBoundaryGrid::level_t AnovaGridIterator::getGridDepth(size_t dim) {
   AnovaBoundaryGrid::level_t depth = -1;
 
-  AnovaBoundaryGrid::level_t orig_level, cur_level;
-  index_t orig_index, cur_index;
+  AnovaBoundaryGrid::level_t orig_level;
+  index_t orig_index;
   get(dim, orig_level, orig_index);
 
   resetToLevelMinusOneInDim(dim);
