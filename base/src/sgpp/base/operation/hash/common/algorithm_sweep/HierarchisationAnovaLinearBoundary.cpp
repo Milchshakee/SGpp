@@ -3,18 +3,19 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#include <sgpp/base/operation/hash/common/algorithm_sweep/HierarchisationAnovaBoundary.hpp>
+#include <sgpp/base/operation/hash/common/algorithm_sweep/HierarchisationAnovaLinearBoundary.hpp>
 
 namespace sgpp {
 namespace base {
 
-HierarchisationAnovaBoundary::HierarchisationAnovaBoundary(
+HierarchisationAnovaLinearBoundary::HierarchisationAnovaLinearBoundary(
     Grid& grid)
     : grid(grid) {}
 
-HierarchisationAnovaBoundary::~HierarchisationAnovaBoundary() {}
+HierarchisationAnovaLinearBoundary::~HierarchisationAnovaLinearBoundary() {}
 
-void HierarchisationAnovaBoundary::hierarchiseConstantRec(DataVector& source, DataVector& result,
+void HierarchisationAnovaLinearBoundary::hierarchiseConstantRec(DataVector& source,
+                                                                DataVector& result,
                                                           grid_iterator& index, size_t dim,
                                                           double constant) {
   // recursive calls for the right and left side of the current node
@@ -39,7 +40,7 @@ void HierarchisationAnovaBoundary::hierarchiseConstantRec(DataVector& source, Da
   result[seq] -= constant;
 }
 
-void HierarchisationAnovaBoundary::hierarchiseConstant(DataVector& source, DataVector& result,
+void HierarchisationAnovaLinearBoundary::hierarchiseConstant(DataVector& source, DataVector& result,
                                                        grid_iterator& index, size_t dim) {
   index.resetToLevelMinusOneInDim(dim);
   double constant = source[index.seq()];
@@ -49,7 +50,8 @@ void HierarchisationAnovaBoundary::hierarchiseConstant(DataVector& source, DataV
   }
 }
 
-void HierarchisationAnovaBoundary::rec(DataVector& source, DataVector& result, grid_iterator& index,
+void HierarchisationAnovaLinearBoundary::rec(DataVector& source, DataVector& result,
+                                             grid_iterator& index,
                                        size_t dim, double fl, double fr) {
   // current position on the grid
   size_t seq = index.seq();
@@ -79,7 +81,7 @@ void HierarchisationAnovaBoundary::rec(DataVector& source, DataVector& result, g
   result[seq] = fm - ((fl + fr) / 2.0);
 }
 
-void HierarchisationAnovaBoundary::operator()(DataVector& source, DataVector& result,
+void HierarchisationAnovaLinearBoundary::operator()(DataVector& source, DataVector& result,
                                               grid_iterator& index, size_t dim) {
   hierarchiseConstant(source, result, index, dim);
 

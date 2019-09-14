@@ -17,7 +17,7 @@ namespace base {
  * the ()operator has to be implement in order to use the sweep algorithm for
  * the grid traversal.
  */
-class HierarchisationAnovaBoundary {
+class HierarchisationAnovaLinearBoundary {
  protected:
   /// Custom iterator
   typedef AnovaGridIterator grid_iterator;
@@ -29,13 +29,13 @@ class HierarchisationAnovaBoundary {
    * @param grid the grid object, on which the hierarchisation should be
    * executed
    */
-  explicit HierarchisationAnovaBoundary(Grid& grid);
+  explicit HierarchisationAnovaLinearBoundary(Grid& grid);
 
 
   /**
    * Destructor
    */
-  ~HierarchisationAnovaBoundary();
+  ~HierarchisationAnovaLinearBoundary();
 
   /**
    * Implements operator() needed by the sweep class during the grid traversal. This function

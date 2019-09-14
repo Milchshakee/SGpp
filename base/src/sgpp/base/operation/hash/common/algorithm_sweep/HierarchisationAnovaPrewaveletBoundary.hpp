@@ -62,17 +62,6 @@ class HierarchisationAnovaPrewaveletBoundary {
    */
   ~HierarchisationAnovaPrewaveletBoundary() {}
 
-  void hierarchiseBorders(DataVector& result, DataVector& functionValues,
-                                              double& sum, size_t& count,
-                                              AnovaGridIterator& originalIndex, size_t dim,
-                                              AnovaGridIterator& index);
-
-  void convertLevelZeroAnsatzFunction(DataVector& source, DataVector& result,
-                                      AnovaGridIterator& index, size_t dim);
-
-  
-  void convertLevelZeroAnsatzFunction(DataVector& source, DataVector& result);
-
   /**
    * Converts a given linear base to a prewavelet base.
    */

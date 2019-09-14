@@ -48,9 +48,6 @@ class OperationEvalAnovaPrewaveletBoundary : public OperationEval {
   /// Pointer to GridStorage object
   GridStorage& storage;
   AnovaBoundaryGrid::AnovaComponent component;
-
-  void rec(const sgpp::base::DataVector& point, size_t current_dim,
-           sgpp::base::AnovaGridIterator& iter, std::vector<std::pair<size_t, double> >& result);
 };
 
 }  // namespace base

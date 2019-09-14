@@ -21,7 +21,8 @@ class AnovaPrewaveletBoundaryBasis : public Basis<LT, IT> {
   static const double border_stamp[];
 
   double inline evalNormalHat(LT level, IT index, double p) {
-    return 1.0 - fabs(static_cast<double>(1 << level) * p - static_cast<double>(index));
+    return std::max(1.0 - fabs(static_cast<double>(1 << level) * p - static_cast<double>(index)),
+                    0.0);
   }
 
  public:
@@ -75,19 +76,22 @@ class AnovaPrewaveletBoundaryBasis : public Basis<LT, IT> {
 
     if (p == 0.0 || p == 1.0) {
       return 0.0;
-      }
+    }
 
     // Index of the affected hatbasis. The affected bases are ab and ab + 1
     unsigned int ab = static_cast<int>(floor(p * static_cast<double>(1 << level)));
-
-    if (ab == index - 3) {
-      return normal_stamp[0] * evalNormalHat(level, ab + 1, p);
-    } else if (ab == index + 2) {
-      return normal_stamp[4] * evalNormalHat(level, ab, p);
+    if (ab >= index - 3 && ab <= index + 2) {
+      if (ab == index - 3) {
+        return normal_stamp[0] * evalNormalHat(level, ab + 1, p);
+      } else if (ab == index + 2) {
+        return normal_stamp[4] * evalNormalHat(level, ab, p);
+      } else {
+        int stamp = ab - index + 2;
+        return normal_stamp[stamp] * evalNormalHat(level, ab, p) +
+               normal_stamp[stamp + 1] * evalNormalHat(level, ab + 1, p);
+      }
     } else {
-      int stamp = ab - index + 2;
-      return normal_stamp[stamp] * evalNormalHat(level, ab, p) +
-             normal_stamp[stamp + 1] * evalNormalHat(level, ab + 1, p);
+      return 0.0;
     }
   }
 
