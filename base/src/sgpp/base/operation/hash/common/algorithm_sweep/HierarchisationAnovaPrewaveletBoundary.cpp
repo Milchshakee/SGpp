@@ -112,11 +112,11 @@ void HierarchisationAnovaPrewaveletBoundary::operator()(DataVector& source, Data
   if (max_level >= 1) {
     // Treatment of the top-point in this dimension
     index.resetToLevelOneInDim(dim);
-    result.at(index.seq()) = 3.0 / 2.0 *
+    result.at(index.seq()) = 0.5 *
         (result.at(index.seq()) - temp.at(2) + (0.5 * temp.at(0)) + (0.5 * temp.at(4)));
 
-    temp0 = result.at(index.seq()) + temp.at(0);
-    temp2 = result.at(index.seq()) + temp.at(4);
+    temp0 = -result.at(index.seq()) + temp.at(0);
+    temp2 = -result.at(index.seq()) + temp.at(4);
   }
 
   index.resetToLevelMinusOneInDim(dim);
@@ -124,10 +124,11 @@ void HierarchisationAnovaPrewaveletBoundary::operator()(DataVector& source, Data
   index.resetToLevelZeroInDim(dim);
   double zeroValue = result.at(index.seq());
 
-  index.resetToLevelZeroInDim(dim);
-  result.at(index.seq()) = (zeroValue - temp2 + temp0) / 2.0;
   index.resetToLevelMinusOneInDim(dim);
-  result.at(index.seq()) = (2 * minusOneValue + zeroValue - temp2 - temp0) / 2.0;
+  result.at(index.seq()) = minusOneValue + (zeroValue - temp0 - temp2) / 2.0;
+
+  index.resetToLevelZeroInDim(dim);
+  result.at(index.seq()) = (zeroValue + temp0 - temp2) / 2.0;
 
   index.set(dim, init_level, init_index);
 }

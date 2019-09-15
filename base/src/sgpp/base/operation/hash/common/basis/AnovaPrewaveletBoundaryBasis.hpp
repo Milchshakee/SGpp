@@ -52,7 +52,7 @@ class AnovaPrewaveletBoundaryBasis : public Basis<LT, IT> {
 
     if (1 == level) {
       if (p <= 0.5) {
-        return -1 + (p * 2);
+        return -1 + (p * 4);
       } else {
         return 1 - ((2 * p - 1) * 2);
       }

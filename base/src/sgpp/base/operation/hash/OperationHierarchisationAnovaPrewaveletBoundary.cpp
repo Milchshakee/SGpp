@@ -6,7 +6,6 @@
 void sgpp::base::OperationHierarchisationAnovaPrewaveletBoundary::doHierarchisation(
   DataVector& node_values) {
   HierarchisationAnovaPrewaveletBoundary func(grid.getStorage());
-  //func.convertLevelZeroAnsatzFunction(node_values, copy);
 
   HierarchisationAnovaLinearBoundary linear(grid);
   sweep_anova<HierarchisationAnovaLinearBoundary> h(linear, grid.getStorage());
