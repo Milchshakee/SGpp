@@ -32,43 +32,47 @@ sgpp::base::GridSample<sgpp::base::DataVector> sgpp::base::AsQuadReducer::fromFi
   return GridSample<DataVector>(grid, samples);
 }
 
-sgpp::base::AsQuadResult::AsQuadResult(const SGridSample& input, const DataMatrix& m, size_t n)
-    : projection(m, n, DataVector(m.getNrows(), 0.5)) {
-  std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
-  newGrid->getGenerator().regular(const_cast<Grid&>(input.getGrid()).getStorage().getMaxLevel());
+sgpp::base::AsQuadResult::AsQuadResult(const AsQuadInput& input, const DataMatrix& m, size_t n,
+                                       const DataVector& mean)
+    : projection(m, n, mean), originalFunction(&input.originalFunction) {
+  std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.functionSample.getGrid()).createGridOfEquivalentType(n));
+  newGrid->getGenerator().regular(
+      const_cast<Grid&>(input.functionSample.getGrid()).getStorage().getMaxLevel());
 
-  originalFunc = EvalFunction(input);
-  std::function<double(const DataVector&)> func = [this](const DataVector& v) {
+  std::function<double(const DataVector&)> func = [this,&input](const DataVector& v) {
     DataVector newV;
     projection.inverse(v, newV);
-    return originalFunc.eval(newV);
+    return input.originalFunction.eval(newV);
   };
 
   SGridSample newSample(newGrid, func);
   newSample.hierarchise();
   reduced = newSample;
   evalFunc = EvalFunction(reduced);
-  originalFunc = EvalFunction(input);
 }
 
-sgpp::base::ScalarFunction& sgpp::base::AsQuadResult::getReducedFunction() {
+sgpp::base::ScalarFunction& sgpp::base::AsQuadResult::getReducedFunctionSurrogate() {
   return evalFunc;
 }
 
 sgpp::base::SGridSample& sgpp::base::AsQuadResult::getReducedOutput() { return reduced; }
 
 
-sgpp::base::ScalarFunction& sgpp::base::AsQuadResult::getOriginalFunction() { return originalFunc; }
+sgpp::base::ScalarFunction& sgpp::base::AsQuadResult::getOriginalFunction() { return *originalFunction; }
 
 sgpp::base::VectorFunction& sgpp::base::AsQuadResult::getTransformationFunction() {
   return projection.getFunction();
 }
 
-sgpp::base::AsQuadFixedCutter::AsQuadFixedCutter(size_t n) : FixedCutter<sgpp::base::AsQuadInput, sgpp::base::AsInfo, sgpp::base::AsQuadResult>(n) {}
+
+sgpp::base::InputProjection& sgpp::base::AsQuadResult::getProjection() { return projection; }
+
+sgpp::base::AsQuadFixedCutter::AsQuadFixedCutter(size_t n, const DataVector& mean)
+    : FixedCutter<sgpp::base::AsQuadInput, sgpp::base::AsInfo, sgpp::base::AsQuadResult>(n), mean(mean) {}
 
 sgpp::base::AsQuadResult sgpp::base::AsQuadFixedCutter::cut(const AsQuadInput& input,
                                                             const AsInfo& info) {
-  return AsQuadResult(input.functionSample, info.eigenVectors, n);
+  return AsQuadResult(input, info.eigenVectors, n, mean);
 }
 
 sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(AsQuadInput& input) {

@@ -23,32 +23,35 @@ struct AsMcInput {
 
 class AsMcResult : public Result<SGridSample> {
  public:
-  AsMcResult(const AsMcInput& input, const DataMatrix& m, size_t n, GridType type, level_t l);
+  AsMcResult(const AsMcInput& input, const DataMatrix& m, size_t n, GridType type, level_t l,
+             const DataVector& mean);
 
   ScalarFunction& getOriginalFunction() override;
   VectorFunction& getTransformationFunction() override;
-  ScalarFunction& getReducedFunction() override;
+  ScalarFunction& getReducedFunctionSurrogate() override;
   SGridSample& getReducedOutput() override;
+  InputProjection& getProjection();
 
  private:
+  ScalarFunction* originalFunction;
   InputProjection projection;
   SGridSample reduced;
   EvalFunction evalFunc;
-  ScalarFunction* originalFunc;
 };
 
 class AsMcCutter {
 public:
-  AsMcCutter(GridType type, level_t level);
+  AsMcCutter(GridType type, level_t level, const DataVector& mean);
 
  protected:
   GridType type;
   level_t level;
+  DataVector mean;
 };
 
 class AsMcFixedCutter : public FixedCutter<AsMcInput, AsInfo, AsMcResult>, public AsMcCutter {
  public:
-  AsMcFixedCutter(size_t n, GridType type, level_t level);
+  AsMcFixedCutter(size_t n, GridType type, level_t level, const DataVector& mean);
 
   AsMcResult cut(const AsMcInput& input, const AsInfo& info) override;
 };
@@ -56,14 +59,15 @@ class AsMcFixedCutter : public FixedCutter<AsMcInput, AsInfo, AsMcResult>, publi
 class AsMcErrorRuleCutter : public ErrorRuleCutter<AsMcInput, AsInfo, AsMcResult>,
                             public AsMcCutter {
  public:
-  AsMcErrorRuleCutter(ErrorRule& r, double maxError, GridType type, level_t level);
+  AsMcErrorRuleCutter(ErrorRule& r, double maxError, GridType type, level_t level,
+                      const DataVector& mean);
 
   AsMcResult cut(const AsMcInput& input, const AsInfo& info) override;
 };
 
 class AsMcIntervalCutter : public Cutter<AsMcInput, AsInfo, AsMcResult>, public AsMcCutter {
  public:
-  AsMcIntervalCutter(size_t bootstrapSamples, GridType type, level_t level);
+  AsMcIntervalCutter(size_t bootstrapSamples, GridType type, level_t level, const DataVector& mean);
 
   AsMcResult cut(const AsMcInput& input, const AsInfo& info) override;
 

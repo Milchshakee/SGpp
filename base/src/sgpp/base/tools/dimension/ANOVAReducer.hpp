@@ -29,11 +29,11 @@ public:
   AnovaResult(std::vector<bool>& activeDimensions, size_t dimensions, const SGridSample& sample,
               double errorShare);
 
-
-  ScalarFunction& getOriginalFunction() override;
+  
+    ScalarFunction& getOriginalFunction() override;
   VectorFunction& getTransformationFunction();
   SGridSample& getReducedOutput();
-  ScalarFunction& getReducedFunction() override;
+  ScalarFunction& getReducedFunctionSurrogate() override;
 
  private:
   EvalFunction originalFunction;

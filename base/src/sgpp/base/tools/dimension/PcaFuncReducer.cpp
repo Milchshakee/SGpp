@@ -3,18 +3,19 @@
 #include <sgpp/base/tools/dist/RandomPdfDistribution.hpp>
 
 sgpp::base::PcaFuncFixedCutter::PcaFuncFixedCutter(size_t n)
-    : FixedCutter<sgpp::base::SGridSample, sgpp::base::PcaFuncInfo, sgpp::base::PcaFuncResult>(n) {}
+    : FixedCutter<sgpp::base::PcaFuncInput, sgpp::base::PcaFuncInfo, sgpp::base::PcaFuncResult>(n) {
+}
 
-sgpp::base::PcaFuncResult sgpp::base::PcaFuncFixedCutter::cut(const SGridSample& input,
+sgpp::base::PcaFuncResult sgpp::base::PcaFuncFixedCutter::cut(const PcaFuncInput& input,
                                                               const PcaFuncInfo& info) {
   return PcaFuncResult(input, info.basis, n, info.mean);
 }
 
-sgpp::base::PcaFuncResult sgpp::base::PcaFuncErrorRuleCutter::cut(const SGridSample& input,
+sgpp::base::PcaFuncResult sgpp::base::PcaFuncErrorRuleCutter::cut(const PcaFuncInput& input,
                                                                   const PcaFuncInfo& info) {
-  PcaFuncResult last(input, info.basis, input.getDimensions(), info.mean);
-  for (size_t d = 1; d < input.getDimensions(); ++d) {
-    PcaFuncResult result(input, info.basis, input.getDimensions() - d, info.mean);
+  PcaFuncResult last(input, info.basis, input.sample.getDimensions(), info.mean);
+  for (size_t d = 1; d < input.sample.getDimensions(); ++d) {
+    PcaFuncResult result(input, info.basis, input.sample.getDimensions() - d, info.mean);
     if (result.calculateRelativeError(r) > maxError) {
       return last;
     } else {
@@ -24,60 +25,66 @@ sgpp::base::PcaFuncResult sgpp::base::PcaFuncErrorRuleCutter::cut(const SGridSam
   return last;
 }
 
-sgpp::base::PcaFuncResult::PcaFuncResult(const SGridSample& input, const DataMatrix& m, size_t n,
+sgpp::base::PcaFuncResult::PcaFuncResult(const PcaFuncInput& input, const DataMatrix& m, size_t n,
                                          const DataVector& mean)
-    : projection(m, n, mean) {
-  std::shared_ptr<Grid> newGrid(const_cast<Grid&>(input.getGrid()).createGridOfEquivalentType(n));
-  newGrid->getGenerator().regular(const_cast<Grid&>(input.getGrid()).getStorage().getMaxLevel());
+    : projection(m, n, mean), originalFunction(&input.function) {
+  std::shared_ptr<Grid> newGrid(
+      const_cast<Grid&>(input.sample.getGrid()).createGridOfEquivalentType(n));
+  newGrid->getGenerator().regular(
+      const_cast<Grid&>(input.sample.getGrid()).getStorage().getMaxLevel());
 
-  originalFunction = EvalFunction(input);
-  std::function<double(const DataVector&)> func = [this](const DataVector& v) {
+  std::function<double(const DataVector&)> func = [this, &input](const DataVector& v) {
     DataVector newV;
     projection.inverse(v, newV);
-    return originalFunction.eval(newV);
+    return input.function.eval(newV);
   };
 
   SGridSample newSample(newGrid, func);
   newSample.hierarchise();
-  reduced = newSample;
-  evalFunc = EvalFunction(reduced);
+  reducedSurrogate = newSample;
+  reducedSurrogateFunction = EvalFunction(reducedSurrogate);
 }
 
-sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunction() { return evalFunc; }
+
+sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getOriginalFunction() {
+  return *originalFunction;
+}
+
+sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getReducedFunctionSurrogate() { return reducedSurrogateFunction; }
 
 sgpp::base::VectorFunction& sgpp::base::PcaFuncResult::getTransformationFunction() {
   return projection.getFunction();
 }
 
-sgpp::base::ScalarFunction& sgpp::base::PcaFuncResult::getOriginalFunction() {
-  return originalFunction;
-}
+sgpp::base::SGridSample& sgpp::base::PcaFuncResult::getReducedOutput() { return reducedSurrogate; }
 
-sgpp::base::SGridSample& sgpp::base::PcaFuncResult::getReducedOutput() { return reduced; }
+
+sgpp::base::InputProjection& sgpp::base::PcaFuncResult::getProjection() { return projection; }
 
 sgpp::base::PcaFuncReducer::PcaFuncReducer(std::shared_ptr<PcaSolver> solver, uint64_t seed,
                                            size_t samples, double stepSize, size_t iterations)
     : solver(solver), seed(seed), samples(samples), stepSize(stepSize), iterations(iterations) {}
 
-sgpp::base::PcaFuncInfo sgpp::base::PcaFuncReducer::evaluate(SGridSample& input) {
-  if (!input.isHierarchised()) {
+sgpp::base::PcaFuncInfo sgpp::base::PcaFuncReducer::evaluate(PcaFuncInput& input) {
+  if (!input.sample.isHierarchised()) {
     throw std::invalid_argument("Input is not hierarchised");
   }
 
-  SGridSample density = input;
+  SGridSample density = input.sample;
   toDensity(density);
   EvalFunction f(density);
-  RandomPdfDistribution d(samples, input.getDimensions(), seed, f, iterations, stepSize);
+  //ScalarFunction& f = input.function;
+  RandomPdfDistribution d(samples, input.sample.getDimensions(), seed, f, iterations, stepSize);
   auto reducer = sgpp::base::PcaReducer(solver);
   sgpp::base::PcaInfo info = reducer.evaluate(d);
 
-  size_t dim = input.getDimensions();
+  size_t dim = input.sample.getDimensions();
   PcaFuncInfo toReturn;
   toReturn.mean = info.mean;
   toReturn.basis = DataMatrix(dim, dim);
 
   for (size_t d = 0; d < dim; ++d) {
-    sgpp::base::DataVector pa(input.getDimensions());
+    sgpp::base::DataVector pa(input.sample.getDimensions());
     info.basis.getColumn(d, pa);
     toReturn.basis.setColumn(dim - d - 1, pa);
   }

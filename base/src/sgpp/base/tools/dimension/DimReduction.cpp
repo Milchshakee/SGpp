@@ -1,10 +1,11 @@
-#include <sgpp/base/tools/dimension/DimReduction.hpp>
 #include <sgpp/base/tools/EigenHelper.hpp>
+#include <sgpp/base/tools/dimension/DimReduction.hpp>
 
 namespace sgpp {
 namespace base {
 
-InputProjection::InputProjection(const DataMatrix& basis, size_t n, const DataVector& mean) : oldDimensions(basis.getNrows()), newDimensions(n), mean(mean), func(*this) {
+InputProjection::InputProjection(const DataMatrix& basis, size_t n, const DataVector& mean)
+    : oldDimensions(basis.getNrows()), newDimensions(n), mean(mean), func(*this) {
   oldToNewBasis = basis;
   oldToNewBasis.transpose();
   oldToNewBasis.resizeRowsCols(newDimensions, oldDimensions);
@@ -14,53 +15,52 @@ InputProjection::InputProjection(const DataMatrix& basis, size_t n, const DataVe
   calculateRanges();
 }
 
-  void InputProjection::calculateRanges() {
+void InputProjection::calculateRanges() {
   size_t dim = newDimensions;
-  posRange = DataVector(dim, std::numeric_limits<double>::infinity());
-  negRange = DataVector(dim, -std::numeric_limits<double>::infinity());
+  posRange = DataVector(dim, 0);
+  negRange = DataVector(dim, 0);
   for (size_t d = 0; d < dim; ++d) {
-    double m = mean[d];
-    for (size_t i = 0; i < newDimensions; ++i) {
+    for (size_t j = 0; j < oldDimensions; ++j) {
       DataVector col(oldDimensions);
-      newToOldBasis.getColumn(i, col);
-      double v = col[d];
-      double posX = (1 - m) / v;
-      double negX = (0 - m) / v;
-      if (posX < 0) {
-        std::swap(posX, negX);
-      }
-      if (posX < posRange[d]) {
-        posRange[d] = posX;
-      }
-      if (negX > negRange[d]) {
-        negRange[d] = negX;
-      }
+      oldToNewBasis.getRow(d, col);
+      double v = col[j];
+      double m = mean[j];
+
+      posRange[d] += v >= 0 ? (1 - m) * v : -m * v;
+      negRange[d] += v < 0 ? (1 - m) * v : -m * v;
     }
   }
 
-    start = mean;
+  start = mean;
+  end = mean;
   for (size_t d = 0; d < newDimensions; ++d) {
     DataVector add(oldDimensions);
-    newToOldBasis.getColumn(d, add);
+    oldToNewBasis.getRow(d, add);
     add.mult(negRange[d]);
     start.add(add);
+    oldToNewBasis.getRow(d, add);
+    add.mult(posRange[d]);
+    end.add(add);
   }
-  }
-
+}
 
 void InputProjection::inverse(const DataVector& in, DataVector& out) {
-    out = start;
+  out = start;
   for (size_t d = 0; d < newDimensions; ++d) {
     double scale = posRange[d] - negRange[d];
     DataVector add(oldDimensions);
-    newToOldBasis.getColumn(d, add);
+    oldToNewBasis.getRow(d, add);
     add.mult(scale * in[d]);
     out.add(add);
   }
 }
 
-InputProjection::ProjectionFunction::ProjectionFunction(InputProjection& p) : VectorFunction(p.oldDimensions, p.newDimensions), p(&p) {
-}
+const DataVector& InputProjection::getStart() { return start; }
+
+const DataVector& InputProjection::getEnd() { return end; }
+
+InputProjection::ProjectionFunction::ProjectionFunction(InputProjection& p)
+    : VectorFunction(p.oldDimensions, p.newDimensions), p(&p) {}
 
 void InputProjection::ProjectionFunction::eval(const DataVector& in, DataVector& out) {
   out = in;
@@ -71,8 +71,7 @@ void InputProjection::ProjectionFunction::eval(const DataVector& in, DataVector&
     double scale = p->posRange[d] - p->negRange[d];
     if (out[d] > p->posRange[d]) {
       out[d] = p->posRange[d];
-      }
-    else if (out[d] < p->negRange[d]) {
+    } else if (out[d] < p->negRange[d]) {
       out[d] = p->negRange[d];
     }
 
@@ -80,16 +79,11 @@ void InputProjection::ProjectionFunction::eval(const DataVector& in, DataVector&
   }
 }
 
-void InputProjection::ProjectionFunction::clone(std::unique_ptr<VectorFunction>& clone) const {
-}
-
+void InputProjection::ProjectionFunction::clone(std::unique_ptr<VectorFunction>& clone) const {}
 
 VectorFunction& InputProjection::getFunction() { return func; }
 
-
-L2SquaredMcRule::L2SquaredMcRule(uint64_t seed, size_t samples) : seed(seed), samples(samples) {
-}
-
+L2SquaredMcRule::L2SquaredMcRule(uint64_t seed, size_t samples) : seed(seed), samples(samples) {}
 
 L2McRule::L2McRule(uint64_t seed, size_t samples) : seed(seed), samples(samples) {}
 
@@ -118,13 +112,13 @@ double ErrorRule::calculateRelativeError(ScalarFunction& f, VectorFunction& t, S
 }
 
 double L2SquaredMcRule::calculateAbsoluteError(ScalarFunction& f, VectorFunction& t,
-  ScalarFunction& r) {
+                                               ScalarFunction& r) {
   OperationL2 o(seed, samples);
   double e = o.calculateMcL2Error(f, t, r);
   return std::pow(e, 2);
 }
 
-  double L2SquaredMcRule::calculateAbsoluteError(ScalarFunction& f) {
+double L2SquaredMcRule::calculateAbsoluteError(ScalarFunction& f) {
   OperationL2 o(seed, samples);
   double l2 = o.calculateMcL2Norm(f);
   return std::pow(l2, 2);

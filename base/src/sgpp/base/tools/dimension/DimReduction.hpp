@@ -69,18 +69,18 @@ class Result {
   double calculateRelativeError(ErrorRule& c)
   {
     return c.calculateRelativeError(getOriginalFunction(), getTransformationFunction(),
-                            getReducedFunction());
+                            getReducedFunctionSurrogate());
   }
 
     double calculateAbsoluteError(ErrorRule& c) {
     return c.calculateAbsoluteError(getOriginalFunction(), getTransformationFunction(),
-                            getReducedFunction());
+                            getReducedFunctionSurrogate());
   }
 
   virtual ScalarFunction& getOriginalFunction() = 0;
-  virtual ScalarFunction& getReducedFunction() = 0;
+  virtual ScalarFunction& getReducedFunctionSurrogate() = 0;
   virtual VectorFunction& getTransformationFunction() = 0;
-  virtual T& getReducedOutput() = 0;
+  virtual SGridSample& getReducedOutput() = 0;
 };
 
   template <class INPUT, class INFO, class OUTPUT>
@@ -116,6 +116,9 @@ class Reducer {
     void inverse(const DataVector& in, DataVector& out);
     VectorFunction& getFunction();
 
+    const DataVector& getStart();
+    const DataVector& getEnd();
+
   private:
     DataMatrix oldToNewBasis;
     /// basis transposed and then cut
@@ -126,6 +129,7 @@ class Reducer {
     DataVector posRange;
     DataVector negRange;
     DataVector start;
+    DataVector end;
 
     void calculateRanges();
 

@@ -54,12 +54,11 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad, size_t d, const SGri
 }
 
 sgpp::base::ScalarFunction& sgpp::base::AnovaResult::getOriginalFunction() {
-  return originalFunction;
 }
 
 sgpp::base::VectorFunction& sgpp::base::AnovaResult::getTransformationFunction() { return f; }
 
-sgpp::base::ScalarFunction& sgpp::base::AnovaResult::getReducedFunction() { return eval; }
+sgpp::base::ScalarFunction& sgpp::base::AnovaResult::getReducedFunctionSurrogate() { return eval; }
 
 sgpp::base::SGridSample& sgpp::base::AnovaResult::getReducedOutput() { return reducedSample; }
 

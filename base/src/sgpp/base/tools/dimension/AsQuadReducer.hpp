@@ -15,6 +15,7 @@ namespace base {
 
   struct AsQuadInput
   {
+  ScalarFunction& originalFunction;
   SGridSample functionSample;
   GridSample<DataVector> gradientSample;
   };
@@ -22,26 +23,31 @@ namespace base {
   class AsQuadResult : public Result<SGridSample>
   {
   public:
-    AsQuadResult(const SGridSample& input, const DataMatrix& m, size_t n);
+    AsQuadResult(const AsQuadInput& input, const DataMatrix& m, size_t n, const DataVector& mean);
 
-
+    
     ScalarFunction& getOriginalFunction() override;
     VectorFunction& getTransformationFunction() override;
-    ScalarFunction& getReducedFunction() override;
+    ScalarFunction& getReducedFunctionSurrogate() override;
     SGridSample& getReducedOutput() override;
+    InputProjection& getProjection();
+
   private:
+    ScalarFunction* originalFunction;
     InputProjection projection;
     SGridSample reduced;
    EvalFunction evalFunc;
-    EvalFunction originalFunc;
   };
 
     class AsQuadFixedCutter : public FixedCutter<AsQuadInput, AsInfo, AsQuadResult>
     {
     public:
-  AsQuadFixedCutter(size_t n);
+      AsQuadFixedCutter(size_t n, const DataVector& mean);
 
       AsQuadResult cut(const AsQuadInput& input, const AsInfo& info) override;
+
+    private:
+      DataVector mean;
     };
 
 class AsQuadReducer : public Reducer<AsQuadInput, AsInfo, AsQuadResult> {
