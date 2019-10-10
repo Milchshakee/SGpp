@@ -13,15 +13,17 @@ double sgpp::base::OperationEvalAnovaPrewaveletBoundary::eval(const DataVector& 
 
   for (size_t i = 0; i < storage.getSize(); i++) {
     GridPoint& p = storage.getPoint(i);
-    double value = 1.0;
-    for (size_t d = 0; d < storage.getDimension(); ++d) {
-      index_t current_index;
-      sgpp::base::AnovaBoundaryGrid::level_t current_level;
-      AnovaBoundaryGrid::fromNormalGridPointLevelIndex(p.getLevel(d), p.getIndex(d), current_level,
-                                                       current_index);
-      value *= current_level == -1 ? 1 : basis.eval(current_level, current_index, point[d]);
+    if (component.empty() || AnovaBoundaryGrid::getAnovaComponentOfPoint(p) == component) {
+      double value = 1.0;
+      for (size_t d = 0; d < storage.getDimension(); ++d) {
+        index_t current_index;
+        sgpp::base::AnovaBoundaryGrid::level_t current_level;
+        AnovaBoundaryGrid::fromNormalGridPointLevelIndex(p.getLevel(d), p.getIndex(d),
+                                                         current_level, current_index);
+        value *= current_level == -1 ? 1 : basis.eval(current_level, current_index, point[d]);
+      }
+      vec.push_back(std::make_pair(storage.getSequenceNumber(p), value));
     }
-    vec.push_back(std::make_pair(storage.getSequenceNumber(p), value));
   }
 
   double result = 0.0;

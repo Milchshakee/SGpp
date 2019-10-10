@@ -7,6 +7,11 @@ sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(std::istream& istr)
 sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(size_t dim)
     : AnovaBoundaryGrid(dim) {}
 
+
+sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(size_t dim,
+  std::vector<AnovaTypes::LevelIndexPair>& anchor) : AnovaBoundaryGrid(dim, anchor) {
+}
+
 sgpp::base::GridType sgpp::base::AnovaLinearBoundaryGrid::getType() {
   return sgpp::base::GridType::AnovaLinearBoundary;
 }

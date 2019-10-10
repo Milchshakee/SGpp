@@ -4,7 +4,7 @@ namespace sgpp {
 namespace base {
 
 
-EvalFunction::EvalFunction() : ScalarFunction(0), sample(nullptr) {}
+EvalFunction::EvalFunction() : ScalarFunction(0), sample(nullptr), evalOp(nullptr) {}
 
 EvalFunction::EvalFunction(const SGridSample& sample)
     : EvalFunction(sample, *op_factory::createOperationEval(const_cast<Grid&>(sample.getGrid()))) {

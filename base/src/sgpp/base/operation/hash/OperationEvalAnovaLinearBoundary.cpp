@@ -22,7 +22,10 @@ double OperationEvalAnovaLinearBoundary::eval(const DataVector& alpha, const Dat
   double result = 0.0;
 
   for (IndexValVector::iterator iter = vec.begin(); iter != vec.end(); iter++) {
-    result += iter->second * alpha[iter->first];
+    GridPoint& p = storage.getPoint(iter->first);
+    if (component.empty() || AnovaBoundaryGrid::getAnovaComponentOfPoint(p) == component) {
+      result += iter->second * alpha[iter->first];
+    }
   }
 
   return result;

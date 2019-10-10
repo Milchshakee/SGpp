@@ -7,6 +7,8 @@
 
 #include <ostream>
 #include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
+#include <sgpp/base/function/scalar/WrapperScalarFunction.hpp>
+#include <sgpp/base/exception/operation_exception.hpp>
 
 namespace sgpp {
 namespace base {
@@ -32,18 +34,22 @@ bool AnovaBoundaryGrid::hasAnchor() { return anchor.size() > 0; }
 
 const std::vector<AnovaTypes::LevelIndexPair>& AnovaBoundaryGrid::getAnchor() { return anchor; }
 
-std::function<double(const DataVector&)>& AnovaBoundaryGrid::getSamplingFunction(
-    std::function<double(const DataVector&)>& func) {
-  static std::function<double(const DataVector&)> f = [&func, this](const DataVector& v) {
+std::shared_ptr<ScalarFunction> AnovaBoundaryGrid::getSamplingFunction(ScalarFunction& func) {
+  if (!hasAnchor()) {
+    throw operation_exception("Grid has no anchor"); 
+    }
+
+  std::function<double(const DataVector&)> f = [&func, this](const DataVector& v) {
     DataVector out = v;
     for (size_t d = 0; d < getDimension(); d++) {
       if (v[d] == 0 && anchor[d].level > -1) {
         out[d] = static_cast<double>(anchor[d].index) / static_cast<double>(1 << anchor[d].level);
       }
     }
-    return func(out);
+    return func.eval(out);
   };
-  return f;
+
+  return std::make_shared<WrapperScalarFunction>(func.getNumberOfParameters(), f);
 }
 }  // namespace base
 }  // namespace sgpp

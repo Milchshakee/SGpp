@@ -28,6 +28,13 @@ class AnovaLinearBoundaryGrid : public AnovaBoundaryGrid {
    */
   AnovaLinearBoundaryGrid(size_t dim);
 
+    /**
+   * Constructor Anova Boundary Grid
+   *
+   * @param dim           the dimension of the grid
+   */
+  AnovaLinearBoundaryGrid(size_t dim, std::vector<AnovaTypes::LevelIndexPair>& anchor);
+
   /**
    * Destructor
    */

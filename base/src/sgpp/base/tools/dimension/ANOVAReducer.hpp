@@ -16,18 +16,24 @@ namespace sgpp {
 namespace base {
 
 struct AnovaInfo {
-  Sample<AnovaBoundaryGrid::AnovaComponent, double> errorShares;
+  Sample<AnovaBoundaryGrid::AnovaComponent, double> variances;
 };
+
+  struct AnovaInput
+  {
+  const SGridSample sample;
+    ScalarFunction& originalFunction;
+  };
 
 class AnovaResult : public Result<SGridSample> {
 public:
   std::vector<bool> activeDimensions;
  size_t dimensions;
-  double errorShare;
+  double coveredVariance;
 
   AnovaResult() = default;
-  AnovaResult(std::vector<bool>& activeDimensions, size_t dimensions, const SGridSample& sample,
-              double errorShare);
+  AnovaResult(std::vector<bool>& activeDimensions, size_t dimensions, const AnovaInput& input,
+              double converedVariance);
 
   
     ScalarFunction& getOriginalFunction() override;
@@ -36,31 +42,31 @@ public:
   ScalarFunction& getReducedFunctionSurrogate() override;
 
  private:
-  EvalFunction originalFunction;
+  ScalarFunction* originalFunction;
   EvalFunction eval;
-  MatrixFunction f;
+  MatrixFunction transformation;
   SGridSample reducedSample;
 };
 
-class AnovaFixedCutter : public FixedCutter<SGridSample, AnovaInfo, AnovaResult> {
+class AnovaFixedCutter : public FixedCutter<AnovaInput, AnovaInfo, AnovaResult> {
  public:
   AnovaFixedCutter(size_t n);
 
-  AnovaResult cut(const SGridSample& input, const AnovaInfo& info) override;
+  AnovaResult cut(const AnovaInput& input, const AnovaInfo& info) override;
 };
 
-  class AnovaErrorRuleCutter : public ErrorRuleCutter<SGridSample, AnovaInfo, AnovaResult> {
+  class AnovaErrorRuleCutter : public ErrorRuleCutter<AnovaInput, AnovaInfo, AnovaResult> {
  public:
     AnovaErrorRuleCutter(ErrorRule& r, double maxError);
 
-  AnovaResult cut(const SGridSample& input, const AnovaInfo& info) override;
+  AnovaResult cut(const AnovaInput& input, const AnovaInfo& info) override;
   };
 
-class AnovaReducer : public sgpp::base::Reducer<SGridSample, AnovaInfo, AnovaResult> {
+class AnovaReducer : public sgpp::base::Reducer<AnovaInput, AnovaInfo, AnovaResult> {
  public:
   AnovaReducer(ErrorRule& rule);
 
-  AnovaInfo evaluate(SGridSample& input) override;
+  AnovaInfo evaluate(AnovaInput& input) override;
 
 private:
   ErrorRule& rule;

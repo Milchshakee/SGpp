@@ -24,7 +24,7 @@ class OperationHierarchisationAnovaLinearBoundary : public OperationHierarchisat
    *
    * @param grid the grid object
    */
-  explicit OperationHierarchisationAnovaLinearBoundary(AnovaBoundaryGrid& grid) : grid(grid) {}
+  explicit OperationHierarchisationAnovaLinearBoundary(Grid& grid) : grid(grid) {}
 
   /**
    * Destructor
@@ -35,10 +35,7 @@ class OperationHierarchisationAnovaLinearBoundary : public OperationHierarchisat
   void doDehierarchisation(DataVector& alpha) override;
 
  protected:
-  AnovaBoundaryGrid& grid;
- private:
-  double getAnchorValue(std::vector<AnovaTypes::LevelIndexPair>& anchor,
-                        DataVector& node_values);
+  Grid& grid;
 };
 
 }  // namespace base

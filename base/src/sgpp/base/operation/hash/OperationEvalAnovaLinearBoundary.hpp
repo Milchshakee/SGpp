@@ -10,6 +10,7 @@
 #include <sgpp/base/operation/hash/OperationEval.hpp>
 
 #include <sgpp/globaldef.hpp>
+#include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
 
 namespace sgpp {
 namespace base {
@@ -22,11 +23,20 @@ namespace base {
 class OperationEvalAnovaLinearBoundary : public OperationEval {
  public:
   /**
+          * Constructor
+          *
+          * @param storage the grid's GridStorage object
+          */
+  explicit OperationEvalAnovaLinearBoundary(GridStorage& storage)
+      : storage(storage) {}
+  /**
    * Constructor
    *
    * @param storage the grid's GridStorage object
    */
-  explicit OperationEvalAnovaLinearBoundary(GridStorage& storage) : storage(storage) {}
+  explicit OperationEvalAnovaLinearBoundary(GridStorage& storage,
+                                            AnovaBoundaryGrid::AnovaComponent& component)
+      : storage(storage), component(component) {}
 
   /**
    * Destructor
@@ -38,6 +48,7 @@ class OperationEvalAnovaLinearBoundary : public OperationEval {
  protected:
   /// Pointer to GridStorage object
   GridStorage& storage;
+  AnovaBoundaryGrid::AnovaComponent component;
 };
 
 }  // namespace base

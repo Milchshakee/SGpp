@@ -29,7 +29,7 @@ class OperationAnovaDecomposition {
   ~OperationAnovaDecomposition() {}
 
   
-  void decompose(const DataVector& alpha, DataVector& result);
+  void decompose(DataVector& alpha, DataVector& result);
 
  protected:
   // Pointer to the grid's GridStorage object

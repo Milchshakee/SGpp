@@ -8,6 +8,7 @@
 #include <sgpp/base/grid/Grid.hpp>
 #include <sgpp/base/grid/generation/AnovaBoundaryGridGenerator.hpp>
 #include <sgpp/base/grid/AnovaTypes.hpp>
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
 
 namespace sgpp {
 namespace base {
@@ -136,8 +137,8 @@ class AnovaBoundaryGrid : public Grid {
 
   const std::vector<AnovaTypes::LevelIndexPair>& getAnchor();
 
-  std::function<double(const DataVector&)>& getSamplingFunction(
-      std::function<double(const DataVector&)>& func);
+  std::shared_ptr<ScalarFunction> getSamplingFunction(
+      ScalarFunction& func);
 
  protected:
   /// grid generator
