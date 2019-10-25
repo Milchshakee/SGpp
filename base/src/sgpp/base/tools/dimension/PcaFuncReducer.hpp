@@ -27,6 +27,15 @@ class PcaFuncResult : public Result<PcaFuncInput> {
  public:
   PcaFuncResult(const PcaFuncInput& input, const DataMatrix& m, size_t n, const DataVector& mean);
 
+  PcaFuncResult& operator=(const PcaFuncResult& other) {
+    if (this == &other) return *this;
+    originalFunction = other.originalFunction;
+    reducedSurrogate = other.reducedSurrogate;
+    reducedSurrogateFunction = EvalFunction(reducedSurrogate);
+    projection = other.projection;
+    return *this;
+  }
+
   ScalarFunction& getOriginalFunction() override;
   ScalarFunction& getReducedFunctionSurrogate() override;
   VectorFunction& getTransformationFunction() override;

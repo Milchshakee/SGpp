@@ -75,6 +75,28 @@ sgpp::base::AsQuadResult sgpp::base::AsQuadFixedCutter::cut(const AsQuadInput& i
   return AsQuadResult(input, info.eigenVectors, n, mean);
 }
 
+
+sgpp::base::AsQuadErrorRuleCutter::AsQuadErrorRuleCutter(ErrorRule& rule, double minValue,
+  const DataVector& mean) : ErrorRuleCutter<sgpp::base::AsQuadInput, sgpp::base::AsInfo, sgpp::base::AsQuadResult>(rule, minValue), mean(mean) {
+}
+
+sgpp::base::AsQuadResult sgpp::base::AsQuadErrorRuleCutter::cut(const AsQuadInput& input,
+                                                                const AsInfo& info) {
+  size_t dim = input.originalFunction.getNumberOfParameters();
+  AsQuadResult last(input, info.eigenVectors, dim,
+                  mean);
+  for (size_t d = 1; d < dim; ++d) {
+    AsQuadResult result(input, info.eigenVectors, dim - d, mean);
+    double var = 1 - result.calculateRelativeError(r);
+    if (var > minVariance) {
+      last = result;
+    } else {
+      return last;
+    }
+  }
+  return last;
+}
+
 sgpp::base::AsInfo sgpp::base::AsQuadReducer::evaluate(AsQuadInput& input) {
   std::vector<PointSample<double>> samples(input.gradientSample.getDimensions());
   for (size_t i = 0; i < input.gradientSample.getDimensions(); ++i) {

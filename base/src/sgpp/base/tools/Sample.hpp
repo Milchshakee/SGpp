@@ -51,6 +51,12 @@ public:
     }
   }
 
+  void erase(size_t index)
+  {
+    keys.erase(keys.begin() + index);
+    values.erase(values.begin() + index);
+  }
+
   T& getValue(const K& key) {
     for (size_t i = 0; i < getSize(); i++) {
       if (key == keys[i]) {
@@ -225,6 +231,8 @@ public:
     OperationQuadratureMC opMC(*grid, paths);
     return opMC.doQuadratureL2Error(f, valuesDataVector);
   }
+
+  void setHierarchised(bool h) { hierarchised = h; }
 
   bool isHierarchised() const { return hierarchised; }
 

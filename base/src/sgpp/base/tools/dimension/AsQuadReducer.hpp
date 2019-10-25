@@ -13,42 +13,59 @@
 namespace sgpp {
 namespace base {
 
-  struct AsQuadInput
-  {
+struct AsQuadInput {
   ScalarFunction& originalFunction;
   SGridSample functionSample;
   GridSample<DataVector> gradientSample;
-  };
+};
 
-  class AsQuadResult : public Result<SGridSample>
-  {
-  public:
-    AsQuadResult(const AsQuadInput& input, const DataMatrix& m, size_t n, const DataVector& mean);
+class AsQuadResult : public Result<SGridSample> {
+ public:
+  AsQuadResult(const AsQuadInput& input, const DataMatrix& m, size_t n, const DataVector& mean);
 
-    
-    ScalarFunction& getOriginalFunction() override;
-    VectorFunction& getTransformationFunction() override;
-    ScalarFunction& getReducedFunctionSurrogate() override;
-    SGridSample& getReducedOutput() override;
-    InputProjection& getProjection();
 
-  private:
-    ScalarFunction* originalFunction;
-    InputProjection projection;
-    SGridSample reduced;
-   EvalFunction evalFunc;
-  };
+  AsQuadResult& operator=(const AsQuadResult& other) {
+    if (this == &other) return *this;
+    Result<SGridSample>::operator =(other);
+    originalFunction = other.originalFunction;
+    projection = other.projection;
+    reduced = other.reduced;
+    evalFunc = EvalFunction(reduced);
+    return *this;
+  }
 
-    class AsQuadFixedCutter : public FixedCutter<AsQuadInput, AsInfo, AsQuadResult>
-    {
-    public:
-      AsQuadFixedCutter(size_t n, const DataVector& mean);
+  ScalarFunction& getOriginalFunction() override;
+  VectorFunction& getTransformationFunction() override;
+  ScalarFunction& getReducedFunctionSurrogate() override;
+  SGridSample& getReducedOutput() override;
+  InputProjection& getProjection();
 
-      AsQuadResult cut(const AsQuadInput& input, const AsInfo& info) override;
+ private:
+  ScalarFunction* originalFunction;
+  InputProjection projection;
+  SGridSample reduced;
+  EvalFunction evalFunc;
+};
 
-    private:
-      DataVector mean;
-    };
+class AsQuadFixedCutter : public FixedCutter<AsQuadInput, AsInfo, AsQuadResult> {
+ public:
+  AsQuadFixedCutter(size_t n, const DataVector& mean);
+
+  AsQuadResult cut(const AsQuadInput& input, const AsInfo& info) override;
+
+ private:
+  DataVector mean;
+};
+
+class AsQuadErrorRuleCutter : public ErrorRuleCutter<AsQuadInput, AsInfo, AsQuadResult> {
+ public:
+  AsQuadErrorRuleCutter(ErrorRule& rule, double minValue, const DataVector& mean);
+
+  AsQuadResult cut(const AsQuadInput& input, const AsInfo& info) override;
+
+ private:
+  DataVector mean;
+};
 
 class AsQuadReducer : public Reducer<AsQuadInput, AsInfo, AsQuadResult> {
  public:
@@ -56,10 +73,9 @@ class AsQuadReducer : public Reducer<AsQuadInput, AsInfo, AsQuadResult> {
                                                      VectorFunction& gradient);
 
   static GridSample<DataVector> fromFiniteDifferences(std::shared_ptr<Grid>&, ScalarFunction& func,
-                                                       double h);
+                                                      double h);
 
   AsInfo evaluate(AsQuadInput& input) override;
-
 };
 
 }  // namespace base

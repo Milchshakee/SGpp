@@ -35,7 +35,18 @@ public:
   AnovaResult(std::vector<bool>& activeDimensions, size_t dimensions, const AnovaInput& input,
               double converedVariance);
 
-  
+  AnovaResult& operator=(const AnovaResult& other) {
+    if (this == &other) return *this;
+    activeDimensions = other.activeDimensions;
+    dimensions = other.dimensions;
+    coveredVariance = other.coveredVariance;
+    originalFunction = other.originalFunction;
+    transformation = other.transformation;
+    reducedSample = other.reducedSample;
+    eval = EvalFunction(reducedSample);
+    return *this;
+  }
+
     ScalarFunction& getOriginalFunction() override;
   VectorFunction& getTransformationFunction();
   SGridSample& getReducedOutput();

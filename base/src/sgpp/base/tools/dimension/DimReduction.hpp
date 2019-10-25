@@ -86,11 +86,11 @@ class Result {
   template <class INPUT, class INFO, class OUTPUT>
   class ErrorRuleCutter : public Cutter<INPUT, INFO, OUTPUT> {
  public:
-  ErrorRuleCutter(ErrorRule& r, double maxError) : r(r), maxError(maxError) {};
+  ErrorRuleCutter(ErrorRule& r, double maxError) : r(r), minVariance(maxError) {};
 
  protected:
   ErrorRule& r;
-  double maxError;
+  double minVariance;
 };
 
 template <class INPUT, class INFO, class OUTPUT>
@@ -113,9 +113,26 @@ class Reducer {
   public:
     InputProjection(const DataMatrix& basis, size_t n, const DataVector& mean);
 
+    InputProjection& operator=(const InputProjection& other) {
+      if (this == &other) return *this;
+      oldToNewBasis = other.oldToNewBasis;
+      newToOldBasis = other.newToOldBasis;
+      oldDimensions = other.oldDimensions;
+      newDimensions = other.newDimensions;
+      mean = other.mean;
+      posRange = other.posRange;
+      negRange = other.negRange;
+      start = other.start;
+      end = other.end;
+      func = ProjectionFunction(*this);
+      return *this;
+    }
+
     void inverse(const DataVector& in, DataVector& out);
     VectorFunction& getFunction();
 
+    size_t getNewDimensions();
+    const DataMatrix getTransformationMatrix();
     const DataVector& getStart();
     const DataVector& getEnd();
 
@@ -137,6 +154,7 @@ class Reducer {
      public:
       ProjectionFunction() = default;
       ProjectionFunction(InputProjection& p);
+
       ~ProjectionFunction() = default;
       void eval(const DataVector& in, DataVector& out) override;
       void clone(std::unique_ptr<VectorFunction>& clone) const override;

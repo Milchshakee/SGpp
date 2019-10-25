@@ -26,6 +26,16 @@ class AsMcResult : public Result<SGridSample> {
   AsMcResult(const AsMcInput& input, const DataMatrix& m, size_t n, GridType type, level_t l,
              const DataVector& mean);
 
+  AsMcResult& operator=(const AsMcResult& other) {
+    if (this == &other) return *this;
+    Result<SGridSample>::operator =(other);
+    originalFunction = other.originalFunction;
+    projection = other.projection;
+    reduced = other.reduced;
+    evalFunc = EvalFunction(reduced);
+    return *this;
+  }
+
   ScalarFunction& getOriginalFunction() override;
   VectorFunction& getTransformationFunction() override;
   ScalarFunction& getReducedFunctionSurrogate() override;

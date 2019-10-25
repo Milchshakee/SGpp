@@ -44,6 +44,7 @@ sgpp::base::AnovaResult::AnovaResult(std::vector<bool>& ad, size_t d, const Anov
     inverse.mult(v, newV);
     return sampleEval.eval(newV);
   };
+
   reducedSample = SGridSample(newGrid, f);
   reducedSample.hierarchise();
   eval = EvalFunction(reducedSample);
@@ -91,7 +92,7 @@ void cutRec(double minVarianceShare, double* currentVarianceShare, size_t* dim,
     size_t removed = 0;
     for (size_t i = 0; i < variances.getSize(); i++) {
       if (variances.getKeys()[i - removed][minIndex]) {
-        variances.getKeys().erase(variances.getKeys().begin() + i - removed);
+        variances.erase(i - removed);
         removed++;
       }
     }
@@ -138,10 +139,10 @@ sgpp::base::AnovaResult sgpp::base::AnovaErrorRuleCutter::cut(const AnovaInput& 
                                                               const AnovaInfo& info) {
   size_t dim = input.sample.getDimensions();
   std::vector<bool> activeDimensions(dim, true);
-  sgpp::base::Sample<sgpp::base::AnovaBoundaryGrid::AnovaComponent, double> errorShares =
+  sgpp::base::Sample<sgpp::base::AnovaBoundaryGrid::AnovaComponent, double> varianceShares =
       info.variances;
   double share = 1.0;
-  cutRec(maxError, &share, &dim, errorShares, activeDimensions);
+  cutRec(minVariance, &share, &dim, varianceShares, activeDimensions);
 
   return AnovaResult(activeDimensions, dim, input, share);
 }
@@ -197,9 +198,11 @@ sgpp::base::AnovaInfo sgpp::base::AnovaReducer::evaluate(AnovaInput& input) {
     sum += x.second;
     }
 
-  for (auto& x : errorShares) {
-      x.second /= sum;
-  }
+  if (sum > 0) {
+      for (auto& x : errorShares) {
+        x.second /= sum;
+      }
+    }
 
 
   return {errorShares};

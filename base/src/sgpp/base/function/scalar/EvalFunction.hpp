@@ -21,11 +21,19 @@ class EvalFunction : public ScalarFunction {
   EvalFunction(const SGridSample& sample, OperationEval& evalOp);
   ~EvalFunction() override = default;
 
+  EvalFunction& operator=(const EvalFunction& other) {
+    if (this == &other) return *this;
+    ScalarFunction::operator=(other);
+    sample = other.sample;
+    evalOp = other.evalOp;
+    return *this;
+  }
+
   double eval(const base::DataVector& x) override;
   void clone(std::unique_ptr<ScalarFunction>& clone) const override;
 
  private:
-  const SGridSample* sample;
+  SGridSample* sample;
   OperationEval* evalOp;
 };
 }  // namespace base

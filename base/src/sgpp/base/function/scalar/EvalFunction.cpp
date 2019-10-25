@@ -11,8 +11,9 @@ EvalFunction::EvalFunction(const SGridSample& sample)
 }
 
 EvalFunction::EvalFunction(const SGridSample& sample, OperationEval& evalOp)
-    : ScalarFunction(sample.getDimensions()), sample(&sample), evalOp(&evalOp)
-{
+    : ScalarFunction(sample.getDimensions()),
+      sample(&const_cast<SGridSample&>(sample)),
+      evalOp(&evalOp) {
   if (!sample.isHierarchised())
   {
     throw std::invalid_argument("Sample must be hierachised");

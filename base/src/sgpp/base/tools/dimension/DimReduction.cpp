@@ -55,6 +55,10 @@ void InputProjection::inverse(const DataVector& in, DataVector& out) {
   }
 }
 
+size_t InputProjection::getNewDimensions() { return newDimensions; }
+
+const DataMatrix InputProjection::getTransformationMatrix() { return oldToNewBasis; }
+
 const DataVector& InputProjection::getStart() { return start; }
 
 const DataVector& InputProjection::getEnd() { return end; }

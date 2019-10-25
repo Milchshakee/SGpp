@@ -22,10 +22,11 @@ AsMcResult AsMcErrorRuleCutter::cut(const AsMcInput& input, const AsInfo& info) 
   for (size_t d = 1; d < input.function.getNumberOfParameters(); ++d) {
     AsMcResult result(input, info.eigenVectors, input.function.getNumberOfParameters() - d, type,
                       level, mean);
-    if (result.calculateRelativeError(r) > maxError) {
-      return last;
-    } else {
+    double var = 1 - result.calculateRelativeError(r);
+    if (var > minVariance) {
       last = result;
+    } else {
+      return last;
     }
   }
   return last;

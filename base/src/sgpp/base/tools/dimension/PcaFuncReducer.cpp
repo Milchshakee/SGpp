@@ -16,10 +16,11 @@ sgpp::base::PcaFuncResult sgpp::base::PcaFuncErrorRuleCutter::cut(const PcaFuncI
   PcaFuncResult last(input, info.basis, input.sample.getDimensions(), info.mean);
   for (size_t d = 1; d < input.sample.getDimensions(); ++d) {
     PcaFuncResult result(input, info.basis, input.sample.getDimensions() - d, info.mean);
-    if (result.calculateRelativeError(r) > maxError) {
-      return last;
-    } else {
+    double var = 1 - result.calculateRelativeError(r);
+    if (var > minVariance) {
       last = result;
+    } else {
+      return last;
     }
   }
   return last;
