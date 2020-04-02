@@ -21,7 +21,7 @@ namespace base {
 OperationQuadratureMC::OperationQuadratureMC(Grid& grid, size_t mcPaths)
     : grid(&grid), mcPaths(mcPaths) {
   // init seed for random number generator
-  srand((unsigned)time(0));
+  srand(static_cast<unsigned>(time(nullptr)));
   // this->simple_rand.seed((unsigned)time(0));
 }
 

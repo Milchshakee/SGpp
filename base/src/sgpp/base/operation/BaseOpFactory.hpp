@@ -8,6 +8,9 @@
 
 #include <sgpp/base/grid/Grid.hpp>
 
+#include <sgpp/base/operation/hash/OperationEvalGradient.hpp>
+#include <sgpp/base/operation/hash/OperationEvalHessian.hpp>
+#include <sgpp/base/operation/hash/OperationEvalPartialDerivative.hpp>
 #include <sgpp/base/operation/hash/OperationHierarchisation.hpp>
 #include <sgpp/base/operation/hash/OperationQuadrature.hpp>
 #include <sgpp/base/operation/hash/OperationFirstMoment.hpp>
@@ -17,7 +20,10 @@
 #include <sgpp/base/operation/hash/OperationMatrix.hpp>
 #include <sgpp/base/operation/hash/OperationEval.hpp>
 #include <sgpp/base/operation/hash/OperationMultipleEval.hpp>
+#include <sgpp/base/operation/hash/OperationSecondMoment.hpp>
 #include <sgpp/base/operation/hash/OperationStencilHierarchisation.hpp>
+#include <sgpp/base/operation/hash/OperationWeightedQuadrature.hpp>
+#include <sgpp/base/operation/hash/OperationWeightedSecondMoment.hpp>
 #include <sgpp/base/operation/hash/OperationDiagonal.hpp>
 
 /*
@@ -26,11 +32,8 @@
 
 #include <sgpp/globaldef.hpp>
 
+#include <set>
 #include <vector>
-
-#include "hash/OperationEvalGradient.hpp"
-#include "hash/OperationEvalHessian.hpp"
-#include "hash/OperationEvalPartialDerivative.hpp"
 
 namespace sgpp {
 
@@ -72,6 +75,15 @@ base::OperationHierarchisation* createOperationArbitraryBoundaryHierarchisation(
  */
 base::OperationQuadrature* createOperationQuadrature(base::Grid& grid);
 /**
+ * Factory method, returning an OperationWeightedQuadrature for the grid at hand.
+ * Note: object has to be freed after use.
+ *
+ * @param grid Grid which is to be used for quadrature
+ * @return Pointer to the new OperationWeightedQuadrature for the Grid grid
+ */
+base::OperationWeightedQuadrature* createOperationWeightedQuadrature(base::Grid& grid,
+                                                                     size_t quadOrder);
+/**
  * Factory method, returning an OperationFirstMoment for the grid at hand.
  * Note: object has to be freed after use.
  *
@@ -87,6 +99,16 @@ base::OperationFirstMoment* createOperationFirstMoment(base::Grid& grid);
  * @return Pointer to the new OperationSecondMoment for the Grid grid
  */
 base::OperationSecondMoment* createOperationSecondMoment(base::Grid& grid);
+/**
+ * Factory method, returning an OperationWeightedSecondMoment for the grid at hand.
+ * Note: object has to be freed after use.
+ *
+ * @param grid Grid which is to be used for quadrature
+ * @param quadOrder quadrature order
+ * @return Pointer to the new OperationSecondMoment for the Grid grid
+ */
+base::OperationWeightedSecondMoment* createOperationWeightedSecondMoment(base::Grid& grid,
+                                                                         size_t quadOrder);
 /**
  * Factory method, returning an OperationConvert for the grid at hand.
  * Note: object has to be freed after use.
@@ -134,7 +156,7 @@ base::OperationMultipleEval* createOperationMultipleEval(base::Grid& grid,
  * @return Pointer to the new OperationMultipleEval object for the Grid grid
  */
 base::OperationMultipleEval* createOperationMultipleEvalInter(base::Grid& grid,
-    base::DataMatrix& dataset, std::vector<std::vector<size_t>> interactions);
+    base::DataMatrix& dataset, std::set<std::set<size_t>> interactions);
 
 /**
  * Factory method, returning an OperationMultipleEvalNaive for the grid at hand.

@@ -15,6 +15,8 @@
 #include <sgpp/base/operation/hash/OperationEval.hpp>
 
 #include <cstddef>
+#include <limits>
+
 namespace sgpp {
 namespace base {
 
@@ -63,11 +65,10 @@ class InterpolantVectorFunction : public VectorFunction {
   inline void eval(const DataVector& x, DataVector& value) override {
     for (size_t t = 0; t < d; t++) {
       if ((x[t] < 0.0) || (x[t] > 1.0)) {
-        value.setAll(INFINITY);
+        value.setAll(std::numeric_limits<double>::infinity());
         return;
       }
     }
-
     opEval->eval(alpha, x, value);
   }
 

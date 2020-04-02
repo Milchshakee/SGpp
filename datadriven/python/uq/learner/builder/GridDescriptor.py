@@ -1,3 +1,8 @@
+# Copyright (C) 2008-today The SG++ project
+# This file is part of the SG++ project. For conditions of distribution and
+# use, please see the copyright notice provided with SG++ or at
+# sgpp.sparsegrids.org
+
 from pysgpp.extensions.datadriven.learner.Types import BorderTypes
 from pysgpp.extensions.datadriven.learner.formatter.GridFormatter import GridFormatter
 
@@ -13,7 +18,7 @@ from pysgpp import RegularGridConfiguration, GridType_PolyBoundary, \
     GridType_ModPolyClenshawCurtis, GridType_ModLinearClenshawCurtis, \
     GridType_ModLinear, GridType_ModPoly, GridType_LinearBoundary
 from pysgpp.pysgpp_swig import GridType_Poly, GridType_Linear, GridType_Bspline, \
-    GridType_BsplineBoundary, GridType_BsplineClenshawCurtis, \
+    GridType_BsplineBoundary, GridType_BsplineClenshawCurtis, GridType_NakBsplineBoundary, \
     GridType_ModBsplineClenshawCurtis, GridType_ModBspline
 
 
@@ -147,6 +152,7 @@ class GridDescriptor(object):
                                        GridType_Bspline,
                                        GridType_ModBspline,
                                        GridType_BsplineBoundary,
+                                       GridType_NakBsplineBoundary,
                                        GridType_BsplineClenshawCurtis,
                                        GridType_ModBsplineClenshawCurtis]:
                 print( "Warning: grid type not fully supported" )

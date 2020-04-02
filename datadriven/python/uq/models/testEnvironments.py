@@ -1,3 +1,8 @@
+# Copyright (C) 2008-today The SG++ project
+# This file is part of the SG++ project. For conditions of distribution and
+# use, please see the copyright notice provided with SG++ or at
+# sgpp.sparsegrids.org
+
 
 import numpy as np
 
@@ -112,6 +117,12 @@ class TestEnvironmentSG(object):
                     refineNodes.withAnchoredWeightedL2OptimizationRanking()
                 elif adaptive == "anchored_mean_squared":
                     refineNodes.withAnchoredMeanSquaredOptRanking()
+                elif adaptive == "l2_mc_pm1d":
+                    refineNodes.withPM1D_MC_Ranking(deg,gridType,'l2')
+                elif adaptive == "exp_mc_pm1d":
+                    refineNodes.withPM1D_MC_Ranking(deg,gridType,'exp')
+                elif adaptive == "var_mc_pm1d":
+                    refineNodes.withPM1D_MC_Ranking(deg,gridType,'var')
                 else:
                     raise AttributeError("unknown ranking method: refinement, %s" % adaptive)
             else:

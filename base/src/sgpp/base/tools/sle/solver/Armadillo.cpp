@@ -46,11 +46,17 @@ bool Armadillo::solve(SLE& system, DataMatrix& B, DataMatrix& X) const {
   const arma::uword n = static_cast<arma::uword>(system.getDimension());
   ArmadilloMatrix A(n, n);
   size_t nnz = 0;
+  size_t rowsDone = 0;
 
   A.zeros();
 
-// parallelize only if the system is cloneable
-#pragma omp parallel if (system.isCloneable()) shared(system, A, nnz)
+  // parallelize only if the system is cloneable
+  // ToDo (rehmemk): On my Ubuntu 19.10 instance the following did not work anymore
+  // and I replaced it by a simple default(shared). Does this introduce problems?
+  // (same in Eigen.cpp)
+  //#pragma omp parallel if (system.isCloneable()) shared(system, A, nnz, rowsDone) default(none)
+#pragma omp parallel if (system.isCloneable()) default(shared)
+
   {
     SLE* system2 = &system;
 #ifdef _OPENMP
@@ -64,7 +70,7 @@ bool Armadillo::solve(SLE& system, DataMatrix& B, DataMatrix& X) const {
 #endif /* _OPENMP */
 
 // copy system matrix to Armadillo matrix object
-#pragma omp for ordered schedule(dynamic)
+#pragma omp for ordered schedule(static)
 
     for (arma::uword i = 0; i < n; i++) {
       for (arma::uword j = 0; j < n; j++) {
@@ -78,16 +84,15 @@ bool Armadillo::solve(SLE& system, DataMatrix& B, DataMatrix& X) const {
         }
       }
 
+#pragma omp atomic
+      rowsDone++;
+
       // status message
-      if (i % 100 == 0) {
-#pragma omp ordered
-        {
-          char str[10];
-          snprintf(str, sizeof(str), "%.1f%%",
-                   static_cast<double>(i) / static_cast<double>(n) * 100.0);
-          Printer::getInstance().printStatusUpdate("constructing matrix (" + std::string(str) +
-                                                   ")");
-        }
+      if (rowsDone % 100 == 0) {
+        char str[10];
+        snprintf(str, sizeof(str), "%.1f%%",
+                 static_cast<double>(rowsDone) / static_cast<double>(n) * 100.0);
+        Printer::getInstance().printStatusUpdate("constructing matrix (" + std::string(str) + ")");
       }
     }
   }

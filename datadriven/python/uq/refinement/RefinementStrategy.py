@@ -1,9 +1,16 @@
+# Copyright (C) 2008-today The SG++ project
+# This file is part of the SG++ project. For conditions of distribution and
+# use, please see the copyright notice provided with SG++ or at
+# sgpp.sparsegrids.org
+
 from pysgpp.extensions.datadriven.uq.analysis import KnowledgeTypes
 from pysgpp.extensions.datadriven.uq.quadrature import getIntegral
 from pysgpp.extensions.datadriven.uq.operations import (estimateConvergence,
                                estimateSurplus)
 from pysgpp import DataVector, DataMatrix, createOperationEvalNaive
 import numpy as np
+import os
+import pickle
 from pysgpp.extensions.datadriven.uq.dists import J
 from pysgpp.extensions.datadriven.uq.plot.plot2d import plotDensity2d
 import matplotlib.pyplot as plt
@@ -156,6 +163,7 @@ class WeightedL2OptRanking(Ranking):
             T = params.getJointTransformation()
             self.vol, self.W, self.D = self._estimationStrategy._extractPDFforMomentEstimation(U, T)
             self.initialized = True
+
 
         # prepare data
         gs = grid.getStorage()
@@ -428,6 +436,79 @@ class AnchoredMeanSquaredOptRanking(Ranking):
 
         # update the ranking
         return np.abs(v[ix] * fx)
+
+
+class PM1D_MC_Ranking(Ranking):
+    """
+    This is pm1d specific! DO NOT MERGE INTO MASTER!
+    Special Refinement criterion for the pm1d CO2 storage example
+    It replicates the WeightedL2OptRanking but calculates the secondMoment with Monte Carlo
+    instead of using estimated densities.
+    This is used in particular for calculating results of the pm1d code with B-splines as currently
+    there are no estimated densities available for them.
+    The Monte Carlo guess is based on 10000 sample points given by the authors of the pm1d code
+    As  the basis function integrals are independent of the actual setting they are precalculated and saved in files.
+    """
+
+    def __init__(self,deg,gridType,refinementType):
+        super(self.__class__, self).__init__()#
+        self.refinementType = refinementType
+        self.momentsFileName = refinementType + '_' + str(gridType) + '_' + str(deg)
+        self.momentsFilePath = os.path.join('/home/rehmemk/git/PaperCO2/Code/sgpp_pm1d/MR/Bspline_precalc',self.momentsFileName + '.pkl')
+        if os.path.exists(self.momentsFilePath):
+            with open(self.momentsFilePath, 'rb') as f:
+                self.moments = pickle.load(f)
+        else:
+            self.moments = {}
+
+    def update(self, grid, v, gpi, params, *args, **kws):
+        """
+        Compute ranking for variance estimation
+
+        \argmax_{i \in \A} |v_i| \sqrt{E[\varphi_i^2]} 
+        
+        using E[\varphi_i^2] \approx \sum_{j} \varphi_i^2(x_j),
+        where x_j are realisations of the unknown probability density function.
+
+        @param grid: Grid 
+        @param v: numpy array coefficients
+        """
+        # prepare data
+        gs = grid.getStorage()
+        basisi = getBasis(grid)
+
+        self.vol = 4.0 #for the pm1d code the domain is [0,1] x [0,1] x [-0.5,3.5] 
+        
+        # compute the second moment for the current grid point using monte carlo estimation 
+        key =(gpi.getLevel(0),gpi.getLevel(1),gpi.getLevel(2),gpi.getIndex(0),gpi.getIndex(1),gpi.getIndex(2))
+        if key in self.moments:
+            secondMoment = self.moments[key]
+        else:
+            self.MCparameters = np.loadtxt("/home/rehmemk/git/SGpp/misc/python/UnitInputParameters_5023.txt", dtype = np.float64, delimiter=' ')
+            secondMoment = 0
+            for j in range(len(self.MCparameters)):
+                baseEval = 1
+                for d in range(len(self.MCparameters[0])):
+                    baseEval *= basisi.eval(gpi.getLevel(d), gpi.getIndex(d),self.MCparameters[j,d])
+                if self.refinementType == 'l2':
+                    secondMoment += baseEval**2
+                elif self.refinementType =='exp':
+                    secondMoment += baseEval
+                elif self.refinementType =='var':
+                    sys.exit('RefinementStrategy: not implemented yet')
+            secondMoment = max(0.0, self.vol * secondMoment/ len(self.MCparameters))
+            self.moments[key] = secondMoment
+            with open(self.momentsFilePath, 'wb+') as f:
+                pickle.dump(self.moments, f, pickle.HIGHEST_PROTOCOL)
+
+        # update the ranking
+        ix = gs.getSequenceNumber(gpi)
+        if self.refinementType == 'l2':
+            ranking = np.abs(v[ix]) * np.sqrt(secondMoment)
+        elif self.refinementType == 'exp':
+            ranking = np.abs(v[ix]*secondMoment)
+            
+        return ranking
 
 # ------------------------------------------------------------------------------
 # Add new collocation nodes

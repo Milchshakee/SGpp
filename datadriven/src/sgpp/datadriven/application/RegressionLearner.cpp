@@ -13,6 +13,8 @@
 #include <sgpp/base/grid/type/LinearBoundaryGrid.hpp>
 #include <sgpp/base/grid/type/LinearGrid.hpp>
 #include <sgpp/base/grid/type/ModLinearGrid.hpp>
+#include <sgpp/base/grid/type/NakBsplineExtendedGrid.hpp>
+#include <sgpp/base/grid/type/NakBsplineModifiedGrid.hpp>
 
 #include <sgpp/solver/sle/BiCGStab.hpp>
 #include <sgpp/solver/sle/ConjugateGradients.hpp>
@@ -25,6 +27,7 @@
 #include <cassert>
 #include <limits>
 #include <random>
+#include <set>
 #include <vector>
 
 namespace sgpp {
@@ -35,7 +38,7 @@ RegressionLearner::RegressionLearner(base::RegularGridConfiguration gridConfig,
                                      solver::SLESolverConfiguration solverConfig,
                                      solver::SLESolverConfiguration finalSolverConfig,
                                      datadriven::RegularizationConfiguration regularizationConfig,
-                                     std::vector<std::vector<size_t>> terms)
+                                     std::set<std::set<size_t>> terms)
     : gridConfig(gridConfig),
       adaptivityConfig(adaptivityConfig),
       solverConfig(solverConfig),
@@ -54,8 +57,8 @@ RegressionLearner::RegressionLearner(base::RegularGridConfiguration gridConfig,
       adaptivityConfig(adaptivityConfig),
       solverConfig(solverConfig),
       finalSolverConfig(finalSolverConfig),
-      regularizationConfig(regularizationConfig) {
-  terms = std::vector<std::vector<size_t>>();
+      regularizationConfig(regularizationConfig),
+      terms() {
   initializeGrid(gridConfig);
 }
 
@@ -65,7 +68,7 @@ void RegressionLearner::train(base::DataMatrix& trainDataset, base::DataVector& 
         "RegressionLearner::train: length of classes vector does not match to "
         "dataset!");
   }
-  auto solver = std::move(createSolver(classes.getSize()));
+  auto solver = createSolver(classes.getSize());
 
   if (solver.type == Solver::solverCategory::cg) {
     systemMatrix = createDMSystem(trainDataset);
@@ -113,7 +116,6 @@ void RegressionLearner::fit(Solver& solver, base::DataVector& classes) {
       break;
     }
     case Solver::solverCategory::none:
-    default:
       throw base::application_exception("RegressionLearner::fit: Solver not supported!");
   }
 }
@@ -132,8 +134,8 @@ void RegressionLearner::refine(base::DataMatrix& data, base::DataVector& classes
   errors.componentwise_mult(weights);
 
   // Refine the grid using the weighted errors.
-  auto refineFunctor = base::SurplusRefinementFunctor(errors, adaptivityConfig.noPoints_,
-                                                      adaptivityConfig.threshold_);
+  auto refineFunctor = base::SurplusRefinementFunctor(errors, adaptivityConfig.numRefinementPoints_,
+                                                      adaptivityConfig.refinementThreshold_);
   if (terms.size() > 0) {
     grid->getGenerator().refineInter(refineFunctor, terms);
   } else {
@@ -149,6 +151,10 @@ void RegressionLearner::refine(base::DataMatrix& data, base::DataVector& classes
 }
 
 base::Grid& RegressionLearner::getGrid() { return *grid; }
+
+std::shared_ptr<sgpp::base::Grid> RegressionLearner::getGridPtr() { return grid; }
+
+// std::shared_ptr<base::Grid> RegressionLearner::getGridPtr() { return grid; }
 
 size_t RegressionLearner::getGridSize() const { return grid->getSize(); }
 
@@ -167,11 +173,17 @@ void RegressionLearner::initializeGrid(const base::RegularGridConfiguration grid
   using base::GridType;
   // no switch used to avoid missing case warnings
   if (gridConfig.type_ == GridType::LinearBoundary) {
-    grid = std::make_unique<base::LinearBoundaryGrid>(gridConfig.dim_);
+    grid = std::make_shared<base::LinearBoundaryGrid>(gridConfig.dim_);
   } else if (gridConfig.type_ == GridType::ModLinear) {
-    grid = std::make_unique<base::ModLinearGrid>(gridConfig.dim_);
+    grid = std::make_shared<base::ModLinearGrid>(gridConfig.dim_);
   } else if (gridConfig.type_ == GridType::Linear) {
-    grid = std::make_unique<base::LinearGrid>(gridConfig.dim_);
+    grid = std::make_shared<base::LinearGrid>(gridConfig.dim_);
+  } else if (gridConfig.type_ == GridType::NakBsplineBoundary) {
+    grid = std::make_shared<base::NakBsplineBoundaryGrid>(gridConfig.dim_, gridConfig.maxDegree_);
+  } else if (gridConfig.type_ == GridType::ModNakBspline) {
+    grid = std::make_shared<base::NakBsplineModifiedGrid>(gridConfig.dim_, gridConfig.maxDegree_);
+  } else if (gridConfig.type_ == GridType::NakBsplineExtended) {
+    grid = std::make_shared<base::NakBsplineExtendedGrid>(gridConfig.dim_, gridConfig.maxDegree_);
   } else {
     throw base::application_exception(
         "RegressionLearner::InitializeGrid: An unsupported grid type was chosen!");
@@ -183,7 +195,6 @@ void RegressionLearner::initializeGrid(const base::RegularGridConfiguration grid
     grid->getGenerator().regular(gridConfig.level_, gridConfig.t_);
   }
   weights = base::DataVector(grid->getSize());
-  weights.setAll(0.0);
 }
 
 // maybe pass regularizationConfig instead of state.
@@ -205,7 +216,6 @@ std::unique_ptr<datadriven::DMSystemMatrixBase> RegressionLearner::createDMSyste
     case RegularizationType::GroupLasso:
     case RegularizationType::Lasso:
     case RegularizationType::ElasticNet:
-    default:
       throw base::application_exception(
           "RegressionLearner::createDMSystem: An unsupported regularization type was chosen!");
   }
@@ -218,17 +228,17 @@ RegressionLearner::Solver RegressionLearner::createSolver(size_t n_rows) {
   using solver::SLESolverType;
   switch (solverConfig.type_) {
     case SLESolverType::CG:
-      return Solver(std::move(std::make_unique<solver::ConjugateGradients>(
-          solverConfig.maxIterations_, solverConfig.eps_)));
+      return Solver(std::make_unique<solver::ConjugateGradients>(solverConfig.maxIterations_,
+                                                                 solverConfig.eps_));
     case SLESolverType::BiCGSTAB:
-      return Solver(std::move(
-          std::make_unique<solver::BiCGStab>(solverConfig.maxIterations_, solverConfig.eps_)));
+      return Solver(
+          std::make_unique<solver::BiCGStab>(solverConfig.maxIterations_, solverConfig.eps_));
     case SLESolverType::FISTA:
       return createSolverFista(n_rows);
-    default:
-      throw base::application_exception(
-          "RegressionLearner::createSolver: An unsupported solver type was chosen!");
   }
+
+  throw base::application_exception(
+      "RegressionLearner::createSolver: An unsupported solver type was chosen!");
 }
 
 RegressionLearner::Solver RegressionLearner::createSolverFista(size_t n_rows) {
@@ -253,10 +263,11 @@ RegressionLearner::Solver RegressionLearner::createSolverFista(size_t n_rows) {
     // The following methods are not supported by FISTA.
     case RegularizationType::Diagonal:
     case RegularizationType::Laplace:
-    default:
-      throw base::application_exception(
-          "RegressionLearner::createSolverFista: Regularization type not supported by FISTA!");
+      break;
   }
+
+  throw base::application_exception(
+      "RegressionLearner::createSolverFista: Regularization type not supported by FISTA!");
 }
 
 }  // namespace datadriven

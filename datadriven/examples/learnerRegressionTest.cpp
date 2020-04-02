@@ -32,10 +32,13 @@ sgpp::datadriven::RegressionLearner getLearner(
   auto gridConfig = sgpp::base::RegularGridConfiguration();
   gridConfig.dim_ = dimension;
   gridConfig.level_ = 3;
-  gridConfig.type_ = sgpp::base::GridType::ModLinear;
+  //  gridConfig.type_ = sgpp::base::GridType::ModLinear;
+
+  gridConfig.type_ = sgpp::base::GridType::ModNakBspline;
+  gridConfig.maxDegree_ = 3;
 
   auto adaptivityConfig = sgpp::base::AdaptivityConfiguration();
-  adaptivityConfig.noPoints_ = 0;
+  adaptivityConfig.numRefinementPoints_ = 0;
   adaptivityConfig.numRefinements_ = 0;
 
   auto solverConfig = sgpp::solver::SLESolverConfiguration();
@@ -128,15 +131,15 @@ std::vector<sgpp::datadriven::RegularizationConfiguration> getConfigs() {
     regularizationConfig.lambda_ = lambda;
     regularizationConfig.exponentBase_ = 0.25;
     result.push_back(regularizationConfig);
-    {
-      // Laplace
-      const auto regularizationType = sgpp::datadriven::RegularizationType::Laplace;
-      auto regularizationConfig = sgpp::datadriven::RegularizationConfiguration();
-      regularizationConfig.type_ = regularizationType;
-      regularizationConfig.lambda_ = lambda;
-      regularizationConfig.exponentBase_ = 0.25;
-      result.push_back(regularizationConfig);
-    }
+    //    {
+    //      // Laplace
+    //      const auto regularizationType = sgpp::datadriven::RegularizationType::Laplace;
+    //      auto regularizationConfig = sgpp::datadriven::RegularizationConfiguration();
+    //      regularizationConfig.type_ = regularizationType;
+    //      regularizationConfig.lambda_ = lambda;
+    //      regularizationConfig.exponentBase_ = 0.25;
+    //      result.push_back(regularizationConfig);
+    //    }
     // Diagonal
     for (const auto exponentBase : exponentBases) {
       const auto regularizationType = sgpp::datadriven::RegularizationType::Diagonal;
@@ -156,9 +159,9 @@ std::vector<sgpp::datadriven::RegularizationConfiguration> getConfigs() {
  * hyper-parameter for the Friedman3 dataset using the diagonal Tikhonov regularization method.
  */
 int main(int argc, char** argv) {
-  const auto filenameTrain = std::string("../datasets/friedman3_10k_train.arff");
-  const auto filenameValidation = std::string("../datasets/friedman3_10k_validation.arff");
-  const auto filenameTest = std::string("../datasets/friedman3_10k_test.arff");
+  const auto filenameTrain = std::string("../datasets/friedman/friedman3_10k_train.arff");
+  const auto filenameValidation = std::string("../datasets/friedman/friedman3_10k_validation.arff");
+  const auto filenameTest = std::string("../datasets/friedman/friedman3_10k_test.arff");
 
   auto dataTrain = sgpp::datadriven::ARFFTools::readARFFFromFile(filenameTrain);
   std::cout << "Read file " << filenameTrain << "." << std::endl;

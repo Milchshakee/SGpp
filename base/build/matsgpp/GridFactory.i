@@ -32,8 +32,15 @@
 %newobject sgpp::base::Grid::createSquareRootGrid(size_t dim);
 %newobject sgpp::base::Grid::createPrewaveletGrid(size_t dim);
 %newobject sgpp::base::Grid::createPeriodicGrid(size_t dim);
+%newobject sgpp::base::Grid::createPolyClenshawCurtisBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel);
+%newobject sgpp::base::Grid::createPolyClenshawCurtisGrid(size_t dim, size_t degree);
+%newobject sgpp::base::Grid::createModPolyClenshawCurtisGrid(size_t dim, size_t degree);
+%newobject sgpp::base::Grid::createNakBsplineBoundaryGrid(size_t dim, size_t degree);
+%newobject sgpp::base::Grid::createNakBsplineModifiedGrid(size_t dim, size_t degree);
+%newobject sgpp::base::Grid::createNakBsplineExtendedGrid(size_t dim, size_t degree);
 
-%newobject sgpp::base::Grid::unserialize(std::string& istr);
+%newobject sgpp::base::Grid::unserializeFromFile(std::string filename);
+%newobject sgpp::base::Grid::unserialize(const std::string& istr);
 %newobject sgpp::base::Grid::clone();
 
 %include "stl.i"
@@ -60,14 +67,20 @@ struct RegularGridConfiguration {
 struct AdaptivityConfiguration {
       /// number of refinements
       size_t numRefinements_;
-      /// refinement threshold for surpluses
-      double threshold_;
+      /// refinement threshold
+      double refinementThreshold_;
+      /// coarsening threshold
+      double coarseningThreshold_;
       /// refinement type: false: classic, true: maxLevel
       bool maxLevelType_;
       /// max. number of points to be refined
-      size_t noPoints_;
+      size_t numRefinementPoints_;
+      /// max. number of points to be coarsened
+      size_t numCoarseningPoints_;
       /// max. percent of points to be refined
       double percent_;
+      /// prevent coarsening of initial grid points, needed for some decompositions
+      bool coarsenInitialPoints_;
     };
 
 enum class GridType {
@@ -86,7 +99,7 @@ enum class GridType {
   Prewavelet,                   // 12
   SquareRoot,                   // 13
   Periodic,                     // 14
-  LinearClenshawCurtis,         // 15
+  LinearClenshawCurtisBoundary, // 15
   Bspline,                      // 16
   BsplineBoundary,              // 17
   BsplineClenshawCurtis,        // 18
@@ -96,29 +109,38 @@ enum class GridType {
   ModFundamentalSpline,         // 22
   ModBsplineClenshawCurtis,     // 23
   LinearStencil,                // 24
-  ModLinearStencil              // 25
+  ModLinearStencil,             // 25
+  PolyClenshawCurtisBoundary,   // 26
+  PolyClenshawCurtis,           // 27
+  LinearClenshawCurtis,         // 28
+  ModPolyClenshawCurtis,        // 29
+  ModLinearClenshawCurtis,      // 30
+  NakBsplineBoundary,           // 31
+  ModNakBspline,                // 32
+  NakBsplineExtended            // 33
 };
 
 class Grid
 {
 public:
-  static Grid* createGrid(RegularGridConfiguration gridConfig);
+  static Grid* createGrid(sgpp::base::RegularGridConfiguration gridConfig);
   static Grid* createLinearGrid(size_t dim);
   static Grid* createLinearStretchedGrid(size_t dim);
-  static Grid* createLinearBoundaryGrid(size_t dim, size_t boundaryLevel);
+  static Grid* createLinearBoundaryGrid(size_t dim, size_t boundaryLevel=1);
   static Grid* createLinearClenshawCurtisGrid(size_t dim);
-  static Grid* createLinearBoundaryGrid(size_t dim);
+  static Grid* createLinearClenshawCurtisBoundaryGrid(size_t dim, size_t boundaryLevel=1);
+  static Grid* createModLinearClenshawCurtisGrid(size_t dim);
   static Grid* createLinearStretchedBoundaryGrid(size_t dim);
   static Grid* createModLinearGrid(size_t dim);
   static Grid* createPolyGrid(size_t dim, size_t degree);
-  static Grid* createPolyBoundaryGrid(size_t dim, size_t degree);
+  static Grid* createPolyBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
   static Grid* createModPolyGrid(size_t dim, size_t degree);
   static Grid* createWaveletGrid(size_t dim);
-  static Grid* createWaveletBoundaryGrid(size_t dim);
+  static Grid* createWaveletBoundaryGrid(size_t dim, size_t boundaryLevel=1);
   static Grid* createModWaveletGrid(size_t dim);
   static Grid* createBsplineGrid(size_t dim, size_t degree);
-  static Grid* createBsplineBoundaryGrid(size_t dim, size_t degree);
-  static Grid* createBsplineClenshawCurtisGrid(size_t dim, size_t degree);
+  static Grid* createBsplineBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
+  static Grid* createBsplineClenshawCurtisGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
   static Grid* createModBsplineGrid(size_t dim, size_t degree);
   static Grid* createModBsplineClenshawCurtisGrid(size_t dim, size_t degree);
   static Grid* createFundamentalSplineGrid(size_t dim, size_t degree);
@@ -129,8 +151,22 @@ public:
   static Grid* createLinearGridStencil(size_t dim);
   static Grid* createModLinearGridStencil(size_t dim);
   static Grid* createPeriodicGrid(size_t dim);
+  static Grid* createPolyClenshawCurtisBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
+  static Grid* createPolyClenshawCurtisGrid(size_t dim, size_t degree);
+  static Grid* createModPolyClenshawCurtisGrid(size_t dim, size_t degree);
+  static Grid* createNaturalBsplineBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
+  static Grid* createNakBsplineBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
+  static Grid* createModNakBsplineGrid(size_t dim, size_t degree);
+  static Grid* createWeaklyFundamentalSplineBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
+  static Grid* createWeaklyFundamentalNakSplineBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
+  static Grid* createFundamentalSplineBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
+  static Grid* createFundamentalNakSplineBoundaryGrid(size_t dim, size_t degree, size_t boundaryLevel=1);
+  static Grid* createNakBsplineExtendedGrid(size_t dim, size_t degree);
 	
-  static Grid* unserialize(std::string& istr);
+  static Grid* unserializeFromFile(std::string filename);
+  static Grid* unserialize(const std::string& istr);
+
+  static sgpp::base::GridType stringToGridType(const std::string& gridType);
 	
 protected:
   Grid();
@@ -151,6 +187,8 @@ public:
   void refine(sgpp::base::DataVector& vector, int num);
   void insertPoint(size_t dim, unsigned int levels[], unsigned int indeces[], bool isLeaf);
   int getSize();
+
+  std::string getTypeAsString();
   
   Grid* clone();
 };

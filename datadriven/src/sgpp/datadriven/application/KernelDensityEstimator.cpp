@@ -3,6 +3,7 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
+#include <sgpp/base/function/scalar/ScalarFunction.hpp>
 #include <sgpp/datadriven/application/DensityEstimator.hpp>
 #include <sgpp/datadriven/application/KernelDensityEstimator.hpp>
 #include <sgpp/datadriven/operation/hash/simple/OperationRosenblattTransformationKDE.hpp>
@@ -23,7 +24,6 @@
 #include <random>
 #include <vector>
 #include <algorithm>
-#include "../../../../../base/src/sgpp/base/function/scalar/ScalarFunction.hpp"
 
 namespace sgpp {
 namespace datadriven {
@@ -91,8 +91,6 @@ void KernelDensityEstimator::initializeKernel(KernelType kernelType) {
       break;
     case KernelType::EPANECHNIKOV:
       kernel.reset(new EpanechnikovKernel());
-      break;
-    default:
       break;
   }
 }
@@ -384,8 +382,6 @@ void KernelDensityEstimator::computeAndSetOptKDEbdwth() {
     case BandwidthOptimizationType::MAXIMUMLIKELIHOOD:
       MaximumLikelihoodCrossValidation::optimizeBandwidths(this, sigma);
       break;
-    default:
-      break;
   }
 
   // set the current bandwidth
@@ -541,8 +537,7 @@ void SilvermansRule::optimizeBandwidths(KernelDensityEstimator* kde, base::DataV
   size_t numDims = kde->getDim();
   bandwidths.resize(numDims);
 
-  base::DataVector flag(numDims);
-  flag.setAll(1.);
+  base::DataVector flag(numDims, 1.0);
 
   // get min and max in each direction
   double datamin = 0.0;

@@ -1,3 +1,8 @@
+# Copyright (C) 2008-today The SG++ project
+# This file is part of the SG++ project. For conditions of distribution and
+# use, please see the copyright notice provided with SG++ or at
+# sgpp.sparsegrids.org
+
 import os
 import re
 import gzip
@@ -97,13 +102,13 @@ def writeDataARFF(data, merge=False):
                     fout.write("@ATTRIBUTE x%d NUMERIC\n" % i)
                 else:
                     fout.write("@ATTRIBUTE %s NUMERIC\n" % dataset['names'][i])
-                fstring = fstring + "%s,"
+                fstring = fstring + "%.16f,"
 
             hasclass = False
             if 'classes' in dataset:
                 hasclass = True
                 fout.write("@ATTRIBUTE class NUMERIC\n")
-                fstring = fstring + "%s"
+                fstring = fstring + "%.16f"
             else:
                 fstring = fstring.strip(',')
 

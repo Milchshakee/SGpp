@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <sgpp/globaldef.hpp>
 #include <sgpp/base/datatypes/DataMatrix.hpp>
 #include <sgpp/base/datatypes/DataVector.hpp>
 #include <sgpp/base/exception/application_exception.hpp>
@@ -13,14 +12,16 @@
 #include <sgpp/base/operation/hash/OperationMatrix.hpp>
 #include <sgpp/datadriven/algorithm/DMSystemMatrixBase.hpp>
 #include <sgpp/datadriven/configuration/RegularizationConfiguration.hpp>
+#include <sgpp/globaldef.hpp>
 #include <sgpp/solver/SLESolver.hpp>
 #include <sgpp/solver/TypesSolver.hpp>
 #include <sgpp/solver/sle/fista/FistaBase.hpp>
 
 #include <algorithm>
 #include <memory>
-#include <vector>
+#include <set>
 #include <utility>
+#include <vector>
 
 namespace sgpp {
 namespace datadriven {
@@ -30,10 +31,10 @@ namespace datadriven {
  */
 class RegressionLearner {
  public:
-  // Fista and (Bi)-CG do not share a common interace.
-  // This is why we need this slightly dirty solution.
-  // Excluded from SWIG.
-  #ifndef SWIG
+// Fista and (Bi)-CG do not share a common interace.
+// This is why we need this slightly dirty solution.
+// Excluded from SWIG.
+#ifndef SWIG
   class Solver {
    public:
     enum class solverCategory { cg, fista, none } type = solverCategory::none;
@@ -79,7 +80,6 @@ class RegressionLearner {
           first.solverFista.swap(second.solverFista);
           break;
         case solverCategory::none:
-        default:
           // Do nothing.
           break;
       }
@@ -102,7 +102,6 @@ class RegressionLearner {
           solverFista.~unique_ptr<sgpp::solver::FistaBase>();
           break;
         case solverCategory::none:
-        default:
           // do nothing
           break;
       }
@@ -114,7 +113,7 @@ class RegressionLearner {
       std::unique_ptr<sgpp::solver::FistaBase> solverFista;
     };
   };
-  #endif  // end inner class
+#endif  // end inner class
 
   /**
    * @brief RegressionLearner
@@ -133,7 +132,7 @@ class RegressionLearner {
                     sgpp::solver::SLESolverConfiguration solverConfig,
                     sgpp::solver::SLESolverConfiguration finalSolverConfig,
                     datadriven::RegularizationConfiguration regularizationConfig,
-                    std::vector<std::vector<size_t>> terms);
+                    std::set<std::set<size_t>> terms);
 
   /**
    * @brief RegressionLearner
@@ -171,6 +170,11 @@ class RegressionLearner {
    */
   sgpp::base::Grid& getGrid();
   /**
+   * @brief getGridPtr
+   * @return shared pointer to the grid
+   */
+  std::shared_ptr<sgpp::base::Grid> getGridPtr();
+  /**
    * @brief getMSE
    * @param data is the design matrix
    * @param y is the target
@@ -194,12 +198,12 @@ class RegressionLearner {
   sgpp::solver::SLESolverConfiguration solverConfig;
   sgpp::solver::SLESolverConfiguration finalSolverConfig;
   datadriven::RegularizationConfiguration regularizationConfig;
-  std::vector<std::vector<size_t>> terms;
+  std::set<std::set<size_t>> terms;
   std::unique_ptr<sgpp::base::OperationMultipleEval> op;
   std::unique_ptr<datadriven::DMSystemMatrixBase> systemMatrix;
 
   /// sparse grid object
-  std::unique_ptr<sgpp::base::Grid> grid;
+  std::shared_ptr<sgpp::base::Grid> grid;
   /// the grid's coefficients
   sgpp::base::DataVector weights;
 

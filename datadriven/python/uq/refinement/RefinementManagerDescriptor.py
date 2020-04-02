@@ -1,3 +1,8 @@
+# Copyright (C) 2008-today The SG++ project
+# This file is part of the SG++ project. For conditions of distribution and
+# use, please see the copyright notice provided with SG++ or at
+# sgpp.sparsegrids.org
+
 from pysgpp.extensions.datadriven.uq.refinement.AdmissibleSet import (AdmissibleSparseGridNodeSet,
                            RefinableNodesSet)
 from pysgpp.extensions.datadriven.uq.refinement.LocalRefinementStrategy import (CreateAllChildrenRefinement,
@@ -22,7 +27,8 @@ from pysgpp.extensions.datadriven.uq.refinement.RefinementStrategy import (Surpl
                                 AnchoredWeightedL2OptRanking,
                                 AnchoredVarianceOptRanking,
                                 AnchoredMeanSquaredOptRanking,
-                                AnchoredExpectationValueOptRanking)
+                                AnchoredExpectationValueOptRanking,
+                                PM1D_MC_Ranking)
 from pysgpp.extensions.datadriven.uq.quadrature.bilinearform import BilinearGaussQuadratureStrategy
 from pysgpp.extensions.datadriven.uq.quadrature.HashQuadrature import HashQuadrature
 
@@ -174,7 +180,11 @@ class RefineCurrentNodesDescriptor(AdmissibleSetDescriptor):
         localRefinementStrategy = ANOVARefinement()
         self._refinement.setLocalRefinementStrategy(localRefinementStrategy)
         return self
-
+    
+    def withPM1D_MC_Ranking(self,deg,gridType,refinementType):
+        ranking = PM1D_MC_Ranking(deg,gridType,refinementType)
+        self._refinement.setRefinementCriterion(ranking)
+        return self
 
 class MostPromisingChildrenDescriptor(AdmissibleSetDescriptor):
 
