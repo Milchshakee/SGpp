@@ -17,9 +17,6 @@ AnovaBoundaryGrid::AnovaBoundaryGrid(std::istream& istr) : Grid(istr), generator
 
 AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim) : Grid(dim), generator(storage) {}
 
-AnovaBoundaryGrid::AnovaBoundaryGrid(size_t dim, std::vector<AnovaTypes::LevelIndexPair>& anchor)
-    : Grid(dim), generator(storage), anchor(anchor) {}
-
 void AnovaBoundaryGrid::serialize(std::ostream& ostr, int version) {
   this->Grid::serialize(ostr, version);
 }
@@ -30,26 +27,5 @@ void AnovaBoundaryGrid::serialize(std::ostream& ostr, int version) {
  */
 GridGenerator& AnovaBoundaryGrid::getGenerator() { return generator; }
 
-bool AnovaBoundaryGrid::hasAnchor() { return anchor.size() > 0; }
-
-const std::vector<AnovaTypes::LevelIndexPair>& AnovaBoundaryGrid::getAnchor() { return anchor; }
-
-std::shared_ptr<ScalarFunction> AnovaBoundaryGrid::getSamplingFunction(ScalarFunction& func) {
-  if (!hasAnchor()) {
-    throw operation_exception("Grid has no anchor"); 
-    }
-
-  std::function<double(const DataVector&)> f = [&func, this](const DataVector& v) {
-    DataVector out = v;
-    for (size_t d = 0; d < getDimension(); d++) {
-      if (v[d] == 0 && anchor[d].level > -1) {
-        out[d] = static_cast<double>(anchor[d].index) / static_cast<double>(1 << anchor[d].level);
-      }
-    }
-    return func.eval(out);
-  };
-
-  return std::make_shared<WrapperScalarFunction>(func.getNumberOfParameters(), f);
-}
 }  // namespace base
 }  // namespace sgpp

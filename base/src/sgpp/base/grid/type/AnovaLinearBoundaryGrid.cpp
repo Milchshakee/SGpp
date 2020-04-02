@@ -1,15 +1,13 @@
 #include <sgpp/base/grid/type/AnovaLinearBoundaryGrid.hpp>
 #include <sgpp/base/operation/hash/common/basis/AnovaLinearBoundaryBasis.hpp>
+#include <sgpp/base/exception/operation_exception.hpp>
+#include <sgpp/base/function/scalar/WrapperScalarFunction.hpp>
 
 sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(std::istream& istr) : AnovaBoundaryGrid(istr) {
 }
 
-sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(size_t dim)
-    : AnovaBoundaryGrid(dim) {}
 
-
-sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(size_t dim,
-  std::vector<AnovaTypes::LevelIndexPair>& anchor) : AnovaBoundaryGrid(dim, anchor) {
+sgpp::base::AnovaLinearBoundaryGrid::AnovaLinearBoundaryGrid(size_t dim) : AnovaBoundaryGrid(dim) {
 }
 
 sgpp::base::GridType sgpp::base::AnovaLinearBoundaryGrid::getType() {

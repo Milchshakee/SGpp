@@ -38,6 +38,33 @@ class RandomDistribution : public VectorDistribution {
  protected:
   std::mt19937_64 prng;
 };
+
+  class RandomDistributionGenerator {
+ public:
+  RandomDistributionGenerator(size_t dimensions, std::uint64_t seed = std::mt19937_64::default_seed);
+
+  virtual DataVector generate() = 0;
+
+ protected:
+  size_t dimensions;
+  std::mt19937_64 prng;
+};
+
+    class PdfGenerator {
+ public:
+  PdfGenerator(std::uint64_t seed,
+               ScalarFunction& pdf, size_t iterations, double stepSize);
+
+  virtual DataVector generate() = 0;
+};
+
+      class MultiRandomDistributionGenerator {
+ public:
+        MultiRandomDistributionGenerator(std::uint64_t seed,
+                                         std::vector<RandomDistributionGenerator> gens);
+
+  virtual DataVector generate() = 0;
+};
 }  // namespace base
 }  // namespace sgpp
 

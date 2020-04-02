@@ -118,13 +118,6 @@ class AnovaBoundaryGrid : public Grid {
   AnovaBoundaryGrid(size_t dim);
 
   /**
-   * Constructor Anova Boundary Grid
-   *
-   * @param dim           the dimension of the grid
-   */
-  AnovaBoundaryGrid(size_t dim, std::vector<AnovaTypes::LevelIndexPair>& anchor);
-
-  /**
    * Destructor
    */
   ~AnovaBoundaryGrid() override = default;
@@ -133,18 +126,9 @@ class AnovaBoundaryGrid : public Grid {
 
   void serialize(std::ostream& ostr, int version = SERIALIZATION_VERSION) override;
 
-  bool hasAnchor();
-
-  const std::vector<AnovaTypes::LevelIndexPair>& getAnchor();
-
-  std::shared_ptr<ScalarFunction> getSamplingFunction(
-      ScalarFunction& func);
-
  protected:
   /// grid generator
   AnovaBoundaryGridGenerator generator;
-
-  std::vector<AnovaTypes::LevelIndexPair> anchor;
 };
 
 }  // namespace base

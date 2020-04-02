@@ -7,11 +7,6 @@ sgpp::base::AnovaPrewaveletBoundaryGrid::AnovaPrewaveletBoundaryGrid(std::istrea
 sgpp::base::AnovaPrewaveletBoundaryGrid::AnovaPrewaveletBoundaryGrid(size_t dim)
     : AnovaBoundaryGrid(dim) {}
 
-
-sgpp::base::AnovaPrewaveletBoundaryGrid::AnovaPrewaveletBoundaryGrid(size_t dim,
-  std::vector<AnovaTypes::LevelIndexPair>& anchor) : AnovaBoundaryGrid(dim, anchor) {
-}
-
 sgpp::base::GridType sgpp::base::AnovaPrewaveletBoundaryGrid::getType() {
   return sgpp::base::GridType::AnovaPrewaveletBoundary;
 }

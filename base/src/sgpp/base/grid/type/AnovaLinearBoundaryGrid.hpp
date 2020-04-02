@@ -8,6 +8,7 @@
 #include <sgpp/base/grid/Grid.hpp>
 #include <sgpp/base/grid/generation/AnovaBoundaryGridGenerator.hpp>
 #include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
+#include <sgpp/base/operation/hash/common/basis/AnovaLinearBoundaryBasis.hpp>
 
 namespace sgpp {
 namespace base {
@@ -28,13 +29,6 @@ class AnovaLinearBoundaryGrid : public AnovaBoundaryGrid {
    */
   AnovaLinearBoundaryGrid(size_t dim);
 
-    /**
-   * Constructor Anova Boundary Grid
-   *
-   * @param dim           the dimension of the grid
-   */
-  AnovaLinearBoundaryGrid(size_t dim, std::vector<AnovaTypes::LevelIndexPair>& anchor);
-
   /**
    * Destructor
    */
@@ -45,6 +39,7 @@ class AnovaLinearBoundaryGrid : public AnovaBoundaryGrid {
   SBasis& getBasis() override;
 
   static Grid* unserialize(std::istream& istr);
+
 };
 
 }  // namespace base

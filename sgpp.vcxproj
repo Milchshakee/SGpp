@@ -24,7 +24,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
-    <RemoteRootDir>~/vsprojects2</RemoteRootDir>
+    <RemoteRootDir>~/vsprojects4</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -48,13 +48,12 @@
     <NMakeIncludeSearchPath>$(LINUX_HEADER_FILE_PATH)\usr\include\c++\5;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu\c++\5;$(LINUX_HEADER_FILE_PATH)\usr\include\c++\5\backward;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\5\include;$(LINUX_HEADER_FILE_PATH)\usr\local\include;$(LINUX_HEADER_FILE_PATH)\usr\lib\gcc\x86_64-linux-gnu\5\include-fixed;$(LINUX_HEADER_FILE_PATH)\usr\include\x86_64-linux-gnu;$(LINUX_HEADER_FILE_PATH)\usr\include;$(ProjectDir)base\src\;$(ProjectDir)optimization\src\;$(ProjectDir)datadriven\src\</NMakeIncludeSearchPath>
     <ProjectPublicIncludePath>
     </ProjectPublicIncludePath>
-    <NMakePreprocessorDefinitions>
-    </NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>USE_EIGEN</NMakePreprocessorDefinitions>
     <NMakeForcedIncludes>$(LINUX_HEADER_FILE_PATH)\cpp_defines.txt;$(ProjectDir)cpp_version.txt</NMakeForcedIncludes>
     <RemoteCleanCommandLine>scons -c</RemoteCleanCommandLine>
     <RemoteReBuildCommandLine>scons --clean
 scons --no-cache</RemoteReBuildCommandLine>
-    <RemoteBuildOutputs>/home/milchshakee/vsprojects2/sgpp/base/examples/testrun</RemoteBuildOutputs>
+    <RemoteBuildOutputs>/home/milchshakee/vsprojects4/sgpp/base/examples/dimensionReduction</RemoteBuildOutputs>
     <SourcesToCopyRemotelyOverride>@(SourcesToCopyRemotely);@(DataFilesToCopyRemotely)</SourcesToCopyRemotelyOverride>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -81,12 +80,6 @@ scons --no-cache</RemoteReBuildCommandLine>
     <None Include="base\**" Exclude="base\doc\**" />
     <None Include="datadriven\**" Exclude="datadriven\doc\**" />
     <None Include="optimization\**" Exclude="optimization\doc\**" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="base\src\sgpp\base\operation\hash\OperationQuadratureAnovaBoundary.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="base\src\sgpp\base\operation\hash\OperationQuadratureAnovaBoundary.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

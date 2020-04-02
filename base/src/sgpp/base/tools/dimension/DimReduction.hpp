@@ -13,6 +13,45 @@
 namespace sgpp {
 namespace base {
 
+  struct ActiveSubspaceInfo {
+  sgpp::base::DataMatrix eigenVectors;
+  sgpp::base::DataVector eigenValues;
+};
+
+  class InputProjectionFunction : public VectorFunction {
+   public:
+    InputProjectionFunction(const DataMatrix& basis, size_t reducedDims);
+    ~InputProjectionFunction() override;
+    void eval(const DataVector& x, DataVector& value) override;
+    void clone(std::unique_ptr<VectorFunction>& clone) const override;
+
+   private:
+    DataMatrix basis;
+    DataVector posRanges;
+  };
+
+  struct ReductionResult {
+    InputProjectionFunction transformation;
+    SGridSample reducedSample;
+  };
+
+  namespace DimReduction
+  {
+double calculateMcL2Error(ScalarFunction& func,
+                                                    VectorFunction& transformation,
+                                                    ScalarFunction& reduced, uint64_t seed,
+                                                    size_t samples);
+sgpp::base::SGridSample createReducedAnovaSample(sgpp::base::SGridSample& sample,
+                                                 AnovaTypes::level_t level, size_t reducedDims);
+ActiveSubspaceInfo activeSubspaceMC(ScalarFunction& f, VectorDistribution& dist);
+ReductionResult reduce(ScalarFunction& f, const DataMatrix& basis, size_t reducedDims, AnovaTypes::level_t level);
+
+    double calcScalingFactor(sgpp::base::DataVector& point, sgpp::base::DataVector& direction);
+
+    DataVector transformPoint(const DataMatrix& basis, const DataVector& in, size_t reducedDims);
+  }
+
+
 template <class INPUT, class INFO, class OUTPUT>
 class Cutter {
  public:
