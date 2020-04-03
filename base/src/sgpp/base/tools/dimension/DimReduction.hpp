@@ -43,7 +43,7 @@ double calculateMcL2Error(ScalarFunction& func,
                                                     size_t samples);
 sgpp::base::SGridSample createReducedAnovaSample(sgpp::base::SGridSample& sample,
                                                  AnovaTypes::level_t level, size_t reducedDims);
-ActiveSubspaceInfo activeSubspaceMC(ScalarFunction& f, VectorDistribution& dist);
+ActiveSubspaceInfo activeSubspaceMC(ScalarFunction& f, DistributionSample& dist);
 ReductionResult reduce(ScalarFunction& f, const DataMatrix& basis, size_t reducedDims, AnovaTypes::level_t level);
 
     double calcScalingFactor(sgpp::base::DataVector& point, sgpp::base::DataVector& direction);

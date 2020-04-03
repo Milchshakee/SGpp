@@ -40,8 +40,9 @@ class AnovaBoundaryGridGenerator : public GridGenerator {
   void refine(RefinementFunctor& func, std::vector<size_t>* addedPoints = 0) override;
   size_t getNumberOfRefinablePoints() override;
 
-  void coarsen(CoarseningFunctor& func, DataVector& alpha) override;
-  void coarsenNFirstOnly(CoarseningFunctor& func, DataVector& alpha, size_t numFirstOnly) override;
+  void coarsen(CoarseningFunctor& func, std::vector<size_t>* removedSeq) override;
+  void coarsenNFirstOnly(CoarseningFunctor& func, size_t numFirstOnly,
+    std::vector<size_t>* removedSeq, size_t minIndexConsidered) override;
   size_t getNumberOfRemovablePoints() override;
 
   void refineMaxLevel(RefinementFunctor& func, size_t maxLevel) override;

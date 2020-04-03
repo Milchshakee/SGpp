@@ -1,13 +1,13 @@
 #include <iostream>
 #include <sgpp/base/operation/hash/OperationAnovaDecomposition.hpp>
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
-#include <sgpp/base/tools/dist/RandomUniformDistribution.hpp>
 #include <sgpp/globaldef.hpp>
 #include "sgpp/base/function/scalar/WrapperScalarFunction.hpp"
 #include "sgpp/base/grid/Grid.hpp"
 #include "sgpp/base/operation/BaseOpFactory.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 #include <sgpp/base/function/scalar/EvalFunction.hpp>
+#include <sgpp/base/tools/DistributionUniform.hpp>
 
 double f(const sgpp::base::DataVector& v) { return 3 * v[0] + 1 * v[1]; }
 
@@ -25,8 +25,9 @@ int main(int argc, char* argv[]) {
 
   std::shared_ptr<sgpp::base::Grid> grid(sgpp::base::Grid::createLinearBoundaryGrid(1));
   grid->getGenerator().regular(6);
-  auto dist = sgpp::base::RandomUniformDistribution(10000, std::mt19937_64::default_seed,
-                                                    func.getNumberOfParameters());
+  std::shared_ptr<sgpp::base::DistributionUniform> u = std::make_shared<sgpp::base::DistributionUniform>();
+  sgpp::base::DistributionsVector v(2, u);
+  auto dist = sgpp::base::DistributionSample(10000, v);
   sgpp::base::ActiveSubspaceInfo i = sgpp::base::DimReduction::activeSubspaceMC(func, dist);
   sgpp::base::ReductionResult result = sgpp::base::DimReduction::reduce(func, i.eigenVectors, 1, 7);
   sgpp::base::EvalFunction eval(result.reducedSample);

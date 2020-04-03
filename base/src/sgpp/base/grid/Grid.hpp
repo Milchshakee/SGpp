@@ -218,6 +218,9 @@ class Grid {
    */
   static Grid* createGrid(RegularGridConfiguration gridConfig);
 
+    static Grid* createAnovaLinearBoundaryGrid(size_t dim);
+  static Grid* createAnovaPrewaveletBoundaryGrid(size_t dim);
+
   /**
    * creates a stencil for a linear grid (without boundaries)
    *

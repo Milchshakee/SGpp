@@ -1,9 +1,6 @@
 #include <sgpp/base/function/scalar/WrapperScalarFunction.hpp>
 #include <sgpp/base/tools/EigenHelper.hpp>
-#include <sgpp/base/tools/dimension/AsMcReducer.hpp>
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
-#include <sgpp/base/tools/dimension/HypercubeFitFunction.hpp>
-#include <sgpp/base/tools/dist/RandomUniformDistribution.hpp>
 
 namespace sgpp {
 namespace base {
@@ -153,9 +150,37 @@ sgpp::base::SGridSample DimReduction::createReducedAnovaSample(sgpp::base::SGrid
   return reducedSample;
 }
 
-ActiveSubspaceInfo DimReduction::activeSubspaceMC(ScalarFunction& f, VectorDistribution& dist) {
+PointSample<DataMatrix> fromFiniteDifferences(ScalarFunction& func, DistributionSample& v,
+                                              double h) {
+  std::vector<DataMatrix> samples(v.getSize(), DataMatrix(v.getDimensions(), v.getDimensions()));
+  sgpp::base::DataVector sampleGradient(v.getDimensions());
+  DataVector working;
+  for (size_t i = 0; i < v.getSize(); ++i) {
+    const DataVector& vec = v.getVectors()[i];
+    working = vec;
+    for (size_t d = 0; d < v.getDimensions(); ++d) {
+      double hOffset = vec[d] + h;
+      if (hOffset > 1.0) {
+        hOffset -= 2 * h;
+      }
+      working[d] = hOffset;
+      double val = (func.eval(vec) - func.eval(working)) / h;
+      sampleGradient[d] = val;
+      working[d] = vec[d];
+    }
+
+    for (size_t d = 0; d < v.getDimensions(); ++d) {
+      sgpp::base::DataVector col = sampleGradient;
+      col.mult(sampleGradient[d]);
+      samples[i].setColumn(d, col);
+    }
+  }
+  return PointSample<DataMatrix>(v.getVectors(), samples);
+}
+
+ActiveSubspaceInfo DimReduction::activeSubspaceMC(ScalarFunction& f, DistributionSample& dist) {
   sgpp::base::PointSample<sgpp::base::DataMatrix> m =
-      sgpp::base::AsMcReducer::fromFiniteDifferences(f, dist, 0.0001);
+      fromFiniteDifferences(f, dist, 0.0001);
   size_t dimensions = f.getNumberOfParameters();
   sgpp::base::DataMatrix matrix(dimensions, dimensions);
   for (size_t i = 0; i < dist.getSize(); ++i) {

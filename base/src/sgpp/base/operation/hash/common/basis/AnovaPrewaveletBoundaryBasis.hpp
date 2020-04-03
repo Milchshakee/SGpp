@@ -36,6 +36,11 @@ class AnovaPrewaveletBoundaryBasis : public Basis<LT, IT> {
    */
   ~AnovaPrewaveletBoundaryBasis() override {}
 
+
+  double evalDx(LT level, IT index, double x) override {
+    throw std::runtime_error("Not implemented");
+  }
+
   /**
    * Evaluate a basis function.
    * Do not call this function for level -1, since it is constant at level -1.
@@ -60,7 +65,7 @@ class AnovaPrewaveletBoundaryBasis : public Basis<LT, IT> {
 
     if (1 == index) {
       double res = 0;
-      for (size_t i = 0; i < 4; i++) {
+      for (unsigned i = 0; i < 4; i++) {
         res += border_stamp[i] * evalNormalHat(level, i, p);
       }
       return res;

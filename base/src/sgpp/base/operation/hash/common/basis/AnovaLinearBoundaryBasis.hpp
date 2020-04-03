@@ -31,6 +31,10 @@ class AnovaLinearBoundaryBasis : public Basis<LT, IT> {
    */
   ~AnovaLinearBoundaryBasis() override {}
 
+    double evalDx(LT level, IT index, double x) override {
+    throw std::runtime_error("Not implemented");
+  }
+
   /**
    * Evaluate a basis function.
    * Do not call this function for level -1, since it is constant at level -1.

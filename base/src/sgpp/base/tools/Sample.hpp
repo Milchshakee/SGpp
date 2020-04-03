@@ -7,10 +7,10 @@
 
 #include <sgpp/base/operation/BaseOpFactory.hpp>
 #include <sgpp/base/tools/OperationQuadratureMC.hpp>
-#include <sgpp/base/tools/dist/GridDistribution.hpp>
 #include <sgpp/base/function/vector/VectorFunction.hpp>
 #include <sgpp/base/exception/tool_exception.hpp>
 #include <sgpp/base/tools/OperationL2.hpp>
+#include <sgpp/base/tools/DistributionSample.hpp>
 
 namespace sgpp {
 namespace base {
@@ -113,7 +113,7 @@ public:
     : grid(grid) {
     PointSample<T>::keys = std::vector<DataVector>(grid->getSize());
     PointSample<T>::values = std::vector<T>(grid->getSize());
-    GridDistribution d(*grid);
+    DistributionSample d(*grid);
     for (size_t i = 0; i < d.getSize(); i++) {
       PointSample<T>::keys[i] = d.getVectors()[i];
       PointSample<T>::values[i] = func(d.getVectors()[i]);
@@ -124,7 +124,7 @@ public:
     : grid(grid) {
     PointSample<T>::keys = std::vector<DataVector>(grid->getSize());
     PointSample<T>::values = std::vector<T>(values);
-    GridDistribution d(*grid);
+    DistributionSample d(*grid);
     PointSample<T>::keys = d.getVectors();
   }
 
@@ -148,7 +148,7 @@ public:
     keys = std::vector<DataVector>(grid->getSize());
     values = std::vector<double>(grid->getSize());
 
-    GridDistribution d(*grid);
+    DistributionSample d(*grid);
     for (size_t i = 0; i < d.getSize(); i++) {
       keys[i] = d.getVectors()[i];
       values[i] = func.eval(d.getVectors()[i]);
@@ -249,7 +249,7 @@ private:
 
 namespace SampleHelper {
 
-inline PointSample<double> sampleScalarFunction(VectorDistribution& dist, ScalarFunction& func) {
+inline PointSample<double> sampleScalarFunction(DistributionSample& dist, ScalarFunction& func) {
   std::vector<double> values(dist.getSize());
   for (size_t i = 0; i < dist.getSize(); i++) {
     values[i] = func.eval(dist.getVectors()[i]);
@@ -257,7 +257,7 @@ inline PointSample<double> sampleScalarFunction(VectorDistribution& dist, Scalar
   return PointSample<double>(dist.getVectors(), values);
 }
 
-inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
+inline PointSample<DataVector> sampleVectorFunction(DistributionSample& dist,
                                                     VectorFunction& func) {
   std::vector<DataVector> values(dist.getSize(), DataVector(dist.getDimensions()));
   for (size_t i = 0; i < dist.getSize(); i++) {
@@ -267,7 +267,7 @@ inline PointSample<DataVector> sampleVectorFunction(VectorDistribution& dist,
 }
 
 inline GridSample<DataVector> sampleGrid(std::shared_ptr<Grid>& grid, VectorFunction& func) {
-  GridDistribution d(*grid);
+  DistributionSample d(*grid);
   PointSample<DataVector> s = sampleVectorFunction(d, func);
   return std::move(GridSample<DataVector>(grid, s.getValues()));
 }

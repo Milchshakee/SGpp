@@ -43,15 +43,11 @@ size_t AnovaBoundaryGridGenerator::getNumberOfRefinablePoints() {
   return refine.getNumberOfRefinablePoints(this->storage);
 }
 
-void AnovaBoundaryGridGenerator::coarsen(CoarseningFunctor& func, DataVector& alpha) {
-  HashCoarsening coarsen;
-  coarsen.free_coarsen(this->storage, func, alpha);
+void AnovaBoundaryGridGenerator::coarsen(CoarseningFunctor& func, std::vector<size_t>* removedSeq) {
 }
 
-void AnovaBoundaryGridGenerator::coarsenNFirstOnly(CoarseningFunctor& func, DataVector& alpha,
-                                              size_t numFirstOnly) {
-  HashCoarsening coarsen;
-  coarsen.free_coarsen_NFirstOnly(this->storage, func, alpha, numFirstOnly);
+void AnovaBoundaryGridGenerator::coarsenNFirstOnly(CoarseningFunctor& func, size_t numFirstOnly,
+  std::vector<size_t>* removedSeq, size_t minIndexConsidered) {
 }
 
 size_t AnovaBoundaryGridGenerator::getNumberOfRemovablePoints() {
