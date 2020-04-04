@@ -1,0 +1,9 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <LinuxHeadersPath>C:\Users\cschn\AppData\Local\Microsoft\Linux\Header Cache\1.0\1210576275</LinuxHeadersPath>
+    <LinuxGCCVersion>5</LinuxGCCVersion>
+    <LinuxPreprocessorDefinitions>USE_EIGEN</LinuxPreprocessorDefinitions>
+    <LinuxProjectDir>/mnt/c/Projects/sgpp</LinuxProjectDir>
+    <LinuxDebugProgram>base/examples/dimensionReduction</LinuxDebugProgram>
+  </PropertyGroup>
+</Project>

@@ -200,9 +200,6 @@ ReductionResult DimReduction::reduce(ScalarFunction& f, const DataMatrix& basis,
   WrapperScalarFunction::FunctionEvalType func = [&reducedDims, &basis, &f](const DataVector& v) {
     DataVector transformed = transformPoint(basis, v, reducedDims);
     double value = f.eval(transformed);
-    if (std::isnan(value)) {
-      value = 0;
-    }
     return value;
   };
   WrapperScalarFunction wrapped(f.getNumberOfParameters(), func);

@@ -20,6 +20,7 @@ double g(const sgpp::base::DataVector& v) {
   return std::max(1 - std::abs(5 * x - 2.5), 0.0);
 }
 
+
 int main(int argc, char* argv[]) {
   sgpp::base::WrapperScalarFunction func(2, g);
 
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
   grid->getGenerator().regular(6);
   std::shared_ptr<sgpp::base::DistributionUniform> u = std::make_shared<sgpp::base::DistributionUniform>();
   sgpp::base::DistributionsVector v(2, u);
-  auto dist = sgpp::base::DistributionSample(10000, v);
+  auto dist = sgpp::base::DistributionSample(1000000, v);
   sgpp::base::ActiveSubspaceInfo i = sgpp::base::DimReduction::activeSubspaceMC(func, dist);
   sgpp::base::ReductionResult result = sgpp::base::DimReduction::reduce(func, i.eigenVectors, 1, 7);
   sgpp::base::EvalFunction eval(result.reducedSample);
