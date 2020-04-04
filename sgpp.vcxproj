@@ -39,6 +39,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <RemoteDebuggerCommand>$(LinuxProjectDir)/$(LinuxDebugProgram)</RemoteDebuggerCommand>
     <RemoteDebuggerWorkingDirectory>$(LinuxProjectDir)</RemoteDebuggerWorkingDirectory>
+    <PreLaunchCommand>export LD_LIBRARY_PATH=$(LinuxProjectDir)/lib/sgpp:$LD_LIBRARY_PATH</PreLaunchCommand>
     <BuildCommandLine>
     </BuildCommandLine>
     <ReBuildCommandLine>
