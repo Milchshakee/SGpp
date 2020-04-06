@@ -4,6 +4,6 @@
     <LinuxGCCVersion>5</LinuxGCCVersion>
     <LinuxPreprocessorDefinitions>USE_EIGEN</LinuxPreprocessorDefinitions>
     <LinuxProjectDir>/mnt/c/Projects/sgpp</LinuxProjectDir>
-    <LinuxDebugProgram>base/examples/dimensionReduction</LinuxDebugProgram>
+    <LinuxDebugProgram>datadriven/examples/dimensionReductionRegression</LinuxDebugProgram>
   </PropertyGroup>
 </Project>

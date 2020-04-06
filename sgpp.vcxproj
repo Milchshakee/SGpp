@@ -36,6 +36,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <Import Project="$(ProjectDir)\visual_studio\linux.props" />
+  <Import Project="$(ProjectDir)\visual_studio\modules.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <RemoteDebuggerCommand>$(LinuxProjectDir)/$(LinuxDebugProgram)</RemoteDebuggerCommand>
     <RemoteDebuggerWorkingDirectory>$(LinuxProjectDir)</RemoteDebuggerWorkingDirectory>
@@ -47,13 +48,14 @@
     <CleanCommandLine>
     </CleanCommandLine>
     <RemoteBuildCommandLine>scons</RemoteBuildCommandLine>
-    <NMakeIncludeSearchPath>$(ProjectDir)\base\src;$(LinuxHeadersPath)\usr\include\c++\$(LinuxGCCVersion);$(LinuxHeadersPath)\usr\include\x86_64-linux-gnu\c++\$(LinuxGCCVersion);$(LinuxHeadersPath)\usr\include\c++\$(LinuxGCCVersion)\backward;$(LinuxHeadersPath)\usr\lib\gcc\x86_64-linux-gnu\$(LinuxGCCVersion)\include;$(LinuxHeadersPath)\usr\local\include;$(LinuxHeadersPath)\usr\lib\gcc\x86_64-linux-gnu\$(LinuxGCCVersion)\include-fixed;$(LinuxHeadersPath)\usr\include\x86_64-linux-gnu;$(LinuxHeadersPath)\usr\include</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>@(ActiveModules);$(LinuxHeadersPath)\usr\include\c++\$(LinuxGCCVersion);$(LinuxHeadersPath)\usr\include\x86_64-linux-gnu\c++\$(LinuxGCCVersion);$(LinuxHeadersPath)\usr\include\c++\$(LinuxGCCVersion)\backward;$(LinuxHeadersPath)\usr\lib\gcc\x86_64-linux-gnu\$(LinuxGCCVersion)\include;$(LinuxHeadersPath)\usr\local\include;$(LinuxHeadersPath)\usr\lib\gcc\x86_64-linux-gnu\$(LinuxGCCVersion)\include-fixed;$(LinuxHeadersPath)\usr\include\x86_64-linux-gnu;$(LinuxHeadersPath)\usr\include</NMakeIncludeSearchPath>
     <NMakePreprocessorDefinitions>$(LinuxPreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeForcedIncludes>$(LinuxHeadersPath)\cpp_defines.txt;$(ProjectDir)\visual_studio\cpp_version.txt</NMakeForcedIncludes>
     <RemoteCleanCommandLine>scons -c</RemoteCleanCommandLine>
     <RemoteReBuildCommandLine>scons --clean
 scons --no-cache</RemoteReBuildCommandLine>
-    <RemoteBuildOutputs>$(LinuxProjectDir)/$(LinuxDebugProgram)</RemoteBuildOutputs>
+    <RemoteBuildOutputs>
+    </RemoteBuildOutputs>
     <LocalRemoteCopySources>false</LocalRemoteCopySources>
     <RemoteProjectDir>$(LinuxProjectDir)</RemoteProjectDir>
   </PropertyGroup>

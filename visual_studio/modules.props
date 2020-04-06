@@ -1,0 +1,44 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ActiveModules Include="base\src"/>
+    <ActiveModules Include="optimization\src"/>
+    <ActiveModules Include="solver\src"/>
+    <ActiveModules Include="pde\src"/>
+    <ActiveModules Include="datadriven\src"/>
+    <ActiveModules Include="misc\src"/>
+    <ActiveModules Include="combigrid\src"/>
+    <ActiveModules Include="quadrature\src"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="base\src\**\*.hpp" />
+    <ClCompile Include="base\src\**\*.cpp" />
+    <ClCompile Include="base\examples\**" />
+	
+    <ClInclude Include="solver\src\**\*.hpp" />
+    <ClCompile Include="solver\src\**\*.cpp" />
+    <ClCompile Include="solver\examples\**" />
+	
+    <ClInclude Include="pde\src\**\*.hpp" />
+    <ClCompile Include="pde\src\**\*.cpp" />
+    <ClCompile Include="pde\examples\**" />
+	
+    <ClInclude Include="combigrid\src\**\*.hpp" />
+    <ClCompile Include="combigrid\src\**\*.cpp" />
+    <ClCompile Include="combigrid\examples\**" />
+	
+    <ClInclude Include="optimization\src\**\*.hpp" />
+    <ClCompile Include="optimization\src\**\*.cpp" />
+    <ClCompile Include="optimization\examples\**" />
+	
+    <ClInclude Include="quadrature\src\**\*.hpp" />
+    <ClCompile Include="quadrature\src\**\*.cpp" />
+    <ClCompile Include="quadrature\examples\**" />
+	
+    <ClInclude Include="misc\src\**\*.hpp" />
+    <ClCompile Include="misc\src\**\*.cpp" />
+	
+    <ClInclude Include="datadriven\src\**\*.hpp" />
+    <ClCompile Include="datadriven\src\**\*.cpp" />
+    <ClCompile Include="datadriven\examples\**" />
+  </ItemGroup>
+</Project>
