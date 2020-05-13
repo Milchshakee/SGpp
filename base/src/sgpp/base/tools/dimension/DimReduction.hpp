@@ -39,9 +39,10 @@ namespace base {
   {
 double calculateMcL2Error(ScalarFunction& func,
                                                     VectorFunction& transformation,
-                                                    ScalarFunction& reduced, uint64_t seed,
-                                                    size_t samples);
-sgpp::base::SGridSample createReducedAnovaSample(sgpp::base::SGridSample& sample,
+                            ScalarFunction& reduced, DistributionSample& dist);
+  double calculateMcL2Error(ScalarFunction& func, DistributionSample& dist);
+
+  sgpp::base::SGridSample createReducedAnovaSample(sgpp::base::SGridSample& sample,
                                                  AnovaTypes::level_t level, size_t reducedDims);
 ActiveSubspaceInfo activeSubspaceMC(ScalarFunction& f, DistributionSample& dist);
 ReductionResult reduce(ScalarFunction& f, const DataMatrix& basis, size_t reducedDims, AnovaTypes::level_t level);
@@ -49,6 +50,9 @@ ReductionResult reduce(ScalarFunction& f, const DataMatrix& basis, size_t reduce
     double calcScalingFactor(sgpp::base::DataVector& point, sgpp::base::DataVector& direction);
 
     DataVector transformPoint(const DataMatrix& basis, const DataVector& in, size_t reducedDims);
+
+    PointSample<double> createActiveSubspaceSample(PointSample<double> input,
+                                                   const DataMatrix& basis, size_t reducedDims);
   }
 
 
@@ -66,30 +70,6 @@ public:
                                         ScalarFunction& r) = 0;
   virtual double calculateAbsoluteError(ScalarFunction& f) = 0;
 };
-
-    class L2McRule : public ErrorRule {
- public:
-  L2McRule(uint64_t seed, size_t samples);
-  double calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
-  double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
-  double calculateAbsoluteError(ScalarFunction& f);
-
- private:
-  uint64_t seed;
-  size_t samples;
-};
-
-  class L2SquaredMcRule : public ErrorRule {
- public:
-    L2SquaredMcRule(uint64_t seed, size_t samples);
-  double calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
-    double calculateAbsoluteError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r);
-    double calculateAbsoluteError(ScalarFunction& f);
-
-  private:
-  uint64_t seed;
-   size_t samples;
-  };
 
     template <class INPUT, class INFO, class OUTPUT>
   class FixedCutter : public Cutter<INPUT, INFO, OUTPUT> {

@@ -1,5 +1,6 @@
 #include <sgpp/base/operation/hash/OperationEvalAnovaPrewaveletBoundary.hpp>
 #include <sgpp/base/operation/hash/common/basis/AnovaPrewaveletBoundaryBasis.hpp>
+#include <sgpp/base/grid/storage/hashmap/AnovaGridIterator.hpp>
 
 double sgpp::base::OperationEvalAnovaPrewaveletBoundary::eval(const DataVector& alpha,
                                                               const DataVector& point)
@@ -13,12 +14,12 @@ double sgpp::base::OperationEvalAnovaPrewaveletBoundary::eval(const DataVector& 
 
   for (size_t i = 0; i < storage.getSize(); i++) {
     GridPoint& p = storage.getPoint(i);
-    if (component.empty() || AnovaBoundaryGrid::getAnovaComponentOfPoint(p) == component) {
+    if (component.empty() || AnovaTypes::getAnovaComponentOfPoint(p) == component) {
       double value = 1.0;
       for (size_t d = 0; d < storage.getDimension(); ++d) {
         index_t current_index;
-        sgpp::base::AnovaBoundaryGrid::level_t current_level;
-        AnovaBoundaryGrid::fromNormalGridPointLevelIndex(p.getLevel(d), p.getIndex(d),
+        sgpp::base::AnovaTypes::level_t current_level;
+        AnovaTypes::fromNormalGridPointLevelIndex(p.getLevel(d), p.getIndex(d),
                                                          current_level, current_index);
         value *= current_level == -1 ? 1 : basis.eval(current_level, current_index, point[d]);
       }

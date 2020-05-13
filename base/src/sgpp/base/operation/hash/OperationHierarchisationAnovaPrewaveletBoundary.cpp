@@ -2,7 +2,6 @@
 #include <sgpp/base/operation/hash/common/algorithm_sweep/HierarchisationAnovaPrewaveletBoundary.hpp>
 #include <sgpp/base/algorithm/sweep_anova.hpp>
 #include <sgpp/base/operation/hash/common/algorithm_sweep/HierarchisationAnovaLinearBoundary.hpp>
-#include <sgpp/base/operation/hash/OperationAnovaDecomposition.hpp>
 
 void sgpp::base::OperationHierarchisationAnovaPrewaveletBoundary::doHierarchisation(
   DataVector& node_values) {

@@ -16,7 +16,6 @@
 #include "sgpp/base/grid/storage/hashmap/HashGridPoint.hpp"
 #include "sgpp/datadriven/tools/ARFFTools.hpp"
 
-#include "sgpp/datadriven/grid/spatial_refinement_blocked.hpp"
 
 int main(void) {
   /*

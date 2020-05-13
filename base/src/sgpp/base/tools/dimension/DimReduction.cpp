@@ -1,26 +1,47 @@
 #include <sgpp/base/function/scalar/WrapperScalarFunction.hpp>
 #include <sgpp/base/tools/EigenHelper.hpp>
 #include <sgpp/base/tools/dimension/DimReduction.hpp>
+#include <sgpp/base/function/vector/WrapperVectorFunction.hpp>
 
 namespace sgpp {
 namespace base {
 
+
+double DimReduction::calculateMcL2Error(ScalarFunction& func, DistributionSample& dist)
+{
+  static WrapperScalarFunction::FunctionEvalType zeroFunc = [](const DataVector&) { return 0; };
+  WrapperScalarFunction zero(func.getNumberOfParameters(), zeroFunc);
+
+  static WrapperVectorFunction::FunctionEvalType tFunc = [](const DataVector& v, DataVector& out) {
+    out = v;
+ };
+  WrapperVectorFunction t(func.getNumberOfParameters(), func.getNumberOfParameters(), tFunc);
+  return DimReduction::calculateMcL2Error(func, t, zero, dist);
+}
+
+PointSample<double> DimReduction::createActiveSubspaceSample(PointSample<double> input,
+                                                             const DataMatrix& basis,
+                                                             size_t reducedDims) {
+  InputProjectionFunction f(basis, reducedDims);
+  std::vector<DataVector> newPoints(input.getSize());
+  for (size_t i = 0; i < input.getSize(); i++) {
+    newPoints[i] = transformPoint(basis, input.getKeys()[i], reducedDims);
+  }
+  return PointSample<double>(newPoints, input.getValues());
+}
+
 double sgpp::base::DimReduction::calculateMcL2Error(ScalarFunction& func,
                                                     VectorFunction& transformation,
-                                                    ScalarFunction& reduced, uint64_t seed,
-                                                    size_t samples) {
-  std::mt19937_64 rand(seed);
-  std::uniform_real_distribution<double> dist(0, 1);
+                                                    ScalarFunction& reduced,
+    DistributionSample& dist) {
   size_t funcDimensions = func.getNumberOfParameters();
   size_t newDimensions = reduced.getNumberOfParameters();
 
   sgpp::base::DataVector point(funcDimensions);
   double res = 0;
 
-  for (size_t i = 0; i < samples; i++) {
-    for (size_t d = 0; d < funcDimensions; d++) {
-      point[d] = dist(rand);
-    }
+  for (size_t i = 0; i < dist.getSize(); i++) {
+    point = dist.getVectors()[i];
     double val = func.eval(point);
     DataVector out(newDimensions);
     transformation.eval(point, out);
@@ -28,7 +49,7 @@ double sgpp::base::DimReduction::calculateMcL2Error(ScalarFunction& func,
     res += pow(val - newVal, 2);
   }
 
-  return sqrt(res / static_cast<double>(samples));
+  return sqrt(res / static_cast<double>(dist.getSize()));
 }
 
 InputProjectionFunction::InputProjectionFunction(const DataMatrix& basis, size_t reducedDims)
@@ -296,45 +317,5 @@ void InputProjection::ProjectionFunction::clone(std::unique_ptr<VectorFunction>&
 
 VectorFunction& InputProjection::getFunction() { return func; }
 
-L2SquaredMcRule::L2SquaredMcRule(uint64_t seed, size_t samples) : seed(seed), samples(samples) {}
-
-L2McRule::L2McRule(uint64_t seed, size_t samples) : seed(seed), samples(samples) {}
-
-double L2McRule::calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) {
-  double e = calculateAbsoluteError(f, t, r);
-  double fe = calculateAbsoluteError(f);
-  return fe != 0.0 ? e / fe : 0.0;
-}
-
-double L2McRule::calculateAbsoluteError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) {
-  OperationL2 o(seed, samples);
-  double e = o.calculateMcL2Error(f, t, r);
-  return e;
-}
-
-double L2McRule::calculateAbsoluteError(ScalarFunction& f) {
-  OperationL2 o(seed, samples);
-  double l2 = o.calculateMcL2Norm(f);
-  return l2;
-}
-
-double ErrorRule::calculateRelativeError(ScalarFunction& f, VectorFunction& t, ScalarFunction& r) {
-  double e = calculateAbsoluteError(f, t, r);
-  double fe = calculateAbsoluteError(f);
-  return fe != 0.0 ? e / fe : 0.0;
-}
-
-double L2SquaredMcRule::calculateAbsoluteError(ScalarFunction& f, VectorFunction& t,
-                                               ScalarFunction& r) {
-  OperationL2 o(seed, samples);
-  double e = o.calculateMcL2Error(f, t, r);
-  return std::pow(e, 2);
-}
-
-double L2SquaredMcRule::calculateAbsoluteError(ScalarFunction& f) {
-  OperationL2 o(seed, samples);
-  double l2 = o.calculateMcL2Norm(f);
-  return std::pow(l2, 2);
-}
 }  // namespace base
 }  // namespace sgpp

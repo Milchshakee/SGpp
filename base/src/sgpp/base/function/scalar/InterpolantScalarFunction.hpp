@@ -16,6 +16,7 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <sgpp/base/tools/Sample.hpp>
 
 namespace sgpp {
 namespace base {
@@ -49,6 +50,18 @@ class InterpolantScalarFunction : public ScalarFunction {
         opEval(op_factory::createOperationEvalNaive(grid)),
         alpha(alpha) {}
 
+  
+  InterpolantScalarFunction(SGridSample& gridSample)
+      : ScalarFunction(grid.getDimension()),
+        grid(const_cast<Grid&>(gridSample.getGrid())),
+        opEval(op_factory::createOperationEval(grid)),
+        alpha(gridSample.getValues()) {}
+
+  InterpolantScalarFunction(SGridSample& gridSample, std::unique_ptr<OperationEval>& evalOp)
+      : ScalarFunction(grid.getDimension()),
+        grid(const_cast<Grid&>(gridSample.getGrid())),
+        opEval(std::move(evalOp)),
+        alpha(gridSample.getValues()) {}
   /**
    * Destructor.
    */

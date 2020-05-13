@@ -7,6 +7,31 @@ namespace sgpp {
 namespace base {
 namespace AnovaTypes {
 
+    /**
+ * A false entry for a certain dimension indicates that the basis function is constant in that
+ * dimension.
+ *
+ * A true entry for a certain dimension indicates that the basis function is active in that
+ * dimension.
+ */
+typedef std::vector<bool> AnovaComponent;
+
+/**
+ * A vector of ANOVA components.
+ */
+typedef std::vector<AnovaComponent> AnovaComponentVector;
+
+/**
+ * Gets the ANOVA component for a grid point.
+ */
+inline AnovaComponent getAnovaComponentOfPoint(const GridPoint& point) {
+  AnovaComponent currentComp(point.getDimension(), false);
+  for (size_t d = 0; d < point.getDimension(); d++) {
+    currentComp[d] = !(point.getLevel(d) == 0 && point.getIndex(d) == 0);
+  }
+  return currentComp;
+}
+
 /**
  * Level type for ANOVA grids (uses -1 level)
  */

@@ -14,7 +14,6 @@
 #include <sgpp/base/grid/type/LinearGrid.hpp>
 #include <sgpp/base/grid/type/ModLinearGrid.hpp>
 #include <sgpp/base/grid/type/NakBsplineExtendedGrid.hpp>
-#include <sgpp/base/grid/type/NakBsplineModifiedGrid.hpp>
 
 #include <sgpp/solver/sle/BiCGStab.hpp>
 #include <sgpp/solver/sle/ConjugateGradients.hpp>
@@ -181,7 +180,7 @@ void RegressionLearner::initializeGrid(const base::RegularGridConfiguration grid
   } else if (gridConfig.type_ == GridType::NakBsplineBoundary) {
     grid = std::make_shared<base::NakBsplineBoundaryGrid>(gridConfig.dim_, gridConfig.maxDegree_);
   } else if (gridConfig.type_ == GridType::ModNakBspline) {
-    grid = std::make_shared<base::NakBsplineModifiedGrid>(gridConfig.dim_, gridConfig.maxDegree_);
+    grid = std::make_shared<base::NakBsplineExtendedGrid>(gridConfig.dim_, gridConfig.maxDegree_);
   } else if (gridConfig.type_ == GridType::NakBsplineExtended) {
     grid = std::make_shared<base::NakBsplineExtendedGrid>(gridConfig.dim_, gridConfig.maxDegree_);
   } else {

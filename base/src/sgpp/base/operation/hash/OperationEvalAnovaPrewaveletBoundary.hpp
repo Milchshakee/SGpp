@@ -8,7 +8,6 @@
 #include <sgpp/base/grid/GridStorage.hpp>
 #include <sgpp/base/operation/hash/OperationEval.hpp>
 #include <sgpp/base/grid/type/AnovaBoundaryGrid.hpp>
-#include <sgpp/base/grid/storage/hashmap/AnovaGridIterator.hpp>
 
 namespace sgpp {
 namespace base {
@@ -34,7 +33,7 @@ class OperationEvalAnovaPrewaveletBoundary : public OperationEval {
    * @param component the ANOVA component for which the ansatz functions should be evaluated
    */
   explicit OperationEvalAnovaPrewaveletBoundary(GridStorage& storage,
-                                                AnovaBoundaryGrid::AnovaComponent& component)
+                                                AnovaTypes::AnovaComponent& component)
       : storage(storage), component(component) {}
 
   /**
@@ -47,7 +46,7 @@ class OperationEvalAnovaPrewaveletBoundary : public OperationEval {
  protected:
   /// Pointer to GridStorage object
   GridStorage& storage;
-  AnovaBoundaryGrid::AnovaComponent component;
+  AnovaTypes::AnovaComponent component;
 };
 
 }  // namespace base

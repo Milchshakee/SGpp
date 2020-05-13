@@ -8,6 +8,7 @@
 #include <sgpp/base/tools/Distribution.hpp>
 
 #include <vector>
+#include <sgpp/base/grid/common/BoundingBox.hpp>
 
 namespace sgpp {
 namespace base {
@@ -18,6 +19,7 @@ class DistributionsVector {
   explicit DistributionsVector(size_t dim);
   DistributionsVector(size_t dim, std::shared_ptr<sgpp::base::Distribution> pdf);
   DistributionsVector(const DistributionsVector& other);
+  DistributionsVector(std::vector<DistributionType> types, BoundingBox& bb);
 
   virtual ~DistributionsVector();
 
