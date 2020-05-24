@@ -24,13 +24,14 @@ DistributionsVector::DistributionsVector(const DistributionsVector& other) {
   }
 }
 
-DistributionsVector::DistributionsVector(std::vector<DistributionType> types, BoundingBox& bb)
+DistributionsVector::DistributionsVector(std::vector<DistributionType> types, BoundingBox& bb,
+                                         bool toUnitBB)
     : distributions(bb.getDimension()) {
   for (size_t d = 0; d < bb.getDimension(); d++) {
     std::shared_ptr<Distribution> dist;
     if (types[d] == DistributionType::Uniform) {
-      dist = std::make_shared<DistributionUniform>(bb.getBoundary(d).leftBoundary,
-                                                    bb.getBoundary(d).rightBoundary);
+      dist = std::make_shared<DistributionUniform>(toUnitBB ? 0 : bb.getBoundary(d).leftBoundary,
+                                                    toUnitBB ? 1 : bb.getBoundary(d).rightBoundary);
     }
     distributions[d] = dist;
   }

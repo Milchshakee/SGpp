@@ -1,7 +1,7 @@
 #include <sgpp/base/tools/AnovaAnalyser.hpp>
 #include <sgpp/base/function/scalar/InterpolantScalarFunction.hpp>
 #include <sgpp/base/operation/hash/OperationEvalAnovaPrewaveletBoundary.hpp>
-#include <sgpp/base/tools/dimension/DimReduction.hpp>
+#include <sgpp/datadriven/tools/dimension/DimReduction.hpp>
 
 
 sgpp::base::AnovaAnalyser::TransformationFunction::~TransformationFunction() {
@@ -41,7 +41,7 @@ double calcVariance(sgpp::base::SGridSample& sample, sgpp::base::DistributionSam
       const_cast<sgpp::base::Grid&>(sample.getGrid()).getStorage(), comp);
   sgpp::base::InterpolantScalarFunction f(
       sample, evalOp);
-  return sgpp::base::DimReduction::calculateMcL2Error(f, dist);
+  return 0;
 }
 
 void iterateComponentsRec(std::map<sgpp::base::AnovaTypes::AnovaComponent, double>& variances,

@@ -20,13 +20,15 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <sgpp/base/tools/dimension/DimReduction.hpp>
+#include <sgpp/datadriven/tools/dimension/DimReduction.hpp>
 #include <sgpp/globaldef.hpp>
 #include "sgpp/base/function/scalar/WrapperScalarFunction.hpp"
 #include "sgpp/base/grid/Grid.hpp"
 #include "sgpp/base/operation/BaseOpFactory.hpp"
 #include "sgpp/base/tools/Sample.hpp"
 #include <sgpp/base/tools/DistributionUniform.hpp>
+#include <sgpp/base/function/scalar/ChainScalarFunction.hpp>
+#include <sgpp/base/function/vector/BoundingBoxFunction.hpp>
 
 /**
  * @brief getLearner
@@ -38,10 +40,10 @@ sgpp::datadriven::RegressionLearner getLearner(
     size_t dimension, sgpp::datadriven::RegularizationConfiguration regularizationConfig) {
   auto gridConfig = sgpp::base::RegularGridConfiguration();
   gridConfig.dim_ = dimension;
-  gridConfig.level_ = 6;
+  gridConfig.level_ = 2;
   //  gridConfig.type_ = sgpp::base::GridType::ModLinear;
 
-  gridConfig.type_ = sgpp::base::GridType::ModLinear;
+  gridConfig.type_ = sgpp::base::GridType::LinearBoundary;
   gridConfig.maxDegree_ = 3;
 
   auto adaptivityConfig = sgpp::base::AdaptivityConfiguration();
@@ -138,15 +140,15 @@ std::vector<sgpp::datadriven::RegularizationConfiguration> getConfigs() {
     regularizationConfig.lambda_ = lambda;
     regularizationConfig.exponentBase_ = 0.25;
     result.push_back(regularizationConfig);
-    //    {
-    //      // Laplace
-    //      const auto regularizationType = sgpp::datadriven::RegularizationType::Laplace;
-    //      auto regularizationConfig = sgpp::datadriven::RegularizationConfiguration();
-    //      regularizationConfig.type_ = regularizationType;
-    //      regularizationConfig.lambda_ = lambda;
-    //      regularizationConfig.exponentBase_ = 0.25;
-    //      result.push_back(regularizationConfig);
-    //    }
+        {
+          // Laplace
+          const auto regularizationType = sgpp::datadriven::RegularizationType::Laplace;
+          auto regularizationConfig = sgpp::datadriven::RegularizationConfiguration();
+          regularizationConfig.type_ = regularizationType;
+          regularizationConfig.lambda_ = lambda;
+          regularizationConfig.exponentBase_ = 0.25;
+          result.push_back(regularizationConfig);
+        }
     // Diagonal
     for (const auto exponentBase : exponentBases) {
       const auto regularizationType = sgpp::datadriven::RegularizationType::Diagonal;
@@ -172,30 +174,53 @@ double g(const sgpp::base::DataVector& v) {
   return std::max(1 - std::abs(5 * x - 2.5), 0.0);
 }
 
+double ebolaFunc(const sgpp::base::DataVector& x) {
+  return (x[0] + ((x[1])) + (x[2]));
+}
+
+
 /**
  * @brief main is an example for the RegressionLearner. It performs a grid search for the best
  * hyper-parameter for the Friedman3 dataset using the diagonal Tikhonov regularization method.
  */
 int main(int argc, char** argv) {
-  sgpp::base::WrapperScalarFunction func(2, f);
+  std::shared_ptr<sgpp::base::ScalarFunction> func =
+      std::make_shared<sgpp::base::WrapperScalarFunction>(3, ebolaFunc);
+  sgpp::base::BoundingBox liberiaBb({{0.1, 0.4},        // beta_1
+                                     {0.1, 0.4},        // beta_2
+                                     {0.05, 0.2},  // gamma_1
+    });   // psi
+  std::vector<sgpp::base::DistributionType> types(3, sgpp::base::DistributionType::Uniform);
+  std::shared_ptr<sgpp::base::VectorFunction> bbTrans =
+      std::make_shared<sgpp::base::BoundingBoxFunction>(
+          sgpp::base::BoundingBoxFunction::Type::FROM_UNIT_BB, liberiaBb);
+  auto vas = {bbTrans};
+  std::shared_ptr<sgpp::base::ScalarFunction> unitFunc =
+      std::make_shared<sgpp::base::ChainScalarFunction>(vas, func);
 
-  std::shared_ptr<sgpp::base::Grid> grid(sgpp::base::Grid::createLinearBoundaryGrid(1));
-  grid->getGenerator().regular(6);
   std::shared_ptr<sgpp::base::DistributionUniform> u =
       std::make_shared<sgpp::base::DistributionUniform>();
-  sgpp::base::DistributionsVector v(2, u);
-  auto dist = sgpp::base::DistributionSample(100000, v);
-  sgpp::base::ActiveSubspaceInfo i = sgpp::base::DimReduction::activeSubspaceMC(func, dist);
+  sgpp::base::DistributionsVector v(3, u);
+  auto dist = sgpp::base::DistributionSample(1000, v);
+  sgpp::base::ActiveSubspaceInfo i = sgpp::base::DimReduction::activeSubspaceMC(*unitFunc, dist);
 
-  auto dist2 = sgpp::base::DistributionSample(10000, v);
+  int dims = 3;
+    sgpp::base::DataMatrix zonotope(dims, dims);
+  for (size_t d = 0; d < dims; ++d) {
+    sgpp::base::DataVector unit(dims, 0.0);
+    unit[d] = 1;
+    zonotope.setColumn(d, unit);
+  }
+  i.eigenVectors = zonotope;
+
+  auto dist2 = sgpp::base::DistributionSample(1000, v);
   sgpp::base::PointSample<double> sample =
-      sgpp::base::DimReduction::createActiveSubspaceSample(sgpp::base::SampleHelper::sampleScalarFunction(dist2, func), i.eigenVectors, 1);
+      sgpp::base::DimReduction::createActiveSubspaceSample(sgpp::base::SampleHelper::sampleScalarFunction(dist2, *unitFunc), i.eigenVectors, 3);
   sgpp::datadriven::Dataset data = sgpp::base::SampleHelper::fromPointSample(sample);
 
   
-  auto dist3 = sgpp::base::DistributionSample(10000, v);
-  sgpp::base::PointSample<double> valSample = sgpp::base::DimReduction::createActiveSubspaceSample(
-      sgpp::base::SampleHelper::sampleScalarFunction(dist3, func), i.eigenVectors, 1);
+  auto dist3 = sgpp::base::DistributionSample(1000, v);
+  sgpp::base::PointSample<double> valSample = sgpp::base::SampleHelper::sampleScalarFunction(dist3, *unitFunc);
   sgpp::datadriven::Dataset valData = sgpp::base::SampleHelper::fromPointSample(valSample);
 
 

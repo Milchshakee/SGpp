@@ -19,7 +19,7 @@ class DistributionsVector {
   explicit DistributionsVector(size_t dim);
   DistributionsVector(size_t dim, std::shared_ptr<sgpp::base::Distribution> pdf);
   DistributionsVector(const DistributionsVector& other);
-  DistributionsVector(std::vector<DistributionType> types, BoundingBox& bb);
+  DistributionsVector(std::vector<DistributionType> types, BoundingBox& bb, bool toUnitBB);
 
   virtual ~DistributionsVector();
 

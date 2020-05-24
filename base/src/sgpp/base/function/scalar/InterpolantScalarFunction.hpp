@@ -52,13 +52,13 @@ class InterpolantScalarFunction : public ScalarFunction {
 
   
   InterpolantScalarFunction(SGridSample& gridSample)
-      : ScalarFunction(grid.getDimension()),
+      : ScalarFunction(gridSample.getDimensions()),
         grid(const_cast<Grid&>(gridSample.getGrid())),
         opEval(op_factory::createOperationEval(grid)),
         alpha(gridSample.getValues()) {}
 
   InterpolantScalarFunction(SGridSample& gridSample, std::unique_ptr<OperationEval>& evalOp)
-      : ScalarFunction(grid.getDimension()),
+      : ScalarFunction(gridSample.getDimensions()),
         grid(const_cast<Grid&>(gridSample.getGrid())),
         opEval(std::move(evalOp)),
         alpha(gridSample.getValues()) {}
