@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
       std::make_shared<sgpp::base::DistributionUniform>();
   sgpp::base::DistributionsVector v(3, u);
   auto dist = sgpp::base::DistributionSample(1000, v);
-  sgpp::base::ActiveSubspaceInfo i = sgpp::base::DimReduction::activeSubspaceMC(*unitFunc, dist);
+  sgpp::base::ActiveSubspaceInfo i = {};
 
   int dims = 3;
     sgpp::base::DataMatrix zonotope(dims, dims);

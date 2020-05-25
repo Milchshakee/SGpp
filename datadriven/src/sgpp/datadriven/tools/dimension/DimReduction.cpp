@@ -51,8 +51,8 @@ sgpp::datadriven::RegressionLearner getLearner(
   auto solverConfig = sgpp::solver::SLESolverConfiguration();
   solverConfig.type_ = sgpp::solver::SLESolverType::CG;
   solverConfig.maxIterations_ = config.maxIterations;
-  solverConfig.eps_ = 1e-8;
-  solverConfig.threshold_ = 1e-5;
+  solverConfig.eps_ = 1e-11;
+  solverConfig.threshold_ = 1e-8;
   solverConfig.verbose_ = true;
 
   return sgpp::datadriven::RegressionLearner(gridConfig, adaptivityConfig, solverConfig,
@@ -109,21 +109,123 @@ SGridSample createRegressionSurrogate(datadriven::Dataset& data,
       learner.train(trainX, trainY);
       auto ptr = learner.getGridPtr();
       double curMSE = learner.getMSE(validateX, validateY);
-      std::cout << "Tested parameters are\n"
-                << showRegularizationConfiguration(regularizationConfig) << ".\n";
+      //std::cout << "Tested parameters are\n" << showRegularizationConfiguration(regularizationConfig) << ".\n";
       if (curMSE < bestMSE) {
-        std::cout << "Better! RMSE is now " << std::sqrt(curMSE) << std::endl;
+        //std::cout << "Better! RMSE is now " << std::sqrt(curMSE) << std::endl;
         sample = SGridSample(ptr, learner.getWeights());
+        sample.setHierarchised(true);
         bestMSE = curMSE;
       } else {
-        std::cout << "Worse!  RMSE is now " << std::sqrt(curMSE) << std::endl;
+        //std::cout << "Worse!  RMSE is now " << std::sqrt(curMSE) << std::endl;
       }
     }
   }
-  //sample.hierarchise();
-  sample.setHierarchised(true);
   return sample;
 }
+
+size_t asIntervalDimensions(DataVector& eigenValues, size_t bootstrapSamples,
+                            size_t bootstrapCount,
+                            PointSample<DataMatrix>& samples) {
+  size_t dimensions = eigenValues.size();
+  std::mt19937_64 prng;
+  std::uniform_int_distribution<size_t> dist(0, samples.getSize() - 1);
+
+  std::vector<std::pair<double, double>> eigenValueIntervals(dimensions);
+  for (size_t d = 0; d < dimensions; ++d) {
+    eigenValueIntervals[d].first = eigenValues[d];
+    eigenValueIntervals[d].second = eigenValues[d];
+  }
+
+  for (size_t i = 0; i < bootstrapCount; i++) {
+    sgpp::base::DataMatrix bootstrapMatrix(eigenValues.size(), eigenValues.size());
+    for (size_t j = 0; j < bootstrapSamples; j++) {
+      size_t l = dist(prng);
+      bootstrapMatrix.add(samples.getValues()[l]);
+    }
+    bootstrapMatrix.mult(1.0 / static_cast<double>(bootstrapSamples));
+
+    sgpp::base::DataMatrix bootstrapEigenVectorMatrix(dimensions, dimensions);
+    sgpp::base::DataVector bootstrapEigenValues(dimensions);
+    EigenHelper::svd(EigenHelper::toEigen(bootstrapMatrix), bootstrapEigenVectorMatrix,
+                     bootstrapEigenValues);
+    for (size_t d = 0; d < dimensions; ++d) {
+      double e = bootstrapEigenValues[d];
+      if (e < eigenValueIntervals[d].first) {
+        eigenValueIntervals[d].first = e;
+      }
+      if (e > eigenValueIntervals[d].second) {
+        eigenValueIntervals[d].second = e;
+      }
+    }
+  }
+
+  DataVector meanEigenValues(eigenValues.size());
+  for (size_t d = 0; d < dimensions; ++d) {
+    meanEigenValues[d] = (eigenValueIntervals[d].first + eigenValueIntervals[d].second) / 2.0;
+  }
+
+  double sum = meanEigenValues.sum();
+  double partialSum = 0;
+  double max = 0;
+  size_t cutoff = 0;
+  for (size_t d = 0; d < dimensions - 1; ++d) {
+    partialSum += meanEigenValues[d];
+    if (partialSum / sum > 0.9) {
+      return d + 1;
+      }
+    //double size = (meanEigenValues[d] - meanEigenValues[d+1]) / meanEigenValues[d];
+    //if (size > max) {
+    //  max = size;
+    //  cutoff = d + 1;
+    //}
+  }
+  return cutoff;
+}
+
+PointSample<DataMatrix> fromFiniteDifferences(ScalarFunction& func, DistributionSample& v,
+                                              double h) {
+  std::vector<DataMatrix> samples(v.getSize(), DataMatrix(v.getDimensions(), v.getDimensions()));
+  sgpp::base::DataVector sampleGradient(v.getDimensions());
+  DataVector working;
+  for (size_t i = 0; i < v.getSize(); ++i) {
+    const DataVector& vec = v.getVectors()[i];
+    working = vec;
+    for (size_t d = 0; d < v.getDimensions(); ++d) {
+      double hOffset = vec[d] + h;
+      if (hOffset > 1.0) {
+        hOffset -= 2 * h;
+      }
+      working[d] = hOffset;
+      double val = (func.eval(vec) - func.eval(working)) / h;
+      sampleGradient[d] = val;
+      working[d] = vec[d];
+    }
+
+    for (size_t d = 0; d < v.getDimensions(); ++d) {
+      sgpp::base::DataVector col = sampleGradient;
+      col.mult(sampleGradient[d]);
+      samples[i].setColumn(d, col);
+    }
+  }
+  return PointSample<DataMatrix>(v.getVectors(), samples);
+}
+
+ActiveSubspaceInfo activeSubspaceMC(
+    sgpp::base::PointSample<sgpp::base::DataMatrix>& m) {
+  size_t dimensions = m.getDimensions();
+  sgpp::base::DataMatrix matrix(dimensions, dimensions);
+  for (size_t i = 0; i < m.getSize(); ++i) {
+    matrix.add(m.getValues()[i]);
+  }
+  matrix.mult(1.0 / static_cast<double>(m.getSize()));
+
+  ActiveSubspaceInfo i;
+  i.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
+  i.eigenValues = sgpp::base::DataVector(dimensions);
+  EigenHelper::svd(EigenHelper::toEigen(matrix), i.eigenVectors, i.eigenValues);
+  return i;
+}
+
 
 AsReductionResult DimReduction::reduceAS(std::shared_ptr<ScalarFunction>& f,
                                        sgpp::base::DistributionsVector dist,
@@ -131,25 +233,41 @@ AsReductionResult DimReduction::reduceAS(std::shared_ptr<ScalarFunction>& f,
   std::vector<GridReductionResult> results;
   std::shared_ptr<ScalarFunction> current = f;
   std::vector<std::shared_ptr<ScalarFunction>> funcs;
+  size_t counter = 0;
+  double currentError = 1;
   for (RegressionConfig& config : configs) {
+    std::cout << std::endl;
+    std::cout << "Starting iteration: " << counter << std::endl;
+
     auto distSample = sgpp::base::DistributionSample(config.samples, dist);
-    auto c = DimReduction::activeSubspaceMC(*f, distSample).eigenVectors;
-    c.resizeRowsCols(c.getNrows(), config.reducedDimension);
+    sgpp::base::PointSample<sgpp::base::DataMatrix> m = fromFiniteDifferences(*current, distSample, 0.00000001);
+    auto i = activeSubspaceMC(m);
+    size_t reducedDims = asIntervalDimensions(i.eigenValues, 0.5 * distSample.getSize(), 5, m);
+    i.eigenVectors.resizeRowsCols(i.eigenVectors.getNrows(), reducedDims);
+
+    std::cout << "Reducing to " << reducedDims << " dimensions.\n\n";
+    std::cout << "Reducing to " << i.eigenValues.toString() << " dimensions.\n\n";
 
     sgpp::base::PointSample<double> sample = sgpp::base::DimReduction::createActiveSubspaceSample(
         sgpp::base::SampleHelper::sampleScalarFunction(distSample, *current),
-        c, config.reducedDimension);
+        i.eigenVectors, reducedDims);
     sgpp::datadriven::Dataset data = sgpp::base::SampleHelper::fromPointSample(sample);
 
     sgpp::base::GridReductionResult result = sgpp::base::DimReduction::activeSubspaceReduction(
-        current, data, c,
-        config.reducedDimension, config);
-    double x = f->eval(DataVector(8, 0.5));
-    double y = result.replacementFunction->eval(DataVector(8, 0.5));
-    double z = result.errorFunction->eval(DataVector(8, 0.5));
-    current = result.errorFunction;
+        current, data, i.eigenVectors, reducedDims, config);
     results.push_back(result);
     funcs.push_back(result.replacementFunction);
+
+    std::shared_ptr<ScalarFunction> sum = std::make_shared<SumFunction>(funcs);
+    auto fullResult = AsReductionResult{f, sum, results};
+
+    auto errorSample = sgpp::base::DistributionSample(config.errorCalcSamples, dist);
+    currentError = (fullResult.mcL2Error(errorSample) / calculateMcL2Error(*f, errorSample));
+    std::cout << "Relative L2 error: \n"
+              << currentError
+              << ".\n";
+    current = result.errorFunction;
+    counter++;
   }
   std::shared_ptr<ScalarFunction> sum = std::make_shared<SumFunction>(funcs);
   return AsReductionResult{f, sum, results};
@@ -160,6 +278,18 @@ ReductionResult::ReductionResult(std::shared_ptr<ScalarFunction>& func,
     : originalFunction(func), replacementFunction(replacement) {
   std::vector<std::shared_ptr<ScalarFunction>> fs{func, replacement};
   errorFunction = std::make_shared<SumFunction>(fs, std::vector<bool>{true, false});
+}
+
+
+double ReductionResult::mcL2Error(DistributionSample& sample) {
+  double res = 0;
+  for (size_t i = 0; i < sample.getSize(); i++) {
+    double val = originalFunction->eval(sample.getVectors()[i]);
+    double newVal = replacementFunction->eval(sample.getVectors()[i]);
+    res += pow(val - newVal, 2);
+  }
+
+  return sqrt(res / static_cast<double>(sample.getSize()));
 }
 
 GridReductionResult::GridReductionResult(std::shared_ptr<ScalarFunction>& func, std::shared_ptr<VectorFunction>& t,
@@ -272,50 +402,6 @@ sgpp::base::SGridSample DimReduction::createReducedAnovaSample(sgpp::base::SGrid
   SGridSample reducedSample(grid, func);
   reducedSample.setHierarchised(true);
   return reducedSample;
-}
-
-PointSample<DataMatrix> fromFiniteDifferences(ScalarFunction& func, DistributionSample& v,
-                                              double h) {
-  std::vector<DataMatrix> samples(v.getSize(), DataMatrix(v.getDimensions(), v.getDimensions()));
-  sgpp::base::DataVector sampleGradient(v.getDimensions());
-  DataVector working;
-  for (size_t i = 0; i < v.getSize(); ++i) {
-    const DataVector& vec = v.getVectors()[i];
-    working = vec;
-    for (size_t d = 0; d < v.getDimensions(); ++d) {
-      double hOffset = vec[d] + h;
-      if (hOffset > 1.0) {
-        hOffset -= 2 * h;
-      }
-      working[d] = hOffset;
-      double val = (func.eval(vec) - func.eval(working)) / h;
-      sampleGradient[d] = val;
-      working[d] = vec[d];
-    }
-
-    for (size_t d = 0; d < v.getDimensions(); ++d) {
-      sgpp::base::DataVector col = sampleGradient;
-      col.mult(sampleGradient[d]);
-      samples[i].setColumn(d, col);
-    }
-  }
-  return PointSample<DataMatrix>(v.getVectors(), samples);
-}
-
-ActiveSubspaceInfo DimReduction::activeSubspaceMC(ScalarFunction& f, DistributionSample& dist) {
-  sgpp::base::PointSample<sgpp::base::DataMatrix> m = fromFiniteDifferences(f, dist, 0.0001);
-  size_t dimensions = f.getNumberOfParameters();
-  sgpp::base::DataMatrix matrix(dimensions, dimensions);
-  for (size_t i = 0; i < dist.getSize(); ++i) {
-    matrix.add(m.getValues()[i]);
-  }
-  matrix.mult(1.0 / static_cast<double>(dist.getSize()));
-
-  ActiveSubspaceInfo i;
-  i.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
-  i.eigenValues = sgpp::base::DataVector(dimensions);
-  EigenHelper::svd(EigenHelper::toEigen(matrix), i.eigenVectors, i.eigenValues);
-  return i;
 }
 
 ReductionResult DimReduction::reduce(ScalarFunction& f, const DataMatrix& basis, size_t reducedDims,

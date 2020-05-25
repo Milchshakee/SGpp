@@ -1,7 +1,7 @@
 #include <sgpp/base/function/vector/BoundingBoxFunction.hpp>
 
 sgpp::base::BoundingBoxFunction::BoundingBoxFunction(Type type, const BoundingBox& bb)
-    : VectorFunction(bb.getDimension(), bb.getDimension()), bb(bb) {}
+    : VectorFunction(bb.getDimension(), bb.getDimension()), type(type), bb(bb) {}
 
 void sgpp::base::BoundingBoxFunction::eval(const DataVector& x, DataVector& value) {
   if (type == Type::TO_UNIT_BB) {

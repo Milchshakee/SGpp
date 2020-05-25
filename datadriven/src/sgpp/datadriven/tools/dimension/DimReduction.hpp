@@ -38,6 +38,8 @@ namespace base {
     std::shared_ptr<ScalarFunction> originalFunction;
     std::shared_ptr<ScalarFunction> replacementFunction;
     std::shared_ptr<ScalarFunction> errorFunction;
+
+    double mcL2Error(DistributionSample& sample);
   };
 
   struct GridReductionResult : public ReductionResult {
@@ -71,6 +73,7 @@ namespace base {
     size_t samples = 1000;
     double trainDataShare = 0.7;
     size_t maxIterations = 1000;
+    size_t errorCalcSamples = 10000;
   };
 
 double calculateMcL2Error(ScalarFunction& func,
@@ -80,7 +83,6 @@ double calculateMcL2Error(ScalarFunction& func,
 
   sgpp::base::SGridSample createReducedAnovaSample(sgpp::base::SGridSample& sample,
                                                  AnovaTypes::level_t level, size_t reducedDims);
-ActiveSubspaceInfo activeSubspaceMC(ScalarFunction& f, DistributionSample& dist);
   GridReductionResult activeSubspaceReduction(std::shared_ptr<ScalarFunction>& f, datadriven::Dataset& data, const DataMatrix& basis,
                                           size_t reducedDims, RegressionConfig config);
   ReductionResult reduce(ScalarFunction& f, const DataMatrix& basis, size_t reducedDims,

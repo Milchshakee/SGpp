@@ -44,8 +44,19 @@ int main(int argc, char* argv[]) {
   sgpp::base::DimReduction::RegressionConfig config(1);
   config.gridLevel = 10;
   config.samples = 1000;
+  auto c2 = config;
+  c2.reducedDimension = 2;
   sgpp::base::AsReductionResult result = sgpp::base::DimReduction::reduceAS(
       func, dist,
-      {config, config, config, config});
+      {config, c2});
+
+  auto distSample = sgpp::base::DistributionSample(samples, dist);
+    double error = sgpp::base::DimReduction::calculateMcL2Error(*result.errorFunction, distSample);
+  double totalVar = sgpp::base::DimReduction::calculateMcL2Error(*func, distSample);
+  sgpp::base::DataVector x;
+
+  sgpp::base::DataVector v = sgpp::base::DataVector(2, 1);
+  v[1] = 0;
+   result.reductions[0].transformation->eval(v, x);
   double va = 0;
 }
