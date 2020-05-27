@@ -143,7 +143,7 @@ public:
   SGridSample(std::shared_ptr<Grid>& grid, ScalarFunction& func) : hierarchised(false) {
     GridSample<double, DataVector>::grid = grid;
     keys = std::vector<DataVector>(grid->getSize());
-    values = DataVector(values.data(), values.size());
+    values = DataVector(grid->getSize());
 
     DistributionSample d(*grid);
     for (size_t i = 0; i < d.getSize(); i++) {
