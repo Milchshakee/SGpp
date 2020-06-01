@@ -7,11 +7,16 @@
 // (visited on 28.11.2018). It is distributed under the GNU LGPL License
 
 #include <string>
+#include <sgpp/base/tools/DistributionSample.hpp>
 
 namespace sgpp {
 namespace datadriven {
+namespace HaltonSequence {
+
+base::DistributionSample haltonSample(size_t size, size_t dims);
 
 double *halton(int i, int m);
+
 /**
  * gives the i'th point in the m-dimensional halton squence according to the array of primes b
  */
@@ -28,5 +33,6 @@ void r8mat_print(int m, int n, double a[], std::string title);
 void r8mat_print_some(int m, int n, double a[], int ilo, int jlo, int ihi, int jhi,
                       std::string title);
 void halton_timestamp();
+}  // namespace HaltonSequence
 }  // namespace datadriven
 }  // namespace sgpp

@@ -12,9 +12,8 @@
 #include <sgpp/base/function/scalar/InterpolantScalarFunction.hpp>
 #include <sgpp/base/function/scalar/SumFunction.hpp>
 
-size_t dims = 8;
-size_t samples = 1000;
-size_t reducedDims = 5;
+size_t iterations = 5;
+size_t samples = 10000;
 
 double ebolaFunc(const sgpp::base::DataVector& x) {
   return (x[0] + ((x[1] * x[3] * x[4]) / x[6]) + (x[2] * x[7] / x[5])) / (x[4] + x[7]);
@@ -24,76 +23,159 @@ double borehole(const sgpp::base::DataVector& x) {
   return (2 * M_PI * x[2] * (x[3] - x[5])) / (std::log(x[1] / x[0]) * (1 + (2 * x[6] * x[2] / (std::log(x[1] / x[0]) * x[0] * x[0] * x[7])) + (x[2] / x[4])));
 }
 
-int main(int argc, char* argv[]) {
-  std::shared_ptr<sgpp::base::ScalarFunction> func = std::make_shared<sgpp::base::WrapperScalarFunction>(dims, ebolaFunc);
-  sgpp::base::BoundingBox liberiaBb({
-                              {0.1, 0.4}, //beta_1
-                              {0.1, 0.4}, //beta_2
-                              {0.05, 0.2}, //beta_3
-                              {0.41, 1}, //p_1
-                              {0.0276, 0.1702}, //gamma_1
-                              {0.081, 0.21}, //gamma_2
-                              {0.25, 0.5}, //omega
-                              {0.0833, 0.7}}); //psi
-
-    sgpp::base::BoundingBox boreholeBb({{0.05, 0.15},        // r_w
-                                     {100, 50000},        // r
-                                     {63070, 115600},       // T_u
-                                     {990, 1110},         // H_u
-                                     {63.1, 116},  // T_I
-                                     {700, 820},     // H_I
-                                     {1120, 1680},       // L
-                                     {9855, 12045}});   // K_W
+sgpp::base::AsReductionResult reduceBorehole() {
+  size_t dims = 8;
+  std::shared_ptr<sgpp::base::ScalarFunction> func =
+      std::make_shared<sgpp::base::WrapperScalarFunction>(dims, borehole);
+  sgpp::base::BoundingBox boreholeBb({{0.05, 0.15},     // r_w
+                                      {100, 50000},     // r
+                                      {63070, 115600},  // T_u
+                                      {990, 1110},      // H_u
+                                      {63.1, 116},      // T_I
+                                      {700, 820},       // H_I
+                                      {1120, 1680},     // L
+                                      {9855, 12045}});  // K_W
 
   std::vector<sgpp::base::DistributionType> types(dims, sgpp::base::DistributionType::Uniform);
+  types[0] = sgpp::base::DistributionType::TruncNormal;
+  types[1] = sgpp::base::DistributionType::TruncLognormal;
+  std::vector<sgpp::base::DataVector> chars(dims);
+  chars[0] = sgpp::base::DataVector{0.1, 0.01618};
+  chars[1] = sgpp::base::DataVector{7.71, 1.0056};
   std::shared_ptr<sgpp::base::VectorFunction> bbTrans =
       std::make_shared<sgpp::base::BoundingBoxFunction>(
-          sgpp::base::BoundingBoxFunction::Type::FROM_UNIT_BB, liberiaBb);
+          sgpp::base::BoundingBoxFunction::Type::FROM_UNIT_BB, boreholeBb);
   auto v = {bbTrans};
   std::shared_ptr<sgpp::base::ScalarFunction> unitFunc =
       std::make_shared<sgpp::base::ChainScalarFunction>(v, func);
 
-    sgpp::base::DistributionsVector dist(types, liberiaBb, true);
-  auto distSample = sgpp::base::DistributionSample(samples, dist);
+  sgpp::base::DistributionsVector dist(types, boreholeBb, true, chars);
 
-  sgpp::base::DimReduction::RegressionConfig config (3);
-  config.gridLevel = 2;
-  config.maxIterations = 1000;
+  sgpp::base::DimReduction::RegressionConfig config(2);
+  config.gridLevel = 3;
+  config.maxIterations = 5000;
   config.samples = 1000;
-  //config.regularizationBases = {2, 1.25, 1.0, 0.5, 0.25, 0.125};
+  // config.regularizationBases = {1.0, 0.5};
   config.lambdas = {0.1, 0.5, 1};
-  config.trainDataShare = 0.03;
-  config.errorCalcSamples = 1000;
+  config.trainDataShare = 0.02;
   config.refinements = 1;
   config.refinementPoints = 100;
+  config.crossValidations = 10;
+  config.subIterations = 10;
 
-  sgpp::base::DimReduction::RegressionConfig c1(5);
+  sgpp::base::DimReduction::RegressionConfig c1 = config;
+  c1.reducedDimension = 4;
   c1.gridLevel = 1;
+  c1.subIterations = 5;
 
-  auto configs = std::vector<sgpp::base::DimReduction::RegressionConfig>(20, config);
-  sgpp::base::DataMatrix mat(2, 20);
-  //configs[0] = c1;
-  //configs[1] = c1;
-  //configs[2] = c1;
-  //configs[3] = c1;
-  //configs[4] = c1;
-  //configs[5] = c1;
-  sgpp::base::AsReductionResult result = sgpp::base::DimReduction::reduceAS(
-      unitFunc, dist, configs);
+  sgpp::base::DimReduction::RegressionConfig c2 = config;
+  c2.reducedDimension = 6;
+  c2.gridLevel = 0;
+  c2.subIterations = 3;
 
-    for (int i = 0; i < 20; i++) {
+  auto configs = std::vector<sgpp::base::DimReduction::RegressionConfig>(iterations, config);
+  sgpp::base::DataMatrix mat(2, iterations);
+  // configs[0] = c1;
+  // configs[1] = c1;
+  // configs[2] = c1;
+  //configs[6] = c1;
+  //configs[7] = c1;
+  //configs[8] = c1;
+  //configs[9] = c1;
+  sgpp::base::AsReductionResult result =
+      sgpp::base::DimReduction::reduceAS(unitFunc, dist, samples, configs);
+  return result;
+}
+
+  double analytical(const sgpp::base::DataVector& x) {
+  return std::exp(x[0] + x[1] + x[2] + x[3] + x[4])
+         + 5 * (std::sin(M_PI * x[5] * x[6] * x[7]) * x[8] * x[8]) * std::pow(x[9], 5) * x[10] +
+           std::pow(x[11] + 2, 2) * x[12] * x[13] * x[14] + x[15] * x[16] +
+           std::log(1 + (10 * x[17] / (x[18] + x[19])));
+  }
+
+  double gfunction(const sgpp::base::DataVector& x) {
+    size_t d = 2;
+    double mult = 1;
+    for (size_t j = 0; j < d; j++) {
+      double a = ((j + 1) - 2) / 2.0;
+      mult *= (std::abs(4 * x[j] - 2) + a) / (1 + a);
+    }
+    return mult;
+  }
+
+double morokoffcaflisch(const sgpp::base::DataVector& x)
+{
+    size_t d = 10;
+    double mult = 1 + std::pow(1.0 / d, d);
+    for (size_t j = 0; j < d; j++) {
+      mult *= std::pow(x[j], (1 / (j + 1.0)));
+    }
+  }
+
+double friedman1(const sgpp::base::DataVector& x) {
+    std::normal_distribution<double> dist;
+  std::default_random_engine rand;
+  return 10.0 * sin(M_PI * x[0] * x[1]) + 20.0 * (x[2] - 0.5) * (x[2] - 0.5) + 10.0 * x[3] +
+           5.0 * x[4] + dist(rand);
+  }
+
+  sgpp::base::AsReductionResult reduceAnalytical()
+{
+  size_t dims = 10;
+    std::shared_ptr<sgpp::base::ScalarFunction> func =
+        std::make_shared<sgpp::base::WrapperScalarFunction>(dims, friedman1);
+
+  std::vector<sgpp::base::DistributionType> types(dims, sgpp::base::DistributionType::Uniform);
+  std::shared_ptr<sgpp::base::ScalarFunction> unitFunc = func;
+
+  sgpp::base::BoundingBox bb(dims);
+  sgpp::base::DistributionsVector dist(types, bb, true);
+
+  sgpp::base::DimReduction::RegressionConfig config(3);
+  config.gridLevel = 1;
+  config.maxIterations = 1000;
+  config.samples = 1000;
+  // config.regularizationBases = {1.0, 0.5};
+  //config.lambdas = {0.1, 0.5, 1};
+  config.trainDataShare = 0.02;
+  config.refinements = 0;
+  config.refinementPoints = 5;
+  config.crossValidations = 10;
+  config.subIterations = 20;
+
+  sgpp::base::DimReduction::RegressionConfig c1 = config;
+  c1.reducedDimension = 4;
+  c1.gridLevel = 1;
+  c1.subIterations = 3;
+
+  sgpp::base::DimReduction::RegressionConfig c2 = config;
+  c2.reducedDimension = 6;
+  c2.gridLevel = 0;
+  c2.subIterations = 3;
+
+  auto configs = std::vector<sgpp::base::DimReduction::RegressionConfig>(iterations, config);
+  sgpp::base::DataMatrix mat(2, iterations);
+  // configs[2] = c1;
+  sgpp::base::AsReductionResult result =
+      sgpp::base::DimReduction::reduceAS(unitFunc, dist, samples, configs, false);
+  return result;
+}
+
+int main()
+{
+  sgpp::base::DataMatrix mat(2, iterations);
+  sgpp::base::AsReductionResult result = reduceAnalytical();
+
+    for (size_t i = 0; i < iterations; i++) {
     size_t sum = 0;
-      for (int j = 0; j <= i; j++) {
+      for (size_t j = 0; j <= i; j++) {
       sum += result.reductions[j].gridPoints;
       }
-      mat(0, i) = sum;;
+      mat(0, i) = sum;
       mat(1, i) = result.reductions[i].l2Error;
   }
 
   mat.transpose();
-  mat.toFile("ebola-red.txt");
-
-  double error = sgpp::base::DimReduction::calculateMcL2Error(*result.errorFunction, distSample);
-  double totalVar = sgpp::base::DimReduction::calculateMcL2Error(*unitFunc, distSample);
-  double va = 0;
+  mat.toFile("friedman1.txt");
 }

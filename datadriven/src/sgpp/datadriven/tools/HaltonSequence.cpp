@@ -3,18 +3,29 @@
 // use, please see the copyright notice provided with SG++ or at
 // sgpp.sparsegrids.org
 
-#include "../../../../../datadriven/src/sgpp/datadriven/tools/HaltonSequence.hpp"
+#include <sgpp/datadriven/tools/HaltonSequence.hpp>
 
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <sgpp/base/tools/DistributionSample.hpp>
 
 using namespace std;
 
 namespace sgpp {
 namespace datadriven {
+namespace HaltonSequence {
+
+base::DistributionSample haltonSample(size_t size, size_t dims) {
+  std::vector<base::DataVector> vectors(size);
+  for (size_t i = 0; i < size; i++) {
+    double *h = halton(i, dims);
+    vectors[i].assign(h, h + dims);
+  }
+  return base::DistributionSample(vectors);
+}
 
 // ****************************************************************************80
 
@@ -860,5 +871,6 @@ void halton_timestamp()
   return;
 #undef TIME_SIZE
 }
+}  // namespace HaltonSequence
 }  // namespace datadriven
 }  // namespace sgpp

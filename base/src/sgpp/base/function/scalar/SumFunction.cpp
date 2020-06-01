@@ -2,7 +2,7 @@
 
 sgpp::base::SumFunction::SumFunction(std::vector<std::shared_ptr<ScalarFunction>>& functions,
                                      std::vector<bool> signs)
-    : ScalarFunction(functions[0]->getNumberOfParameters()), functions(functions), signs(signs) {}
+    : ScalarFunction(functions.size() > 0 ? functions[0]->getNumberOfParameters() : 0), functions(functions), signs(signs) {}
 
 double sgpp::base::SumFunction::eval(const DataVector& x)
 {

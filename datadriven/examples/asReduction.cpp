@@ -73,6 +73,11 @@ int main(int argc, char* argv[]) {
 
 
   std::vector<sgpp::base::DistributionType> types(dims, sgpp::base::DistributionType::Uniform);
+    types[0] = sgpp::base::DistributionType::TruncNormal;
+    types[1] = sgpp::base::DistributionType::TruncLognormal;
+    std::vector<sgpp::base::DataVector> chars(dims);
+    chars[0] = sgpp::base::DataVector{0.1, 0.01618};
+    chars[1] = sgpp::base::DataVector{7.71, 1.0056};
   std::shared_ptr<sgpp::base::VectorFunction> bbTrans =
       std::make_shared<sgpp::base::BoundingBoxFunction>(
           sgpp::base::BoundingBoxFunction::Type::FROM_UNIT_BB, boreholeBb);
@@ -80,7 +85,7 @@ int main(int argc, char* argv[]) {
   std::shared_ptr<sgpp::base::ScalarFunction> unitFunc =
       std::make_shared<sgpp::base::ChainScalarFunction>(v, func);
 
-  sgpp::base::DistributionsVector dist(types, boreholeBb, true);
+  sgpp::base::DistributionsVector dist(types, boreholeBb, true, chars);
   auto distSample = sgpp::base::DistributionSample(samples, dist);
 
   for (size_t l = 0; l < maxLevel; l++) {

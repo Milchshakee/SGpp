@@ -3,7 +3,6 @@
 namespace sgpp {
 namespace base {
 
-
 DistributionSample::DistributionSample(const std::vector<DataVector>& vectors) : size(vectors.size()), dimensions(vectors[0].getSize()), vectors(vectors) {
 }
 
