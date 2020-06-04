@@ -120,6 +120,7 @@ custom.py
 /obj/
 /bin/
 *.user
+/run/
 
 base/examples/ba*
 

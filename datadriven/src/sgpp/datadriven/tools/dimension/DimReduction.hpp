@@ -92,9 +92,13 @@ namespace base {
   sgpp::base::SGridSample createReducedAnovaSample(sgpp::base::SGridSample& sample,
                                                  AnovaTypes::level_t level, size_t reducedDims);
 
-  AsReductionResult reduceAS(std::shared_ptr<ScalarFunction>& f,
+    AsReductionResult reduceASRandom(std::shared_ptr<ScalarFunction>& f,
                              sgpp::base::DistributionsVector dist,
-                             double errorCalcSamples,
+                             RegressionConfig config, size_t reducedDims);
+
+  AsReductionResult reduceAS(std::shared_ptr<ScalarFunction>& f,
+                             sgpp::base::DistributionsVector& dist,
+                             size_t errorCalcSamples,
                            std::vector<RegressionConfig> config, bool useRelativeError = true);
 
   GridReductionResult activeSubspaceReductionStep(std::shared_ptr<ScalarFunction>& f,

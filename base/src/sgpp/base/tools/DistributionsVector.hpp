@@ -19,8 +19,8 @@ class DistributionsVector {
   explicit DistributionsVector(size_t dim);
   DistributionsVector(size_t dim, std::shared_ptr<sgpp::base::Distribution> pdf);
   DistributionsVector(const DistributionsVector& other);
-  DistributionsVector(std::vector<DistributionType> types, BoundingBox& bb, bool toUnitBB,
-                      std::vector<DataVector> characteristics = {});
+  DistributionsVector(std::vector<DistributionType> types,
+                      std::vector<DataVector> characteristics = {}, std::shared_ptr<BoundingBox> bb = nullptr);
 
   virtual ~DistributionsVector();
 
@@ -34,6 +34,7 @@ class DistributionsVector {
   void clear();
 
  private:
+  std::shared_ptr<BoundingBox> bb;
   std::vector<std::shared_ptr<sgpp::base::Distribution>> distributions;
 };
 

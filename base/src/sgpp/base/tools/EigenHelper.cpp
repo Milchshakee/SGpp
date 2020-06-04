@@ -78,6 +78,15 @@ void EigenHelper::svd(const Eigen::MatrixXd& input, DataMatrix& eigenVectorMatri
     eigenValues[max] = temp3;
   }
 }
+
+
+void EigenHelper::solveSLE(const sgpp::base::DataMatrix& A, const sgpp::base::DataVector& b,
+  DataVector& x) {
+  auto eigenA = toEigen(A);
+  auto eigenb = toEigen(b);
+  Eigen::VectorXd eigenx = eigenA.householderQr().solve(eigenb);
+  x = fromEigen(eigenx);
+}
 }  // namespace base
 }  // namespace sgpp
 

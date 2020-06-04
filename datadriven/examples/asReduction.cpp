@@ -85,7 +85,8 @@ int main(int argc, char* argv[]) {
   std::shared_ptr<sgpp::base::ScalarFunction> unitFunc =
       std::make_shared<sgpp::base::ChainScalarFunction>(v, func);
 
-  sgpp::base::DistributionsVector dist(types, boreholeBb, true, chars);
+  auto bb = std::shared_ptr<sgpp::base::BoundingBox>(&boreholeBb);
+  sgpp::base::DistributionsVector dist(types, chars, bb);
   auto distSample = sgpp::base::DistributionSample(samples, dist);
 
   for (size_t l = 0; l < maxLevel; l++) {

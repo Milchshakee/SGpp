@@ -53,6 +53,8 @@ sgpp::base::DataVector mult(const sgpp::base::DataMatrix& m, const sgpp::base::D
  */
 void svd(const Eigen::MatrixXd& input, sgpp::base::DataMatrix& eigenVectors,
          sgpp::base::DataVector& eigenValues);
+
+  void solveSLE(const sgpp::base::DataMatrix& A, const sgpp::base::DataVector& b, DataVector& x);
 }  // namespace EigenHelper
 }  // namespace base
 }  // namespace sgpp

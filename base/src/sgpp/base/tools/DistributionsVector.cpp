@@ -25,27 +25,23 @@ DistributionsVector::DistributionsVector(const DistributionsVector& other) {
   for (auto& pdf : other.distributions) {
     distributions.push_back(pdf);
   }
+  bb = other.bb;
 }
 
-DistributionsVector::DistributionsVector(std::vector<DistributionType> types, BoundingBox& bb,
-                                         bool toUnitBB, std::vector<DataVector> characteristics)
-    : distributions(bb.getDimension()) {
-  for (size_t d = 0; d < bb.getDimension(); d++) {
-    double left = toUnitBB ? 0 : bb.getBoundary(d).leftBoundary;
-    double right = toUnitBB ? 1 : bb.getBoundary(d).rightBoundary;
+DistributionsVector::DistributionsVector(std::vector<DistributionType> types,
+                                         std::vector<DataVector> characteristics,
+                                         std::shared_ptr<BoundingBox> bb)
+    : distributions(types.size()), bb(bb) {
+  for (size_t d = 0; d < bb->getDimension(); d++) {
+    double left = bb->getBoundary(d).leftBoundary;
+    double right = bb->getBoundary(d).rightBoundary;
     std::shared_ptr<Distribution> dist;
     if (types[d] == DistributionType::Uniform) {
-      dist = std::make_shared<DistributionUniform>(toUnitBB ? 0 : bb.getBoundary(d).leftBoundary,
-                                                    toUnitBB ? 1 : bb.getBoundary(d).rightBoundary);
+      dist = std::make_shared<DistributionUniform>(left, right);
     }
     else if (types[d] == DistributionType::TruncNormal || types[d] == DistributionType::TruncLognormal) {
       double mean = characteristics[d][0];
       double stddev = characteristics[d][1];
-      if (toUnitBB) {
-        mean = (mean - bb.getBoundary(d).leftBoundary) /
-               (bb.getBoundary(d).rightBoundary - bb.getBoundary(d).leftBoundary);
-        stddev /= (bb.getBoundary(d).rightBoundary - bb.getBoundary(d).leftBoundary);
-        }
       if (types[d] == DistributionType::TruncNormal) {
         dist = std::make_shared<DistributionTruncNormal>(mean, stddev, left, right);
       } else {
@@ -67,7 +63,12 @@ std::vector<std::shared_ptr<sgpp::base::Distribution>> DistributionsVector::getD
 sgpp::base::DataVector DistributionsVector::sample() {
   sgpp::base::DataVector sampleVector(distributions.size(), 0.0);
   for (size_t d = 0; d < distributions.size(); d++) {
-    sampleVector[d] = distributions[d]->sample();
+    double v = distributions[d]->sample();
+    if (bb != nullptr) {
+    v = (v - bb->getBoundary(d).leftBoundary) /
+               (bb->getBoundary(d).rightBoundary - bb->getBoundary(d).leftBoundary);
+      }
+    sampleVector[d] = v;
   }
   return sampleVector;
 }
