@@ -5,54 +5,55 @@
 #include <sgpp/base/function/scalar/WrapperScalarFunction.hpp>
 #include <sgpp/base/function/vector/WrapperVectorFunction.hpp>
 #include <sgpp/base/tools/EigenHelper.hpp>
+#include <sgpp/base/tools/sle/solver/Eigen.hpp>
+#include <sgpp/base/tools/sle/system/FullSLE.hpp>
 #include <sgpp/datadriven/activeSubspaces/ASMatrixGradientMC.hpp>
 #include <sgpp/datadriven/application/RegressionLearner.hpp>
 #include <sgpp/datadriven/tools/DatasetTools.hpp>
 #include <sgpp/datadriven/tools/dimension/DimReduction.hpp>
-#include <sgpp/base/tools/sle/solver/Eigen.hpp>
-#include <sgpp/base/tools/sle/system/FullSLE.hpp>
 #include <sgpp/solver/sle/BiCGStab.hpp>
 
 namespace sgpp {
 namespace base {
 
-double DimReduction::calculateMcL2Error(ScalarFunction& func, DistributionSample& dist) {
-  size_t funcDimensions = func.getNumberOfParameters();
-
-  sgpp::base::DataVector point(funcDimensions);
-  double res = 0;
-
-  for (size_t i = 0; i < dist.getSize(); i++) {
-    point = dist.getVectors()[i];
-    double val = func.eval(point);
-    res += pow(val, 2);
-  }
-
-  return sqrt(res / static_cast<double>(dist.getSize()));
-}
-
-PointSample<double> DimReduction::createActiveSubspaceSample(PointSample<double> input,
+std::tuple < PointSample<double>, PointSample<double>> createActiveSubspaceSample(
+    PointSample<double>& originalInput, PointSample<double>& input,
                                                              const DataMatrix& basis,
-                                                             size_t reducedDims) {
-  InputProjectionFunction f(basis, reducedDims);
-  std::vector<DataVector> newPoints(input.getSize());
-  for (size_t i = 0; i < input.getSize(); i++) {
-    f.eval(input.getKeys()[i], newPoints[i]);
+    size_t sampleCount) {
+  std::vector<int> indices(input.getSize());
+  for (int j = 0; j < input.getSize(); j++) indices[j] = j;
+  std::random_shuffle(indices.begin(), indices.end());
+
+  InputProjectionFunction f(basis, basis.getNcols());
+  std::vector<DataVector> newPoints(sampleCount);
+  std::vector<double> newValues(sampleCount);
+  for (size_t i = 0; i < sampleCount; i++) {
+    f.eval(input.getKeys()[indices[i]], newPoints[i]);
+    newValues[i] = input.getValues()[indices[i]];
   }
-  return PointSample<double>(newPoints, input.getValues());
-}
+
+  std::vector<DataVector> testPoints(input.getSize() - sampleCount);
+  std::vector<double> testValues(input.getSize() - sampleCount);
+  for (size_t i = sampleCount; i < input.getSize(); i++) {
+    testPoints[i - sampleCount] = originalInput.getKeys()[indices[i]];
+    testValues[i - sampleCount] = originalInput.getValues()[indices[i]];
+  }
+  return std::tuple<PointSample<double>, PointSample<double>>{
+      PointSample<double>(newPoints, newValues),
+          PointSample<double>(testPoints, testValues)};
+  }
 
 datadriven::RegressionLearner getLearner(
     size_t dimension, sgpp::datadriven::RegularizationConfiguration regularizationConfig,
     DimReduction::RegressionConfig config) {
   auto gridConfig = sgpp::base::RegularGridConfiguration();
   gridConfig.dim_ = dimension;
-  gridConfig.level_ = config.gridLevel;
+  gridConfig.level_ = std::max<double>((std::log2(config.maxGridPoints) / dimension) - 1, 0);
 
   gridConfig.type_ = sgpp::base::GridType::LinearBoundary;
 
   auto adaptivityConfig = sgpp::base::AdaptivityConfiguration();
-  adaptivityConfig.numRefinementPoints_ = config.refinementPoints;
+  adaptivityConfig.numRefinementPoints_ = config.refinementPointsPerGridPoint * config.maxGridPoints;
   adaptivityConfig.numRefinements_ = config.refinements;
   adaptivityConfig.numCoarseningPoints_ = 0;
   adaptivityConfig.coarsenInitialPoints_ = false;
@@ -62,7 +63,7 @@ datadriven::RegressionLearner getLearner(
 
   auto solverConfig = sgpp::solver::SLESolverConfiguration();
   solverConfig.type_ = sgpp::solver::SLESolverType::BiCGSTAB;
-  solverConfig.maxIterations_ = config.maxIterations;
+  solverConfig.maxIterations_ = 1000;
   solverConfig.eps_ = 1e-11;
   solverConfig.threshold_ = 1e-8;
   solverConfig.verbose_ = true;
@@ -71,13 +72,13 @@ datadriven::RegressionLearner getLearner(
                                              solverConfig, regularizationConfig);
 }
 
-void trainValidateSplit(PointSample<double>& data, double trainDataShare, DataMatrix& trainX,
+void trainValidateSplit(PointSample<double>& data, size_t trainData, DataMatrix& trainX,
                         DataVector& trainY, DataMatrix& validateX, DataVector& validateY) {
   std::vector<int> indices;
   for (int i = 0; i < data.getSize(); i++) indices.push_back(i);
   std::random_shuffle(indices.begin(), indices.end());
 
-  size_t trainSize = trainDataShare * data.getSize();
+  size_t trainSize = trainData;
   trainX = DataMatrix(trainSize, data.getDimensions());
   trainY = DataVector(trainSize);
   for (size_t i = 0; i < trainSize; i++) {
@@ -102,7 +103,7 @@ double crossValidate(PointSample<double>& data, DataMatrix& trainX, DataVector& 
   for (size_t i = 0; i < config.crossValidations; i++) {
     auto learner = getLearner(data.getDimensions(), regularizationConfig, config);
     learner.train(trainX, trainY);
-    trainValidateSplit(data, config.trainDataShare, trainX, trainY, validateX, validateY);
+    trainValidateSplit(data, config.trainDataPerGridPoint * config.maxGridPoints, trainX, trainY, validateX, validateY);
     double curRMSE = std::sqrt(learner.getMSE(validateX, validateY));
     meanRMSE += curRMSE;
   }
@@ -111,8 +112,7 @@ double crossValidate(PointSample<double>& data, DataMatrix& trainX, DataVector& 
 }
 
 void createRegressionSurrogate(PointSample<double>& data, DimReduction::RegressionConfig config,
-                               double totalError, SGridSample& out, size_t& gridPoints,
-                               double& error) {
+                               SGridSample& out, double& error) {
   DataMatrix trainX;
   DataVector trainY;
   DataMatrix validateX;
@@ -131,12 +131,11 @@ void createRegressionSurrogate(PointSample<double>& data, DimReduction::Regressi
 
       double meanRMSE =
           crossValidate(data, trainX, trainY, validateX, validateY, config, regularizationConfig);
-      double relError = meanRMSE / totalError;
       // std::cout << "Tested parameters are\n" <<
       // showRegularizationConfiguration(regularizationConfig) << ".\n";
-      if (relError < bestError) {
+      if (meanRMSE < bestError) {
         // std::cout << "Better! Relative L2 error is now " << relError << std::endl;
-        bestError = relError;
+        bestError = meanRMSE;
         bestConfig = regularizationConfig;
       } else {
         // std::cout << "Worse! Relative L2 error is now " << relError << std::endl;
@@ -146,19 +145,18 @@ void createRegressionSurrogate(PointSample<double>& data, DimReduction::Regressi
 
   error = std::numeric_limits<double>::infinity();
   for (size_t i = 0; i < 5; i++) {
-    trainValidateSplit(data, config.trainDataShare, trainX, trainY, validateX, validateY);
+    trainValidateSplit(data, config.trainDataPerGridPoint * config.maxGridPoints, trainX, trainY,
+                       validateX, validateY);
     auto bestLearner = getLearner(data.getDimensions(), bestConfig, config);
     bestLearner.train(trainX, trainY);
     auto ptr = bestLearner.getGridPtr();
     double curRMSE = std::sqrt(bestLearner.getMSE(validateX, validateY));
-    double relError = curRMSE / totalError;
-    if (relError < error) {
+    if (curRMSE < error) {
       // std::cout << "Better! Relative L2 error is now " << relError << std::endl;
 
       SGridSample sample(ptr, bestLearner.getWeights());
       sample.setHierarchised(true);
-      gridPoints = sample.getSize();
-      error = relError;
+      error = curRMSE;
       out = sample;
     }
   }
@@ -222,221 +220,272 @@ size_t asIntervalDimensions(DataVector& eigenValues, size_t bootstrapSamples, si
   return cutoff;
 }
 
-ActiveSubspaceInfo activeSubspaceMC(sgpp::base::PointSample<sgpp::base::DataMatrix>& m) {
-  size_t dimensions = m.getDimensions();
-  sgpp::base::DataMatrix matrix(dimensions, dimensions);
-  for (size_t i = 0; i < m.getSize(); ++i) {
-    matrix.add(m.getValues()[i]);
-  }
-  matrix.mult(1.0 / static_cast<double>(m.getSize()));
-
-  ActiveSubspaceInfo i;
-  i.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
-  i.eigenValues = sgpp::base::DataVector(dimensions);
-  EigenHelper::svd(EigenHelper::toEigen(matrix), i.eigenVectors, i.eigenValues);
-  return i;
-}
-
-ActiveSubspaceInfo fromFiniteDifferences(ScalarFunction& func, DistributionSample& v,
-                                              double h) {
-  std::vector<DataMatrix> samples(v.getSize(), DataMatrix(v.getDimensions(), v.getDimensions()));
-  sgpp::base::DataVector sampleGradient(v.getDimensions());
-  DataVector working;
-  for (size_t i = 0; i < v.getSize(); ++i) {
-    const DataVector& vec = v.getVectors()[i];
-    working = vec;
-    for (size_t d = 0; d < v.getDimensions(); ++d) {
+std::shared_ptr<VectorFunction> DimReduction::finiteDifferencesFunction(std::shared_ptr<ScalarFunction>& f,
+                                                          double h) {
+  WrapperVectorFunction::FunctionEvalType func = [&f, h](const DataVector& vec, DataVector& out) {
+    DataVector working = vec;
+    for (size_t d = 0; d < f->getNumberOfParameters(); ++d) {
       double hOffset = vec[d] + h;
       if (hOffset > 1.0) {
         hOffset -= 2 * h;
       }
       working[d] = hOffset;
-      double val = (func.eval(vec) - func.eval(working)) / h;
-      sampleGradient[d] = val;
+      double val = (f->eval(vec) - f->eval(working)) / h;
+      out[d] = val;
       working[d] = vec[d];
     }
-
-    for (size_t d = 0; d < v.getDimensions(); ++d) {
-      sgpp::base::DataVector col = sampleGradient;
-      col.mult(sampleGradient[d]);
-      samples[i].setColumn(d, col);
-    }
-  }
-  PointSample<DataMatrix> ps(v.getVectors(), samples);
-  return activeSubspaceMC(ps);
+  };
+  return std::make_shared<WrapperVectorFunction>(f->getNumberOfParameters(),
+                                                 f->getNumberOfParameters(), func);
 }
 
-  ActiveSubspaceInfo fromSample(PointSample<double>& samples)
-{
+PointSample<DataVector> createGradientSample(PointSample<double>& v,
+                                             DimReduction::GradientConfig& gradConfig) {
+  std::vector<DataVector> keys(gradConfig.sampleCount);
+  std::vector<DataVector> gradients(gradConfig.sampleCount);
+
+  std::vector<int> indices(v.getSize());
+  for (size_t j = 0; j < v.getSize(); j++) {
+    indices[j] = j;
+  }
+  std::random_shuffle(indices.begin(), indices.end());
+  for (size_t j = 0; j < gradConfig.sampleCount; j++) {
+    keys[j] = v.getKeys()[indices[j]];
+  }
+
+  if (gradConfig.type == DimReduction::GradientConfig::GRADIENT_FUNCTION) {
+    sgpp::base::DataVector sampleGradient(v.getDimensions());
+    DataVector working(v.getDimensions());
+    for (size_t i = 0; i < gradConfig.sampleCount; ++i) {
+      const DataVector& vec = v.getKeys()[indices[i]];
+      gradConfig.gradientFunction->eval(vec, working);
+      gradients[i] = working;
+    }
+  } else if (gradConfig.type == DimReduction::GradientConfig::RANDOM_NEIGHBOUR_APPROXIMATION ||
+             gradConfig.type == DimReduction::GradientConfig::NEAREST_NEIGHBOUR_APPROXIMATION) {
+    for (size_t i = 0; i < gradConfig.sampleCount; ++i) {
+      std::vector<DataVector> neighbours;
+      std::vector<double> neighbourValues;
+
+      for (size_t j = 0; j < gradConfig.neighbourConsiderationCount; ++j) {
+        bool shouldSelect = true;
+        if (gradConfig.type == DimReduction::GradientConfig::NEAREST_NEIGHBOUR_APPROXIMATION) {
+          DataVector vec = v.getKeys()[i];
+          vec.sub(v.getKeys()[indices[j]]);
+          vec.abs();
+          for (size_t d = 0; d < vec.getSize(); ++d) {
+            vec[d] = std::pow(vec[d], gradConfig.pNorm);
+          }
+          double norm = std::pow(vec.sum(), 1.0 / gradConfig.pNorm);
+          if (norm > gradConfig.maxNorm) {
+            shouldSelect = false;
+          }
+        }
+
+        if (shouldSelect) {
+          neighbours.push_back(v.getKeys()[indices[j]]);
+          neighbourValues.push_back(v.getValues()[indices[j]]);
+        }
+      }
+
+      if (neighbours.size() == 0) continue;
+
+      DataMatrix A(neighbours.size(), v.getDimensions());
+      DataVector b(neighbours.size());
+      for (size_t j = 0; j < neighbours.size(); ++j) {
+        DataVector vec = v.getKeys()[i];
+        vec.sub(neighbours[j]);
+        A.setRow(j, vec);
+        b[j] = neighbourValues[j] - v.getValues()[i];
+      }
+
+      EigenHelper::solveSLE(A, b, gradients[i]);
+    }
+  }
+  return PointSample<DataVector>(keys, gradients);
+}
+
+DataMatrix createBasis(PointSample<DataVector>& samples, DimReduction::BasisConfig& bConfig,
+                       DimReduction::ReductionConfig& redConfig, DimReduction::Output& output) {
   size_t dimensions = samples.getDimensions();
   DataMatrix mat(samples.getDimensions(), samples.getDimensions());
 
-  for (size_t i = 0; i < samples.getSize(); ++i) {
-    std::vector<DataVector> neighbours;
-
-    for (size_t j = 0; j < samples.getSize(); ++j) {
-      if (i == j) continue;
-
-      DataVector vec = samples.getKeys()[i];
-      vec.sub(samples.getKeys()[j]);
-      if (vec.sum() < 0.1) {
-        neighbours.push_back(samples.getKeys()[j]);
-        }
+  if (bConfig.type == DimReduction::BasisConfig::ACTIVE_SUBSPACE) {
+    for (size_t i = 0; i < samples.getSize(); ++i) {
+      DataMatrix local(samples.getDimensions(), samples.getDimensions());
+      for (size_t d = 0; d < samples.getDimensions(); ++d) {
+        sgpp::base::DataVector col = samples.getValues()[i];
+        col.mult(samples.getValues()[i][d]);
+        local.setColumn(d, col);
+      }
+      mat.add(local);
     }
-
-    if (neighbours.size() == 0) continue;
-
-    DataMatrix A(neighbours.size(), dimensions);
-    DataVector b(neighbours.size());
-    for (size_t j = 0; j < neighbours.size(); ++j) {
-      DataVector vec = samples.getKeys()[i];
-      vec.sub(samples.getKeys()[(i + j + 1) % samples.getSize()]);
-      A.setRow(j, vec);
-      b[j] = samples.getValues()[(i + j + 1) % samples.getSize()] - samples.getValues()[i];
+    mat.mult(1.0 / (samples.getSize()));
+  } else if (bConfig.type == DimReduction::BasisConfig::INV_AS) {
+    DataVector gradAvg(samples.getDimensions());
+    for (size_t i = 0; i < samples.getSize(); ++i) {
+      gradAvg.add(samples.getValues()[i]);
     }
+    gradAvg.mult(1.0 / (samples.getSize()));
 
-    DataVector gradient(dimensions);
-    EigenHelper::solveSLE(A, b, gradient);
-
-    DataMatrix local(samples.getDimensions(), samples.getDimensions());
     for (size_t d = 0; d < samples.getDimensions(); ++d) {
-      sgpp::base::DataVector col = gradient;
-      col.mult(gradient[d]);
-      local.setColumn(d, col);
+      sgpp::base::DataVector col = gradAvg;
+      col.mult(gradAvg[d]);
+      mat.setColumn(d, col);
     }
-    mat.add(local);
-  }
-  mat.mult(1.0 / (samples.getSize()));
-
-  ActiveSubspaceInfo i;
-  i.eigenVectors = sgpp::base::DataMatrix(dimensions, dimensions);
-  i.eigenValues = sgpp::base::DataVector(dimensions);
-  EigenHelper::svd(EigenHelper::toEigen(mat), i.eigenVectors, i.eigenValues);
-  return i;
   }
 
-AsReductionResult DimReduction::reduceAS(std::shared_ptr<ScalarFunction>& f,
-                                         sgpp::base::DistributionsVector& dist,
-                                           size_t errorCalcSamples,
-                                         std::vector<RegressionConfig> configs,
-                                         bool useRelativeError) {
+  sgpp::base::DataMatrix eigenVectors(dimensions, dimensions);
+  sgpp::base::DataVector eigenValues(dimensions);
+  EigenHelper::svd(EigenHelper::toEigen(mat), eigenVectors, eigenValues);
+  output.eigenValues = eigenValues;
+  output.eigenVectors = eigenVectors;
+
+    double sum = eigenValues.sum();
+  double partialSum = 0;
+  double max = 0;
+  size_t cutoff = redConfig.maxReducedDimension;
+  for (size_t d = 0; d < redConfig.maxReducedDimension - 1; ++d) {
+    partialSum += eigenValues[d];
+    if (partialSum / sum > 0.95) {
+      cutoff = d + 1;
+      break;
+    }
+  }
+  eigenVectors.transpose();
+  eigenVectors.resizeRows(cutoff);
+  eigenVectors.transpose();
+  return eigenVectors;
+}
+
+ GridReductionResult activeSubspaceReductionStep(PointSample<double>& asSample,
+                                                 const DataMatrix& basis,
+                                                 DimReduction::RegressionConfig& config) {
+   SGridSample s;
+   double error;
+   createRegressionSurrogate(asSample, config, s, error);
+   std::shared_ptr<VectorFunction> projection =
+       std::make_shared<InputProjectionFunction>(basis, basis.getNcols());
+   std::shared_ptr<ScalarFunction> reducedFunc = std::make_shared<InterpolantScalarFunction>(s);
+   return GridReductionResult{projection, reducedFunc, s};
+ }
+
+ DataMatrix createBestBasis(PointSample<double>& samples,
+                            PointSample<DataVector>& gradients,
+                            DimReduction::BasisConfig& bConfig,
+                            DimReduction::ReductionConfig& redConfig, DimReduction::Output& output) {
+   double bestError = std::numeric_limits<double>::infinity();
+   DataMatrix bestBasis;
+   for (size_t i = 0; i < bConfig.basisIterations; ++i) {
+     auto mat = createBasis(gradients, bConfig, redConfig, output);
+
+         std::tuple<PointSample<double>, PointSample<double>> split =
+         createActiveSubspaceSample(samples, samples, mat, bConfig.evaluationConfig.sampleCount);
+     auto asSample = std::get<0>(split);
+     auto errorSample = std::get<1>(split);
+
+     sgpp::base::GridReductionResult result =
+         activeSubspaceReductionStep(asSample, mat, bConfig.evaluationConfig);
+
+     double err = result.mcL2Error(errorSample);
+     std::cout << "Trying basis with dimensions: " << mat.getNcols() << ", error: " << err
+               << ".\n";
+     if (err < bestError) {
+       bestError = err;
+       bestBasis = mat;
+     }
+   }
+   std::cout << "Found best basis dimensions: " << bestBasis.getNcols() << " with error " << bestError << ".\n";
+   return bestBasis;
+ }
+
+  void updateSample(PointSample<double>& sample, std::shared_ptr<ScalarFunction> func) {
+   for (int j = 0; j < sample.getSize(); j++)
+   {
+      sample.getValues()[j] -= func->eval(sample.getKeys()[j]);
+   }
+ }
+
+ AsReductionResult DimReduction::reduceAS(PointSample<double>& sample,
+                                         ReductionConfig& redConfig, RegressionConfig& regConfig,
+                                         GradientConfig& gradConfig, BasisConfig& basisConfig,
+     ExaminationConfig& examConfig,std::vector<Output>& output) {
   std::vector<GridReductionResult> results;
-  std::shared_ptr<ScalarFunction> current = f;
   std::vector<std::shared_ptr<ScalarFunction>> funcs;
-  size_t counter = 0;
-  size_t gridPoints = 0;
-  auto errorSample = sgpp::base::DistributionSample(errorCalcSamples, dist);
-  double totalError = useRelativeError ? calculateMcL2Error(*f, errorSample) : 1.0;
-  if (totalError == 0.0) {
-    std::shared_ptr<ScalarFunction> sum = std::make_shared<SumFunction>(funcs);
-    return AsReductionResult{f, sum, results};
-  }
-
-  for (RegressionConfig& config : configs) {
+  PointSample<double>& current = sample;
+  std::vector<int> indices(sample.getSize());
+  for (int j = 0; j < sample.getSize(); j++) indices[j] = j;
+  std::random_shuffle(indices.begin(), indices.end());
+  
+  double currentError = std::numeric_limits<double>::infinity();
+  for (size_t i = 0; i < redConfig.maxIterations; i++) {
     std::cout << std::endl;
-    std::cout << "Starting iteration: " << counter << std::endl;
+    std::cout << "Starting iteration: " << i << std::endl;
 
-    double bestError = std::numeric_limits<double>::infinity();
-    sgpp::base::GridReductionResult bestResult;
-    for (size_t i = 0; i < config.subIterations; ++i) {
-      size_t reducedDims = config.reducedDimension;
-      std::cout << "Starting subiteration: " << i << " with " << reducedDims << " dimensions"
-                << std::endl;
-      auto distSample = sgpp::base::DistributionSample(config.samples, dist);
+    output.push_back({});
+    PointSample<DataVector> gradients = createGradientSample(current, gradConfig);
 
-      sgpp::base::PointSample<double> s =
-          sgpp::base::SampleHelper::sampleScalarFunction(distSample, *current);
+    DataMatrix basis =
+        createBestBasis(current, gradients, basisConfig, redConfig, output[i]);
 
-      auto info = fromSample(s);
-          //fromFiniteDifferences(*current, distSample, 0.00000001);
+    
+    std::tuple<PointSample<double>, PointSample<double>> split =
+        createActiveSubspaceSample(sample, current, basis, regConfig.sampleCount);
+    auto asSample = std::get<0>(split);
+    auto errorSample = std::get<1>(split);
 
-      // asIntervalDimensions(i.eigenValues, 0.5 * distSample.getSize(), 5, m);
-      info.eigenVectors.transpose();
-      info.eigenVectors.resizeRows(reducedDims);
-      info.eigenVectors.transpose();
+    sgpp::base::GridReductionResult result =
+        activeSubspaceReductionStep(asSample, basis, regConfig);
 
-      sgpp::base::PointSample<double> sample = sgpp::base::DimReduction::createActiveSubspaceSample(
-          sgpp::base::SampleHelper::sampleScalarFunction(distSample, *current), info.eigenVectors,
-          reducedDims);
+    basisConfig.type = BasisConfig::ACTIVE_SUBSPACE;
 
-      sgpp::base::GridReductionResult result =
-          sgpp::base::DimReduction::activeSubspaceReductionStep(current, sample, info.eigenVectors,
-                                                                reducedDims, config, totalError);
-      double err = (result.mcL2Error(errorSample) / totalError);
-      if (err < bestError) {
-        bestResult = result;
-        bestError = err;
-        std::cout << "Found better error: " << bestError << ".\n";
+      double err = (result.mcL2Error(errorSample));
+      if (!examConfig.discardWorseIterations || err < currentError) {
+        currentError = err;
+        results.push_back(result);
+        funcs.push_back(result.replacementFunction);
+        updateSample(current, result.replacementFunction);
+
+        std::cout << "-----"
+                  << "\n";
+        std::cout << "New error after iteration: " << currentError << ".\n";
       } else {
         std::cout << "Found worse error: " << err << ".\n";
       }
-    }
 
-    results.push_back(bestResult);
-    funcs.push_back(bestResult.replacementFunction);
-    std::shared_ptr<ScalarFunction> sum = std::make_shared<SumFunction>(funcs);
-    auto fullResult = AsReductionResult{f, sum, results};
-
-    gridPoints += bestResult.reducedSample.getSize();
-    std::cout << "-----"
-              << "\n";
-    std::cout << "New error after iteration: " << bestError << ".\n";
-    std::cout << "Total grid points: " << gridPoints << ".\n\n";
-    current = bestResult.errorFunction;
-    counter++;
   }
   std::shared_ptr<ScalarFunction> sum = std::make_shared<SumFunction>(funcs);
-  return AsReductionResult{f, sum, results};
+  return AsReductionResult{sum, results};
 }
 
-ReductionResult::ReductionResult(std::shared_ptr<ScalarFunction>& func,
-                                 std::shared_ptr<ScalarFunction> replacement)
-    : originalFunction(func), replacementFunction(replacement) {
-  std::vector<std::shared_ptr<ScalarFunction>> fs{func, replacement};
-  errorFunction = std::make_shared<SumFunction>(fs, std::vector<bool>{true, false});
+ReductionResult::ReductionResult(std::shared_ptr<ScalarFunction> replacement)
+    : replacementFunction(replacement) {
 }
 
-double ReductionResult::mcL2Error(DistributionSample& sample) {
+double ReductionResult::mcL2Error(PointSample<double>& sample) {
   double res = 0;
   for (size_t i = 0; i < sample.getSize(); i++) {
-    double val = originalFunction->eval(sample.getVectors()[i]);
-    double newVal = replacementFunction->eval(sample.getVectors()[i]);
+    double val = sample.getValues()[i];
+    double newVal = replacementFunction->eval(sample.getKeys()[i]);
     res += pow(val - newVal, 2);
   }
 
   return sqrt(res / static_cast<double>(sample.getSize()));
 }
 
-GridReductionResult::GridReductionResult(std::shared_ptr<ScalarFunction>& func,
-                                         std::shared_ptr<VectorFunction>& t,
+GridReductionResult::GridReductionResult(std::shared_ptr<VectorFunction>& t,
                                          std::shared_ptr<ScalarFunction>& sampleFunction,
-                                         SGridSample& sample, size_t gridPoints, double l2Error)
-    : ReductionResult(func,
+                                         SGridSample& sample)
+    : ReductionResult(
                       std::make_shared<ChainScalarFunction>(
                           std::vector<std::shared_ptr<VectorFunction>>(1, t), sampleFunction)),
       reducedSample(sample),
       reducedFunction(sampleFunction),
-      transformation(t),
-      gridPoints(gridPoints),
-      l2Error(l2Error) {}
+      transformation(t) {}
 
-AsReductionResult::AsReductionResult(std::shared_ptr<ScalarFunction>& func,
-                                     std::shared_ptr<ScalarFunction> replacement,
+AsReductionResult::AsReductionResult(std::shared_ptr<ScalarFunction> replacement,
                                      std::vector<GridReductionResult>& results)
-    : ReductionResult(func, replacement), reductions(results) {}
-
-GridReductionResult DimReduction::activeSubspaceReductionStep(
-    std::shared_ptr<ScalarFunction>& f, PointSample<double>& sample, const DataMatrix& basis,
-    size_t reducedDims, RegressionConfig config, double totalError) {
-  SGridSample s;
-  size_t gridPoints;
-  double error;
-  createRegressionSurrogate(sample, config, totalError, s, gridPoints, error);
-  std::shared_ptr<VectorFunction> projection =
-      std::make_shared<InputProjectionFunction>(basis, reducedDims);
-  std::shared_ptr<ScalarFunction> reducedFunc = std::make_shared<InterpolantScalarFunction>(s);
-  return GridReductionResult{f, projection, reducedFunc, s, gridPoints, error};
-}
+    : ReductionResult(replacement), reductions(results) {}
 
 std::shared_ptr<InputProjectionFunction> InputProjectionFunction::identity(size_t dims) {
   sgpp::base::DataMatrix id(dims, dims);
@@ -513,41 +562,6 @@ void InputProjectionFunction::eval(const DataVector& x, DataVector& value) {
 
 void InputProjectionFunction::clone(std::unique_ptr<VectorFunction>& clone) const {}
 
-sgpp::base::SGridSample DimReduction::createReducedAnovaSample(sgpp::base::SGridSample& sample,
-                                                               AnovaTypes::level_t level,
-                                                               size_t reducedDims) {
-  std::shared_ptr<sgpp::base::Grid> grid(
-      sgpp::base::Grid::createAnovaPrewaveletBoundaryGrid(reducedDims));
-  grid->getGenerator().regular(AnovaTypes::toNormalLevel(level));
-  std::function<double(const DataVector&)> func = [&sample](const DataVector& v) {
-    DataVector coords = v;
-    coords.resizeZero(sample.getDimensions());
-    double value = sample.getValue(coords);
-    return value;
-  };
-
-  SGridSample reducedSample(grid, func);
-  reducedSample.setHierarchised(true);
-  return reducedSample;
-}
-
-ReductionResult DimReduction::reduceANOVA(ScalarFunction& f, const DataMatrix& basis,
-                                          size_t reducedDims, AnovaTypes::level_t level) {
-  WrapperScalarFunction::FunctionEvalType func = [&reducedDims, &basis, &f](const DataVector& v) {
-    return 0;
-  };
-  WrapperScalarFunction wrapped(f.getNumberOfParameters(), func);
-
-  std::shared_ptr<sgpp::base::Grid> grid(
-      sgpp::base::Grid::createAnovaPrewaveletBoundaryGrid(f.getNumberOfParameters()));
-  grid->getGenerator().regular(AnovaTypes::toNormalLevel(level));
-  sgpp::base::SGridSample sample(grid, wrapped);
-  sample.hierarchise();
-  SGridSample reducedSample = createReducedAnovaSample(sample, level, reducedDims);
-  auto projection = std::make_shared<InputProjectionFunction>(basis, reducedDims);
-  // return {f, projection, reducedSample};
-}
-
 DataMatrix randomBasis(size_t dims, size_t reducedDims) {
   DataMatrix mat(dims, reducedDims);
   mat.setAll(0.0);
@@ -567,56 +581,6 @@ DataMatrix randomBasis(size_t dims, size_t reducedDims) {
   q.resize(dims, reducedDims);
   DataMatrix ortho = EigenHelper::fromEigen(q);
   return ortho;
-}
-
-AsReductionResult DimReduction::reduceASRandom(std::shared_ptr<ScalarFunction>& f,
-                                               sgpp::base::DistributionsVector dist,
-                                               RegressionConfig config, size_t reducedDims) {
-  std::vector<GridReductionResult> results;
-  std::shared_ptr<ScalarFunction> current = f;
-  std::vector<std::shared_ptr<ScalarFunction>> funcs;
-
-  auto errorSample = sgpp::base::DistributionSample(1000, dist);
-  double totalError = calculateMcL2Error(*f, errorSample);
-
-  for (size_t it = 0; it < 10; ++it) {
-    double bestError = std::numeric_limits<double>::infinity();
-    sgpp::base::GridReductionResult bestResult;
-
-    for (size_t i = 0; i < 100; ++i) {
-      
-      std::cout << "Starting subiteration: " << i << " with " << reducedDims << " dimensions"
-                << std::endl;
-      auto distSample = sgpp::base::DistributionSample(1000, dist);
-
-      DataMatrix mat = randomBasis(f->getNumberOfParameters(), reducedDims);
-
-      sgpp::base::PointSample<double> sample = sgpp::base::DimReduction::createActiveSubspaceSample(
-          sgpp::base::SampleHelper::sampleScalarFunction(distSample, *current), mat, reducedDims);
-
-      sgpp::base::GridReductionResult result =
-          sgpp::base::DimReduction::activeSubspaceReductionStep(current, sample, mat, reducedDims,
-                                                                config, totalError);
-      double err = (result.mcL2Error(errorSample) / totalError);
-      if (err < bestError) {
-        bestResult = result;
-        bestError = err;
-        std::cout << "Found better error: " << bestError << ".\n";
-      } else {
-        std::cout << "Found worse error: " << err << ".\n";
-      }
-    }
-
-    results.push_back(bestResult);
-    funcs.push_back(bestResult.replacementFunction);
-    std::shared_ptr<ScalarFunction> sum = std::make_shared<SumFunction>(funcs);
-    auto fullResult = AsReductionResult{f, sum, results};
-
-    std::cout << "-----"
-              << "\n";
-    std::cout << "New error after iteration: " << bestError << ".\n";
-    current = bestResult.errorFunction;
-  }
 }
 
 }  // namespace base

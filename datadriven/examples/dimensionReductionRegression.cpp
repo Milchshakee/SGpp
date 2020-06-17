@@ -202,7 +202,6 @@ int main(int argc, char** argv) {
       std::make_shared<sgpp::base::DistributionUniform>();
   sgpp::base::DistributionsVector v(3, u);
   auto dist = sgpp::base::DistributionSample(1000, v);
-  sgpp::base::ActiveSubspaceInfo i = {};
 
   int dims = 3;
     sgpp::base::DataMatrix zonotope(dims, dims);
@@ -211,11 +210,10 @@ int main(int argc, char** argv) {
     unit[d] = 1;
     zonotope.setColumn(d, unit);
   }
-  i.eigenVectors = zonotope;
 
   auto dist2 = sgpp::base::DistributionSample(1000, v);
-  sgpp::base::PointSample<double> sample =
-      sgpp::base::DimReduction::createActiveSubspaceSample(sgpp::base::SampleHelper::sampleScalarFunction(dist2, *unitFunc), i.eigenVectors, 3);
+  sgpp::base::PointSample<double> sample;
+      //sgpp::base::DimReduction::createActiveSubspaceSample(sgpp::base::SampleHelper::sampleScalarFunction(dist2, *unitFunc), i.eigenVectors, 3);
   sgpp::datadriven::Dataset data = sgpp::base::SampleHelper::fromPointSample(sample);
 
   

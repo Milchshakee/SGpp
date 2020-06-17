@@ -13,11 +13,6 @@
 namespace sgpp {
 namespace base {
 
-  struct ActiveSubspaceInfo {
-  sgpp::base::DataMatrix eigenVectors;
-  sgpp::base::DataVector eigenValues;
-};
-
   class InputProjectionFunction : public VectorFunction {
    public:
     InputProjectionFunction(const DataMatrix& basis, size_t reducedDims);
@@ -35,32 +30,25 @@ namespace base {
   struct ReductionResult {
     ReductionResult(){};
     ReductionResult(
-        std::shared_ptr<ScalarFunction>& func,
         std::shared_ptr<ScalarFunction> replacement);
 
-    std::shared_ptr<ScalarFunction> originalFunction;
     std::shared_ptr<ScalarFunction> replacementFunction;
-    std::shared_ptr<ScalarFunction> errorFunction;
 
-    double mcL2Error(DistributionSample& sample);
+    double mcL2Error(PointSample<double>& orgFunctionSample);
   };
 
   struct GridReductionResult : public ReductionResult {
     GridReductionResult(){};
-    GridReductionResult(std::shared_ptr<ScalarFunction>& func, std::shared_ptr<VectorFunction>& t,
-                        std::shared_ptr<ScalarFunction>& sampleFunction, SGridSample& sample,
-                        size_t gridPoints, double l2Error);
+    GridReductionResult(std::shared_ptr<VectorFunction>& t,
+                        std::shared_ptr<ScalarFunction>& sampleFunction, SGridSample& sample);
 
     SGridSample reducedSample;
     std::shared_ptr<VectorFunction> transformation;
     std::shared_ptr<ScalarFunction> reducedFunction;
-    size_t gridPoints;
-    double l2Error;
   };
 
   struct AsReductionResult : public ReductionResult {
     AsReductionResult(
-        std::shared_ptr<ScalarFunction>& func,
         std::shared_ptr<ScalarFunction> replacement,
         std::vector<GridReductionResult>& results);
 
@@ -69,45 +57,88 @@ namespace base {
 
   namespace DimReduction
   {
-  struct RegressionConfig {
-    RegressionConfig(size_t reducedDimension) : reducedDimension(reducedDimension) {}
+  struct ReductionConfig {
+    ReductionConfig(size_t maxReducedDimension) : maxReducedDimension(maxReducedDimension) {}
 
-    size_t reducedDimension;
-    size_t gridLevel = 3;
-    std::vector<double> lambdas = {0.00001, 0.0001, 0.001, 0.01, 0.1, 0.5, 1};
-    std::vector<double> regularizationBases = {1.0, 0.5, 0.25, 0.125};
-    size_t samples = 1000;
-    size_t refinements = 1;
-    size_t refinementPoints = 10;
-    double trainDataShare = 0.02;
-    size_t maxIterations = 1000;
-    size_t crossValidations = 5;
-    size_t subIterations = 3;
+    size_t maxReducedDimension;
+    size_t maxIterations = 10;
+    double maxErrorShare = 0.01;
+    size_t errorCalcSamples = 10000;
   };
 
-  double calculateMcL2Error(ScalarFunction& func, DistributionSample& dist);
+  struct RegressionConfig {
 
-  ReductionResult reduceANOVA(ScalarFunction& f, const DataMatrix& basis, size_t reducedDims,
-                              AnovaTypes::level_t level);
-  sgpp::base::SGridSample createReducedAnovaSample(sgpp::base::SGridSample& sample,
-                                                 AnovaTypes::level_t level, size_t reducedDims);
+    size_t maxGridPoints = 100;
+    std::vector<double> lambdas = {0.00001, 0.0001, 0.001, 0.01, 0.1, 0.5, 1};
+    std::vector<double> regularizationBases = {1.0, 0.5, 0.25, 0.125};
+    size_t refinements = 1;
+    double refinementPointsPerGridPoint = 0.1;
+    double trainDataPerGridPoint = 1;
+    size_t crossValidations = 5;
+    size_t sampleCount = 10000;
+  };
+
+    struct GradientConfig
+    {
+    enum Type {
+      GRADIENT_FUNCTION,
+      NEAREST_NEIGHBOUR_APPROXIMATION,
+      RANDOM_NEIGHBOUR_APPROXIMATION,
+    };
+    Type type;
+
+    size_t sampleCount = 10000;
+
+    std::shared_ptr<VectorFunction> gradientFunction;
+
+    double pNorm = 1;
+    double maxNorm = 0.2;
+
+    size_t neighbourConsiderationCount = 1000;
+    };
+
+  struct BasisConfig {
+    enum Type {
+      ACTIVE_SUBSPACE,
+      INV_AS,
+      RANDOM
+    };
+    Type type;
+
+    size_t basisIterations = 10;
+    RegressionConfig evaluationConfig;
+  };
+
+    struct ExaminationConfig
+    {
+    bool hasOutput()
+    { return outputDir.empty();
+    }
+
+      bool useRelativeError = true;
+      uint64_t randomSeed;
+    bool discardWorseIterations = false;
+      std::string outputDir;
+    };
+
+    struct Output
+    {
+      DataMatrix eigenVectors;
+      DataVector eigenValues;
+      
+    };
+
+  std::shared_ptr<VectorFunction> finiteDifferencesFunction(std::shared_ptr<ScalarFunction>& f,
+                                                            double h);
 
     AsReductionResult reduceASRandom(std::shared_ptr<ScalarFunction>& f,
                              sgpp::base::DistributionsVector dist,
                              RegressionConfig config, size_t reducedDims);
 
-  AsReductionResult reduceAS(std::shared_ptr<ScalarFunction>& f,
-                             sgpp::base::DistributionsVector& dist,
-                             size_t errorCalcSamples,
-                           std::vector<RegressionConfig> config, bool useRelativeError = true);
+  AsReductionResult reduceAS(PointSample<double>& sample, ReductionConfig& redConfig,
+                               RegressionConfig& regConfig, GradientConfig& gradConfig,
+                               BasisConfig& basisConfig, ExaminationConfig& examConfig, std::vector<Output>& output);
 
-  GridReductionResult activeSubspaceReductionStep(std::shared_ptr<ScalarFunction>& f,
-                                              PointSample<double>& sample, const DataMatrix& basis,
-                                              size_t reducedDims, RegressionConfig config,
-                                              double totalError);
-
-    PointSample<double> createActiveSubspaceSample(PointSample<double> input,
-                                                   const DataMatrix& basis, size_t reducedDims);
   }
 }  // namespace base
 }  // namespace sgpp

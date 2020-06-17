@@ -97,8 +97,10 @@ int main(int argc, char* argv[]) {
     auto eval = std::make_shared<sgpp::base::InterpolantScalarFunction>(sample);
     auto funcs = std::vector<std::shared_ptr<sgpp::base::ScalarFunction>>{unitFunc, eval};
     auto errorFunc = std::make_shared<sgpp::base::SumFunction>(funcs, std::vector<bool>{true, false});
-    double error = sgpp::base::DimReduction::calculateMcL2Error(*errorFunc, distSample);
-    double totalError = sgpp::base::DimReduction::calculateMcL2Error(*unitFunc, distSample);
+    double error = 0;
+    //sgpp::base::DimReduction::calculateMcL2Error(*errorFunc, distSample);
+    double totalError = 0;
+    //sgpp::base::DimReduction::calculateMcL2Error(*unitFunc, distSample);
     double relError = (error / totalError);
 
     m.set(0, l, grid->getSize());
