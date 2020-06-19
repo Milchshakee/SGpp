@@ -10,7 +10,7 @@
 #include <sgpp/datadriven/activeSubspaces/ASMatrixGradientMC.hpp>
 #include <sgpp/datadriven/tools/dimension/DimReduction.hpp>
 #include <sgpp/base/function/scalar/InterpolantScalarFunction.hpp>
-#include <sgpp/base/function/scalar/SumFunction.hpp>
+#include <sgpp/base/function/scalar/SumScalarFunction.hpp>
 
 size_t dims = 8;
 size_t samples = 1000;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     sample.hierarchise();
     auto eval = std::make_shared<sgpp::base::InterpolantScalarFunction>(sample);
     auto funcs = std::vector<std::shared_ptr<sgpp::base::ScalarFunction>>{unitFunc, eval};
-    auto errorFunc = std::make_shared<sgpp::base::SumFunction>(funcs, std::vector<bool>{true, false});
+    auto errorFunc = std::make_shared<sgpp::base::SumScalarFunction>(funcs, std::vector<bool>{true, false});
     double error = 0;
     //sgpp::base::DimReduction::calculateMcL2Error(*errorFunc, distSample);
     double totalError = 0;

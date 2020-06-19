@@ -33,8 +33,6 @@ namespace base {
         std::shared_ptr<ScalarFunction> replacement);
 
     std::shared_ptr<ScalarFunction> replacementFunction;
-
-    double mcL2Error(PointSample<double>& orgFunctionSample);
   };
 
   struct GridReductionResult : public ReductionResult {
@@ -90,6 +88,7 @@ namespace base {
     size_t sampleCount = 10000;
 
     std::shared_ptr<VectorFunction> gradientFunction;
+    double h = 1e-8;
 
     double pNorm = 1;
     double maxNorm = 0.2;
@@ -109,12 +108,29 @@ namespace base {
     RegressionConfig evaluationConfig;
   };
 
+  struct Error {
+    Error(std::string name) : name(name) {}
+
+    virtual double calculateError(std::shared_ptr<ScalarFunction>& func,
+                                  PointSample<double>& errorSample) = 0;
+
+    const std::string& getName()
+    { return name;
+    }
+
+  private:
+    std::string name;
+  };
+
     struct ExaminationConfig
     {
+    ExaminationConfig(Error& e) : error(e) {}
+
     bool hasOutput()
     { return outputDir.empty();
     }
 
+      Error& error;
       bool useRelativeError = true;
       uint64_t randomSeed;
     bool discardWorseIterations = false;
@@ -128,12 +144,40 @@ namespace base {
       
     };
 
+    class L2 : public Error
+    {
+    public:
+      L2()
+        : Error("RMSE") {
+      }
+
+      double calculateError(std::shared_ptr<ScalarFunction>& func,
+        PointSample<double>& errorSample) override;
+    };
+
+    class MSE : public Error
+    {
+     public:
+      MSE() : Error("MSE") {}
+      double calculateError(std::shared_ptr<ScalarFunction>& func,
+                            PointSample<double>& errorSample) override;
+    };
+
+    class NRMSE : public Error {
+     public:
+      NRMSE() : Error("NRMSE") {}
+      double calculateError(std::shared_ptr<ScalarFunction>& func,
+                            PointSample<double>& errorSample) override;
+    };
+
+
+    extern  L2 L2_ERROR;
+    extern L2 RMSE_ERROR;
+    extern MSE MSE_ERROR;
+    extern  NRMSE NRMSE_ERROR;
+
   std::shared_ptr<VectorFunction> finiteDifferencesFunction(std::shared_ptr<ScalarFunction>& f,
                                                             double h);
-
-    AsReductionResult reduceASRandom(std::shared_ptr<ScalarFunction>& f,
-                             sgpp::base::DistributionsVector dist,
-                             RegressionConfig config, size_t reducedDims);
 
   AsReductionResult reduceAS(PointSample<double>& sample, ReductionConfig& redConfig,
                                RegressionConfig& regConfig, GradientConfig& gradConfig,

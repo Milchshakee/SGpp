@@ -10,7 +10,7 @@
 #include <sgpp/base/function/scalar/ChainScalarFunction.hpp>
 #include <sgpp/base/tools/EigenHelper.hpp>
 #include <sgpp/base/function/scalar/InterpolantScalarFunction.hpp>
-#include <sgpp/base/function/scalar/SumFunction.hpp>
+#include <sgpp/base/function/scalar/SumScalarFunction.hpp>
 
 size_t iterations = 5;
 size_t samples = 10000;
@@ -133,9 +133,10 @@ sgpp::base::AsReductionResult reduceBorehole() {
   regConfig.crossValidations = 5;
 
   sgpp::base::DimReduction::BasisConfig basis;
-  basis.type = sgpp::base::DimReduction::BasisConfig::INV_AS;
-  basis.basisIterations = 5;
+  basis.type = sgpp::base::DimReduction::BasisConfig::Type::INV_AS;
+  basis.basisIterations = 20;
   basis.evaluationConfig = regConfig;
+  basis.evaluationConfig.maxGridPoints = 20;
 
   std::shared_ptr<sgpp::base::VectorFunction> gradient =
       sgpp::base::DimReduction::finiteDifferencesFunction(func, 1e-8);
@@ -146,7 +147,7 @@ sgpp::base::AsReductionResult reduceBorehole() {
   gradConfig.type = sgpp::base::DimReduction::GradientConfig::GRADIENT_FUNCTION;
   gradConfig.gradientFunction = gradient;
 
-  auto exConfig = sgpp::base::DimReduction::ExaminationConfig{};
+  auto exConfig = sgpp::base::DimReduction::ExaminationConfig(sgpp::base::DimReduction::NRMSE_ERROR);
   exConfig.discardWorseIterations = false;
 
   std::vector<sgpp::base::DimReduction::Output> output;
