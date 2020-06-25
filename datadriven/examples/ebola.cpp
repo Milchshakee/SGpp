@@ -90,9 +90,9 @@ double friedman1(const sgpp::base::DataVector& x) {
 //}
 
 sgpp::base::AsReductionResult reduceBorehole() {
-  size_t dims = 2;
+  size_t dims = 8;
   std::shared_ptr<sgpp::base::ScalarFunction> func =
-      std::make_shared<sgpp::base::WrapperScalarFunction>(dims, test1);
+      std::make_shared<sgpp::base::WrapperScalarFunction>(dims, borehole);
   std::shared_ptr<sgpp::base::BoundingBox> boreholeBb = std::make_shared<sgpp::base::BoundingBox>(std::vector<sgpp::base::BoundingBox1D>{
                                       {0.05, 0.15},     // r_w
                                       {100, 50000},     // r
@@ -116,46 +116,58 @@ sgpp::base::AsReductionResult reduceBorehole() {
   std::shared_ptr<sgpp::base::ScalarFunction> unitFunc =
       std::make_shared<sgpp::base::ChainScalarFunction>(v, func);
 
-  std::shared_ptr<sgpp::base::BoundingBox> bb = std::make_shared<sgpp::base::BoundingBox>(dims);
   sgpp::base::DistributionsVector dist(
-      {sgpp::base::DistributionType::Uniform, sgpp::base::DistributionType::Uniform}, {}, bb);
-  sgpp::base::DistributionSample distSample(2000, dist);
+      types, chars, boreholeBb);
+  sgpp::base::DistributionSample distSample(100000, dist);
   sgpp::base::PointSample<double> funcSample =
-      sgpp::base::SampleHelper::sampleScalarFunction(distSample, *func);
+      sgpp::base::SampleHelper::sampleScalarFunction(distSample, *unitFunc);
 
-  sgpp::base::DimReduction::ReductionConfig redConfig(1);
+  sgpp::base::DimReduction::ReductionConfig redConfig(3);
+  redConfig.maxIterations = 5;
 
   sgpp::base::DimReduction::RegressionConfig regConfig;
-  regConfig.sampleCount = 1000;
-  regConfig.maxGridPoints = 100;
-  regConfig.refinementPointsPerGridPoint = 0;
-  regConfig.trainDataPerGridPoint = 1;
+  regConfig.sampleCount = 50000;
+  regConfig.maxGridPoints = 200;
+  regConfig.refinements = 0;
+  regConfig.refinementPointsPerGridPoint = 0.1;
+  regConfig.trainDataPerGridPoint = 20;
   regConfig.crossValidations = 5;
 
+    sgpp::base::DimReduction::RegressionConfig fastRegConfig;
+  fastRegConfig.sampleCount = 10000;
+    fastRegConfig.maxGridPoints = 5;
+  fastRegConfig.refinements = 0;
+  fastRegConfig.refinementPointsPerGridPoint = 0;
+    fastRegConfig.trainDataPerGridPoint = 20;
+  fastRegConfig.crossValidations = 3;
+
   sgpp::base::DimReduction::BasisConfig basis;
-  basis.type = sgpp::base::DimReduction::BasisConfig::Type::INV_AS;
-  basis.basisIterations = 20;
-  basis.evaluationConfig = regConfig;
-  basis.evaluationConfig.maxGridPoints = 20;
+  basis.types = {sgpp::base::DimReduction::BasisConfig::Type::ACTIVE_SUBSPACE};
+  basis.useBiggestInterval = false;
+  basis.eigenValueShare = 0.999;
+  basis.basisIterations = 1;
+
+  //basis.basisIterations = 1;
 
   std::shared_ptr<sgpp::base::VectorFunction> gradient =
-      sgpp::base::DimReduction::finiteDifferencesFunction(func, 1e-8);
+      sgpp::base::DimReduction::finiteDifferencesFunction(unitFunc, 1e-8);
   sgpp::base::DimReduction::GradientConfig gradConfig;
-  gradConfig.sampleCount = 1000;
+  gradConfig.sampleCount = 50000;
   gradConfig.maxNorm = 3;
   gradConfig.pNorm = 1;
   gradConfig.type = sgpp::base::DimReduction::GradientConfig::GRADIENT_FUNCTION;
-  gradConfig.gradientFunction = gradient;
+  gradConfig.initialGradientFunction = gradient;
 
   auto exConfig = sgpp::base::DimReduction::ExaminationConfig(sgpp::base::DimReduction::NRMSE_ERROR);
   exConfig.discardWorseIterations = false;
+  exConfig.outputDir = "borehole-new";
 
   std::vector<sgpp::base::DimReduction::Output> output;
 
   sgpp::base::DataMatrix mat(2, iterations);
 
   sgpp::base::AsReductionResult result =
-      sgpp::base::DimReduction::reduceAS(funcSample, redConfig, regConfig, gradConfig, basis, exConfig, output);
+      sgpp::base::DimReduction::reduceAS(funcSample, redConfig, fastRegConfig, regConfig, gradConfig, basis, exConfig, output);
   return result;
 }
 
@@ -227,17 +239,4 @@ int main()
 {
   sgpp::base::DataMatrix mat(2, iterations);
   sgpp::base::AsReductionResult result = reduceBorehole();
-
-    for (size_t i = 0; i < iterations; i++) {
-    size_t sum = 0;
-      for (size_t j = 0; j <= i; j++) {
-      sum += 1;  // result.reductions[j].gridPoints;
-      }
-      mat(0, i) = sum;
-      mat(1, i) = 0.5;
-      //result.reductions[i].l2Error;
-  }
-
-  mat.transpose();
-  mat.toFile("bore-d1-l7-0.02.txt");
 }

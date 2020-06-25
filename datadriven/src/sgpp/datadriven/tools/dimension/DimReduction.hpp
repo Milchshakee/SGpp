@@ -87,7 +87,7 @@ namespace base {
 
     size_t sampleCount = 10000;
 
-    std::shared_ptr<VectorFunction> gradientFunction;
+    std::shared_ptr<VectorFunction> initialGradientFunction;
     double h = 1e-8;
 
     double pNorm = 1;
@@ -102,10 +102,11 @@ namespace base {
       INV_AS,
       RANDOM
     };
-    Type type;
+    std::vector<Type> types;
 
+    double eigenValueShare = 0.9;
+    bool useBiggestInterval = true;
     size_t basisIterations = 10;
-    RegressionConfig evaluationConfig;
   };
 
   struct Error {
@@ -127,7 +128,7 @@ namespace base {
     ExaminationConfig(Error& e) : error(e) {}
 
     bool hasOutput()
-    { return outputDir.empty();
+    { return !outputDir.empty();
     }
 
       Error& error;
@@ -141,7 +142,8 @@ namespace base {
     {
       DataMatrix eigenVectors;
       DataVector eigenValues;
-      
+      size_t gridPointsAdded;
+      double newError;
     };
 
     class L2 : public Error
@@ -180,6 +182,7 @@ namespace base {
                                                             double h);
 
   AsReductionResult reduceAS(PointSample<double>& sample, ReductionConfig& redConfig,
+                             RegressionConfig& fastRegConfig,
                                RegressionConfig& regConfig, GradientConfig& gradConfig,
                                BasisConfig& basisConfig, ExaminationConfig& examConfig, std::vector<Output>& output);
 
